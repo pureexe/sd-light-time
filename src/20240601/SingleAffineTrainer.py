@@ -39,47 +39,55 @@ class SingleAffineDataset(torch.utils.data.Dataset):
 class SingleAffine(L.LightningModule):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__()
-
+        MASTER_TYPE = torch.float32
         # setup dataset
-        self.affines = torch.nn.ParameterList([
+        affines = [
             # down-1
-            torch.nn.Parameter(torch.ones(1, 320, 64, 64)),
-            torch.nn.Parameter(torch.zeros(1, 320, 64, 64)),
+            torch.nn.Parameter(torch.ones(1, 320, 64, 64, dtype=MASTER_TYPE)),
+            torch.nn.Parameter(torch.zeros(1, 320, 64, 64, dtype=MASTER_TYPE)),
             # down-2
-            torch.nn.Parameter(torch.ones(1, 640, 32, 32)),
-            torch.nn.Parameter(torch.zeros(1, 640, 32, 32)),
+            torch.nn.Parameter(torch.ones(1, 640, 32, 32, dtype=MASTER_TYPE)),
+            torch.nn.Parameter(torch.zeros(1, 640, 32, 32, dtype=MASTER_TYPE)),
             # down-3
-            torch.nn.Parameter(torch.ones(1, 1280, 16, 16)),
-            torch.nn.Parameter(torch.zeros(1, 1280, 16, 16)),
+            torch.nn.Parameter(torch.ones(1, 1280, 16, 16, dtype=MASTER_TYPE)),
+            torch.nn.Parameter(torch.zeros(1, 1280, 16, 16, dtype=MASTER_TYPE)),
             # up-3
-            torch.nn.Parameter(torch.ones(1, 1280, 8, 8)),
-            torch.nn.Parameter(torch.zeros(1, 1280, 8,8)),
+            torch.nn.Parameter(torch.ones(1, 1280, 8, 8, dtype=MASTER_TYPE)),
+            torch.nn.Parameter(torch.zeros(1, 1280, 8,8, dtype=MASTER_TYPE)),
             # up-2
-            torch.nn.Parameter(torch.ones(1, 1280, 16, 16)),
-            torch.nn.Parameter(torch.zeros(1, 1280, 16, 16)),
+            torch.nn.Parameter(torch.ones(1, 1280, 16, 16, dtype=MASTER_TYPE)),
+            torch.nn.Parameter(torch.zeros(1, 1280, 16, 16, dtype=MASTER_TYPE)),
             # up-1
-            torch.nn.Parameter(torch.ones(1, 640, 32, 32)),
-            torch.nn.Parameter(torch.zeros(1, 640, 32, 32))
-        ])
+            torch.nn.Parameter(torch.ones(1, 640, 32, 32, dtype=MASTER_TYPE)),
+            torch.nn.Parameter(torch.zeros(1, 640, 32, 32, dtype=MASTER_TYPE))
+        ]
         # add small noise to parameter
-        for p in self.affines:
-            p.data += torch.randn_like(p) * 1e-4
+        for p in affines:
+            p.data += torch.randn_like(p, dtype=MASTER_TYPE) * 1e-3
 
 
         # load pipeline
         sd_path = "runwayml/stable-diffusion-v1-5"
-        self.pipe = StableDiffusionPipeline.from_pretrained(sd_path, torch_dtype=torch.float32)
+        self.pipe = StableDiffusionPipeline.from_pretrained(sd_path, torch_dtype=MASTER_TYPE)
         self.pipe.safty_checker = None
         # load unet from pretrain 
         self.pipe.unet = UNet2DSingleAffineConditionModel.from_pretrained(sd_path, subfolder='unet')
-        self.pipe.unet.set_affine(self.affines)
+        self.pipe.unet.requires_grad_(False)
+        self.pipe.vae.requires_grad_(False)
+        self.pipe.text_encoder.requires_grad_(False)
+        
+        self.pipe.unet.set_affine(affines)
+
+        
+        self.affines_params = torch.nn.ParameterList(self.pipe.unet.get_affine_params())
+
         self.pipe.to('cuda')
 
 
     def training_step(self, batch, batch_idx):
 
 
-        self.pipe.unet.set_affine(self.affines)
+        #self.pipe.unet.set_affine(self.affines)
         
         #input_ids = self.pipe.tokenizer(batch['text'], max_length=self.pipe.tokenizer.model_max_length, padding="max_length", truncation=True, return_tensors="pt")
         text_inputs = self.pipe.tokenizer(
@@ -92,7 +100,7 @@ class SingleAffine(L.LightningModule):
         text_input_ids = text_inputs.input_ids
 
 
-        latents = self.pipe.vae.encode(batch['pixel_values']).latent_dist.sample()
+        latents = self.pipe.vae.encode(batch['pixel_values']).latent_dist.sample().detach()
 
         latents = latents * self.pipe.vae.config.scaling_factor
 
@@ -115,7 +123,7 @@ class SingleAffine(L.LightningModule):
         
         model_pred = self.pipe.unet(noisy_latents, timesteps, encoder_hidden_states, return_dict=False)[0]
 
-        loss = torch.nn.functional.mse_loss(model_pred.float(), target.float(), reduction="mean")
+        loss = torch.nn.functional.mse_loss(model_pred, target, reduction="mean")
 
         self.log('train_loss', loss)
 
@@ -123,7 +131,7 @@ class SingleAffine(L.LightningModule):
     
     def validation_step(self, batch, batch_idx):
         # get image from self.pipe and write to tensorboard
-        self.pipe.unet.set_affine(self.affines)
+        #self.pipe.unet.set_affine(self.affines)
         pt_image, _ = self.pipe(
             batch['text'], 
             output_type="pt",
@@ -133,7 +141,7 @@ class SingleAffine(L.LightningModule):
             generator=torch.Generator().manual_seed(42)
         )
         self.logger.experiment.add_image('image', pt_image[0], self.global_step)
-        for i, affine in enumerate(self.affines):
+        for i, affine in enumerate(self.affines_params):
             self.log(f'sum_affine/{i}', torch.sum(affine[0]))
         if self.global_step == 0:
             self.logger.experiment.add_text('text', batch['text'][0], self.global_step)
@@ -144,7 +152,9 @@ class SingleAffine(L.LightningModule):
 
 
     def configure_optimizers(self):
-        optimizer = torch.optim.Adam(self.parameters(), lr=args.learning_rate)
+        #optimizer = torch.optim.Adam(self.parameters(), lr=args.learning_rate)
+        lora_layers = filter(lambda p: p.requires_grad, self.pipe.unet.parameters())
+        optimizer = torch.optim.Adam(lora_layers, lr=args.learning_rate)
         return optimizer
 
 
