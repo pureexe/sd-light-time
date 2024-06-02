@@ -8,6 +8,12 @@ from UNet2DSingleAffineConditionModel import UNet2DSingleAffineConditionModel
 
 from diffusers import StableDiffusionPipeline
 
+import argparse 
+
+parser = argparse.ArgumentParser()
+parser.add_argument('-lr', '--learning_rate', type=float, default=1e-4)
+args = parser.parse_args()
+
  
 
 class SingleAffineDataset(torch.utils.data.Dataset):
@@ -26,7 +32,7 @@ class SingleAffineDataset(torch.utils.data.Dataset):
 
     def __getitem__(self, idx):
         return {
-            'image': self.transform(self.image),
+            'pixel_values': self.transform(self.image),
             'text': 'man wearing a gray sweater'
         }
 
@@ -46,14 +52,14 @@ class SingleAffine(L.LightningModule):
             torch.nn.Parameter(torch.ones(1, 1280, 16, 16)),
             torch.nn.Parameter(torch.zeros(1, 1280, 16, 16)),
             # up-3
+            torch.nn.Parameter(torch.ones(1, 1280, 8, 8)),
+            torch.nn.Parameter(torch.zeros(1, 1280, 8,8)),
+            # up-2
             torch.nn.Parameter(torch.ones(1, 1280, 16, 16)),
             torch.nn.Parameter(torch.zeros(1, 1280, 16, 16)),
-            # up-2
-            torch.nn.Parameter(torch.ones(1, 640, 32, 32)),
-            torch.nn.Parameter(torch.zeros(1, 640, 32, 32)),
             # up-1
-            torch.nn.Parameter(torch.ones(1, 320, 64, 64)),
-            torch.nn.Parameter(torch.zeros(1, 320, 64, 64))
+            torch.nn.Parameter(torch.ones(1, 640, 32, 32)),
+            torch.nn.Parameter(torch.zeros(1, 640, 32, 32))
         ])
         # add small noise to parameter
         for p in self.affines:
@@ -74,7 +80,16 @@ class SingleAffine(L.LightningModule):
 
 
         self.pipe.unet.set_affine(self.affines)
-        input_ids = self.pipe.tokenizer(batch['text'], max_length=self.pipe.tokenizer.model_max_length, padding="max_length", truncation=True, return_tensors="pt")
+        
+        #input_ids = self.pipe.tokenizer(batch['text'], max_length=self.pipe.tokenizer.model_max_length, padding="max_length", truncation=True, return_tensors="pt")
+        text_inputs = self.pipe.tokenizer(
+                batch['text'],
+                padding="max_length",
+                max_length=self.pipe.tokenizer.model_max_length,
+                truncation=True,
+                return_tensors="pt",
+        )
+        text_input_ids = text_inputs.input_ids
 
 
         latents = self.pipe.vae.encode(batch['pixel_values']).latent_dist.sample()
@@ -87,17 +102,22 @@ class SingleAffine(L.LightningModule):
         bsz = latents.shape[0]
 
         # Sample a random timestep for each image
-        timesteps = torch.randint(0, self.pipe.noise_scheduler.config.num_train_timesteps, (bsz,), device=latents.device)
-        timesteps = timesteps.long()        
+        timesteps = torch.randint(0, self.pipe.scheduler.config.num_train_timesteps, (bsz,), device=latents.device)
+        timesteps = timesteps.long().to(latents.device)
 
-        encoder_hidden_states = self.pipe.text_encoder(input_ids, return_dict=False)[0]
+        text_input_ids = text_input_ids.to(latents.device)
+        encoder_hidden_states = self.pipe.text_encoder(text_input_ids)[0]
 
         # 
         target = noise 
-        noisy_latents = self.pipe.noise_scheduler.add_noise(latents, noise, timesteps)
+    
+        noisy_latents = self.pipe.scheduler.add_noise(latents, noise, timesteps)
+        
         model_pred = self.pipe.unet(noisy_latents, timesteps, encoder_hidden_states, return_dict=False)[0]
 
         loss = torch.nn.functional.mse_loss(model_pred.float(), target.float(), reduction="mean")
+
+        self.log('train_loss', loss)
 
         return loss
     
@@ -109,22 +129,29 @@ class SingleAffine(L.LightningModule):
             output_type="pt",
             guidance_scale=7.5,
             num_inference_steps=50,
-            return_dict = False
+            return_dict = False,
+            generator=torch.Generator().manual_seed(42)
         )
         self.logger.experiment.add_image('image', pt_image[0], self.global_step)
+        for i, affine in enumerate(self.affines):
+            self.log(f'sum_affine/{i}', torch.sum(affine[0]))
+        if self.global_step == 0:
+            self.logger.experiment.add_text('text', batch['text'][0], self.global_step)
+            self.logger.experiment.add_text('params', str(args), self.global_step)
+            self.logger.experiment.add_text('learning_rate', str(args.learning_rate), self.global_step)
         return torch.zeros(1, )
     
 
 
     def configure_optimizers(self):
-        optimizer = torch.optim.Adam(self.parameters(), lr=1e-3)
+        optimizer = torch.optim.Adam(self.parameters(), lr=args.learning_rate)
         return optimizer
 
 
 
 def main():
     model = SingleAffine()
-    train_dataset = SingleAffineDataset(num_files=1000)
+    train_dataset = SingleAffineDataset(num_files=100)
     val_dataset = SingleAffineDataset(num_files=1)
     train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=1, shuffle=True)
     val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=1, shuffle=False)

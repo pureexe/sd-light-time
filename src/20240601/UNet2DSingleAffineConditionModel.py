@@ -9,24 +9,17 @@ class UNet2DSingleAffineConditionModel(UNet2DConditionModel):
         return config, {}, {}
             
     def set_affine(self, affines):
-        if len(self.down_blocks) == 6:
-            self.down_blocks[0].affine = AffineBlock(affines[0], affines[1])
-            self.down_blocks[2].affine = AffineBlock(affines[2], affines[3])
-            self.down_blocks[4].affine = AffineBlock(affines[4], affines[5])
-        else:
-            self.down_blocks.insert(0, AffineBlock(affines[0], affines[1]))
-            self.down_blocks.insert(2, AffineBlock(affines[2], affines[3]))
-            self.down_blocks.insert(4, AffineBlock(affines[4], affines[5]))
+        for block_id in range(3):
+            if len(self.down_blocks[block_id].downsamplers) == 1:
+                self.down_blocks[block_id].downsamplers.insert(0, AffineBlock(affines[block_id*2], affines[block_id*2+1]))
+            else:
+                self.down_blocks[block_id].downsamplers[0] = AffineBlock(affines[block_id*2], affines[block_id*2+1])
 
-        if len(self.up_blocks) == 6:
-            self.up_blocks[0].affine = AffineBlock(affines[6], affines[7])
-            self.up_blocks[2].affine = AffineBlock(affines[8], affines[9])
-            self.up_blocks[4].affine = AffineBlock(affines[10], affines[11])
-        else:
-            self.up_blocks.insert(0, AffineBlock(affines[6], affines[7]))
-            self.up_blocks.insert(2, AffineBlock(affines[8], affines[9]))
-            self.up_blocks.insert(4, AffineBlock(affines[10], affines[11]))
-        self.affines = affines
+        for block_id in range(3):
+            if len(self.up_blocks[block_id].upsamplers) == 1:
+                self.up_blocks[block_id].upsamplers.insert(0, AffineBlock(affines[block_id*2+6], affines[block_id*2+7]))
+            else:
+                self.up_blocks[block_id].upsamplers[0] = AffineBlock(affines[block_id*2+6], affines[block_id*2+7])
         
 class AffineBlock(torch.nn.Module):
     def __init__(self, multipiler, bias):
@@ -34,9 +27,7 @@ class AffineBlock(torch.nn.Module):
         self.multipiler = multipiler
         self.bias = bias
         
-    def forward(self, hidden_states, temb, *args, **kwargs):
-        #print(hidden_states.shape)
-        #print(self.multipiler.shape)
-        out = hidden_states * self.multipiler + self.bias
-        resout = out + (hidden_states,)
-        return out, resout
+    def forward(self, hidden_states, *args, **kwargs):
+        #print(self.multipiler)
+        out = hidden_states #* self.multipiler + self.bias
+        return out
