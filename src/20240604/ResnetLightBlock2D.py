@@ -1,6 +1,7 @@
 import torch 
 from diffusers.models.resnet import ResnetBlock2D
 from diffusers.utils import deprecate
+import types
 
 
 class LightEmbedBlock(torch.nn.Module):
@@ -53,9 +54,8 @@ def forward_lightcondition(self, input_tensor: torch.Tensor, temb: torch.Tensor,
 
     if self.time_embedding_norm == "default":
         if temb is not None:
-            light_mul, light_add = self.get_lightcondition()
             
-            hidden_states = light_mul*hidden_states + light_add + temb
+            hidden_states = self.light_block(hidden_states) + temb
         hidden_states = self.norm2(hidden_states)
     elif self.time_embedding_norm == "scale_shift":
         raise NotImplementedError("Not support scale-shift mode yet.")
@@ -67,8 +67,7 @@ def forward_lightcondition(self, input_tensor: torch.Tensor, temb: torch.Tensor,
         hidden_states = self.norm2(hidden_states)
         hidden_states = hidden_states * (1 + time_scale) + time_shift
     else:
-        light_mul, light_add = self.get_lightcondition()    
-        hidden_states = light_mul*hidden_states + light_add 
+        hidden_states = self.light_block(hidden_states)
         hidden_states = self.norm2(hidden_states)
 
     hidden_states = self.nonlinearity(hidden_states)
@@ -86,34 +85,37 @@ def forward_lightcondition(self, input_tensor: torch.Tensor, temb: torch.Tensor,
 # Inject to Unet
 def set_light_direction(self, direction):
     for block_id in range(len(self.down_blocks)):
-        for resblock_id in len(self.down_blocks[block_id].resblocks):
-            if hasattr(self.down_blocks[block_id].resblocks[resblock_id], 'time_emb_proj'):
-                self.down_blocks[block_id].resblocks[resblock_id].light_block.set_light_direction(direction)
-    for block_id in range(self.up_blocks):
-        for resblock_id in len(self.up_blocks[block_id].resblocks):
-            if hasattr(self.up_blocks[block_id].resblocks[resblock_id], 'time_emb_proj'):
-                self.up_blocks[block_id].resblocks[resblock_id].light_block.set_light_direction(direction)
+        for resblock_id in range(len(self.down_blocks[block_id].resnets)):
+            if hasattr(self.down_blocks[block_id].resnets[resblock_id], 'time_emb_proj'):
+                self.down_blocks[block_id].resnets[resblock_id].light_block.set_light_direction(direction)
+    for block_id in range(len(self.up_blocks)):
+        for resblock_id in range(len(self.up_blocks[block_id].resnets)):
+            if hasattr(self.up_blocks[block_id].resnets[resblock_id], 'time_emb_proj'):
+                self.up_blocks[block_id].resnets[resblock_id].light_block.set_light_direction(direction)
 
 def add_light_block(self):
-    for block_id in range(3):
-        for resblock_id in len(self.down_blocks[block_id].resblocks):
-            num_channel = self.unet.down_blocks[block_id].resnets[resblock_id].time_emb_proj.out_features
-            self.down_blocks[block_id].resblocks[resblock_id].light_block = LightEmbedBlock(num_channel)
-            self.down_blocks[block_id].resblocks[resblock_id].forward = forward_lightcondition
-    for block_id in range(3):
-        for resblock_id in len(self.up_blocks[block_id].resblocks):
-            num_channel = self.unet.up_blocks[block_id].resnets[resblock_id].time_emb_proj.out_features
-            self.up_blocks[block_id].resblocks[resblock_id].light_block = LightEmbedBlock(num_channel)
-            self.up_blocks[block_id].resblocks[resblock_id].forward = forward_lightcondition
+    for block_id in range(len(self.down_blocks)):
+        for resblock_id in range(len(self.down_blocks[block_id].resnets)):
+            num_channel = self.down_blocks[block_id].resnets[resblock_id].time_emb_proj.out_features
+            self.down_blocks[block_id].resnets[resblock_id].light_block = LightEmbedBlock(num_channel)
+            #self.down_blocks[block_id].resnets[resblock_id].forward = forward_lightcondition
+            self.down_blocks[block_id].resnets[resblock_id].forward = types.MethodType(forward_lightcondition, self.down_blocks[block_id].resnets[resblock_id])
+
+    for block_id in range(len(self.up_blocks)):
+        for resblock_id in range(len(self.up_blocks[block_id].resnets)):
+            num_channel = self.up_blocks[block_id].resnets[resblock_id].time_emb_proj.out_features
+            self.up_blocks[block_id].resnets[resblock_id].light_block = LightEmbedBlock(num_channel)
+            #self.up_blocks[block_id].resnets[resblock_id].forward = forward_lightcondition
+            self.up_blocks[block_id].resnets[resblock_id].forward = types.MethodType(forward_lightcondition, self.up_blocks[block_id].resnets[resblock_id])
 
 def get_optimizable_params(self):
     all_params = []
-    for block_id in range(3):
-        for resblock_id in len(self.down_blocks[block_id].resblocks):
-            all_params.extend(self.down_blocks[block_id].resblocks[resblock_id].light_block.parameters())
-    for block_id in range(3):
-        for resblock_id in len(self.up_blocks[block_id].resblocks):
-            all_params.extend(self.up_blocks[block_id].resblocks[resblock_id].light_block.parameters())
+    for block_id in range(len(self.down_blocks)):
+        for resblock_id in range(len(self.down_blocks[block_id].resnets)):
+            all_params.extend(self.down_blocks[block_id].resnets[resblock_id].light_block.parameters())
+    for block_id in range(len(self.up_blocks)):
+        for resblock_id in range(len(self.up_blocks[block_id].resnets)):
+            all_params.extend(self.up_blocks[block_id].resnets[resblock_id].light_block.parameters())
     return all_params
 
 
