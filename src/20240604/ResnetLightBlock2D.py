@@ -12,8 +12,6 @@ class LightEmbedBlock(torch.nn.Module):
         self.light_add = torch.nn.Parameter(torch.zeros(2, channel))
         # spinkle random noise 
         self.light_add.data = self.light_add.data*torch.randn_like(self.light_add) * 1e-3
-
-
         self.light_direction = 0
     
     def set_light_direction(self, direction):
@@ -54,8 +52,7 @@ def forward_lightcondition(self, input_tensor: torch.Tensor, temb: torch.Tensor,
 
     if self.time_embedding_norm == "default":
         if temb is not None:
-            
-            hidden_states = self.light_block(hidden_states) + temb
+            hidden_states = self.light_block(hidden_states  + temb)
         hidden_states = self.norm2(hidden_states)
     elif self.time_embedding_norm == "scale_shift":
         raise NotImplementedError("Not support scale-shift mode yet.")
@@ -68,7 +65,7 @@ def forward_lightcondition(self, input_tensor: torch.Tensor, temb: torch.Tensor,
         hidden_states = hidden_states * (1 + time_scale) + time_shift
     else:
         hidden_states = self.light_block(hidden_states)
-        hidden_states = self.norm2(hidden_states)
+        hidden_states = self. Affin(hidden_states)
 
     hidden_states = self.nonlinearity(hidden_states)
     hidden_states = self.dropout(hidden_states)

@@ -63,11 +63,13 @@ class LeftRightAffineDataset(torch.utils.data.Dataset):
         Returns:
             np.array: gray scale array in shape [...] (1 dimension less)
         """
+        assert v.shape[0] == 3
         return 0.299*v[0] + 0.587*v[1] + 0.114*v[2]
 
     def get_light_direction(self, idx):
-        light = np.load(os.path.join(self.root_dir, "light", self.subdirs[idx], f"{self.subdirs[idx]}_light.npy")) 
+        light = np.load(os.path.join(self.root_dir, "light", self.subdirs[idx], f"{self.files[idx]}_light.npy")) 
         light = self.convert_to_grayscale(light.transpose())
+        assert len(light) == 9
         if light[1] < 0.0:
             return 0 #left
         else:
@@ -155,7 +157,7 @@ class LeftRightAffine(L.LightningModule):
         return loss
     
     def validation_step(self, batch, batch_idx):
-        if batch_idx == 0 and self.global_step and self.current_epoch % 5 == 0 and self.global_step > 9000 :
+        if batch_idx == 0 and self.global_step and self.current_epoch % 20 == 0 and self.global_step > 9000 :
             prompts = []
             with open(os.path.join(DATASET_ROOT_DIR, "prompts.json")) as f:
                 prompts = json.load(f)
@@ -192,7 +194,7 @@ class LeftRightAffine(L.LightningModule):
         )
         gt_image = (batch["pixel_values"] + 1.0) / 2.0
         images = torch.cat([gt_image, pt_image], dim=0)
-        image = torchvision.utils.make_grid(images, nrow=2, normalize=True, range=(0, 1))
+        image = torchvision.utils.make_grid(images, nrow=2, normalize=True)
         self.logger.experiment.add_image(f'image/{batch["name"][0]}', image, self.global_step)
         if self.global_step == 0 and batch_idx == 0:
             self.logger.experiment.add_text('text', batch['text'][0], self.global_step)

@@ -1,5 +1,5 @@
-OUTPUT = "output/20240604/"
-SRC = "src/20240604/"
+OUTPUT = "output/20240609/"
+SRC = "src/20240609/"
 DATASET_ROOT_DIR = "datasets/face/face2000_single/"
 MAN_FACE = "src/20240601/man.png"
 OUTPUT_MULTI = "output/20240604_TimeEmbedingV2/"

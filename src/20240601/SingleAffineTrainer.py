@@ -165,7 +165,7 @@ def main():
     val_dataset = SingleAffineDataset(num_files=1)
     train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=1, shuffle=True)
     val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=1, shuffle=False)
-    trainer = L.Trainer(max_epochs =1000, precision=32)
+    trainer = L.Trainer(max_epochs =1000, precision=32, default_root_dir=OUTPUT)
     trainer.fit(model=model, train_dataloaders=train_dataloader, val_dataloaders=val_dataloader)
 
 if __name__ == '__main__':

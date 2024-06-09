@@ -66,7 +66,7 @@ class LeftRightAffineDataset(torch.utils.data.Dataset):
         return 0.299*v[0] + 0.587*v[1] + 0.114*v[2]
 
     def get_light_direction(self, idx):
-        light = np.load(os.path.join(self.root_dir, "light", self.subdirs[idx], f"{self.subdirs[idx]}_light.npy")) 
+        light = np.load(os.path.join(self.root_dir, "light", self.subdirs[idx], f"{self.files[idx]}_light.npy")) 
         light = self.convert_to_grayscale(light.transpose())
         if light[1] < 0.0:
             return 0 #left
@@ -182,7 +182,7 @@ class LeftRightAffine(L.LightningModule):
         return loss
     
     def validation_step(self, batch, batch_idx):
-        if batch_idx == 0:
+        if batch_idx == 0 and self.global_step and self.current_epoch % 20 == 0 and self.global_step > 9000 :
             prompts = []
             with open(os.path.join(DATASET_ROOT_DIR, "prompts.json")) as f:
                 prompts = json.load(f)
