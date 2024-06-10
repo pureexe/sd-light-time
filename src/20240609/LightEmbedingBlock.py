@@ -1,0 +1,131 @@
+import torch 
+from diffusers.models.resnet import ResnetBlock2D
+from diffusers.utils import deprecate
+import types
+
+
+class LightEmbedBlock(torch.nn.Module):
+
+    def __init__(self, channel, *args, **kwargs):
+        super().__init__()
+        self.light_mul = torch.nn.Parameter(torch.ones(2, channel))
+        self.light_add = torch.nn.Parameter(torch.zeros(2, channel))
+        # spinkle random noise 
+        self.light_add.data = self.light_add.data*torch.randn_like(self.light_add) * 1e-3
+        self.light_direction = 0
+        self.is_apply_cfg = True
+    
+    def enable_apply_cfg(self):
+        self.is_apply_cfg = True
+        
+    def disable_apply_cfg(self):
+        self.is_apply_cfg = False
+    
+    def set_light_direction(self, direction):
+        self.light_direction = direction
+
+    def forward(self, x):
+        h = 0
+        
+        # print("BEFORE", x.shape)
+        # if using cfg (classifier guidance-free), only apply light condition to non cfg part
+        if self.is_apply_cfg and x.shape[0] % 2 == 0:
+            # apply only non cfg part
+            h = x.shape[0] // 2
+            v = x[h:]
+        else:
+            v = x
+            
+        # compute light condition
+        y = v * self.light_mul[self.light_direction][None,:,None,None] + self.light_add[self.light_direction][None,:,None,None] 
+       
+        #  concat part that not apply light condition back
+        if h > 0:
+            y = torch.cat([x[:h], y], dim=0)
+        # print("AFTER", y.shape)
+        return y
+
+
+
+# Inject to ResnetBlock2D
+def forward_lightcondition(self, input_tensor: torch.Tensor, temb: torch.Tensor, *args, **kwargs):
+    if len(args) > 0 or kwargs.get("scale", None) is not None:
+            deprecation_message = "The `scale` argument is deprecated and will be ignored. Please remove it, as passing it will raise an error in the future. `scale` should directly be passed while calling the underlying pipeline component i.e., via `cross_attention_kwargs`."
+            deprecate("scale", "1.0.0", deprecation_message)
+    
+    hidden_states = input_tensor
+    hidden_states = self.norm1(hidden_states)
+    hidden_states = self.nonlinearity(hidden_states)
+    
+    if self.upsample is not None:
+        # upsample_nearest_nhwc fails with large batch sizes. see https://github.com/huggingface/diffusers/issues/984
+        if hidden_states.shape[0] >= 64:
+            input_tensor = input_tensor.contiguous()
+            hidden_states = hidden_states.contiguous()
+        input_tensor = self.upsample(input_tensor)
+        hidden_states = self.upsample(hidden_states)
+    elif self.downsample is not None:
+        input_tensor = self.downsample(input_tensor)
+        hidden_states = self.downsample(hidden_states)
+
+    hidden_states = self.conv1(hidden_states)
+
+    if self.time_emb_proj is not None:
+        if not self.skip_time_act:
+            temb = self.nonlinearity(temb)
+        temb = self.time_emb_proj(temb)[:, :, None, None]
+
+    if self.time_embedding_norm == "default":
+        if temb is not None:
+            hidden_states = self.light_block(hidden_states  + temb)
+        hidden_states = self.norm2(hidden_states)
+    elif self.time_embedding_norm == "scale_shift":
+        raise NotImplementedError("Not support scale-shift mode yet.")
+        if temb is None:
+            raise ValueError(
+                f" `temb` should not be None when `time_embedding_norm` is {self.time_embedding_norm}"
+            )
+        time_scale, time_shift = torch.chunk(temb, 2, dim=1)
+        hidden_states = self.norm2(hidden_states)
+        hidden_states = hidden_states * (1 + time_scale) + time_shift
+    else:
+        hidden_states = self.light_block(hidden_states)
+        hidden_states = self. Affin(hidden_states)
+
+    hidden_states = self.nonlinearity(hidden_states)
+    hidden_states = self.dropout(hidden_states)
+    hidden_states = self.conv2(hidden_states)
+
+    if self.conv_shortcut is not None:
+        input_tensor = self.conv_shortcut(input_tensor)
+
+    output_tensor = (input_tensor + hidden_states) / self.output_scale_factor
+
+    return output_tensor
+
+
+# Inject to Unet
+def set_light_direction(self, direction):
+    for block_id in range(len(self.down_blocks)):
+        for resblock_id in range(len(self.down_blocks[block_id].resnets)):
+            if hasattr(self.down_blocks[block_id].resnets[resblock_id], 'time_emb_proj'):
+                self.down_blocks[block_id].resnets[resblock_id].light_block.set_light_direction(direction)
+    for block_id in range(len(self.up_blocks)):
+        for resblock_id in range(len(self.up_blocks[block_id].resnets)):
+            if hasattr(self.up_blocks[block_id].resnets[resblock_id], 'time_emb_proj'):
+                self.up_blocks[block_id].resnets[resblock_id].light_block.set_light_direction(direction)
+
+def add_light_block(self):
+    for block_id in range(len(self.down_blocks)):
+        for resblock_id in range(len(self.down_blocks[block_id].resnets)):
+            num_channel = self.down_blocks[block_id].resnets[resblock_id].time_emb_proj.out_features
+            self.down_blocks[block_id].resnets[resblock_id].light_block = LightEmbedBlock(num_channel)
+            self.down_blocks[block_id].resnets[resblock_id].forward = types.MethodType(forward_lightcondition, self.down_blocks[block_id].resnets[resblock_id])
+
+    for block_id in range(len(self.up_blocks)):
+        for resblock_id in range(len(self.up_blocks[block_id].resnets)):
+            num_channel = self.up_blocks[block_id].resnets[resblock_id].time_emb_proj.out_features
+            self.up_blocks[block_id].resnets[resblock_id].light_block = LightEmbedBlock(num_channel)
+            self.up_blocks[block_id].resnets[resblock_id].forward = types.MethodType(forward_lightcondition, self.up_blocks[block_id].resnets[resblock_id])
+
+

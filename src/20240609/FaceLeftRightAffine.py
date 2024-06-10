@@ -5,109 +5,44 @@ import lightning as L
 import numpy as np
 import torchvision
 import json
-from constants import *
+from tqdm.auto import tqdm
 
+from constants import *
 from diffusers import StableDiffusionPipeline
-from ResnetLightBlock2D import set_light_direction, get_optimizable_params, LightEmbedBlock, forward_lightcondition, add_light_block
+from LightEmbedingBlock import set_light_direction, add_light_block
+from FaceLeftRightDataset import FaceLeftRightDataset
+
 
 import argparse 
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-lr', '--learning_rate', type=float, default=1e-4)
 args = parser.parse_args()
-from tqdm.auto import tqdm
  
-
-class LeftRightAffineDataset(torch.utils.data.Dataset):
-    
-    def __init__(self, num_files=1, root_dir=DATASET_ROOT_DIR, split="train", *args, **kwargs) -> None:
+ 
+class FaceLeftRightAffine(L.LightningModule):
+    def __init__(self, learning_rate=1e-3, face100_every=10, *args, **kwargs) -> None:
         super().__init__()
-        self.root_dir = root_dir
-        self.num_files = num_files
-        self.files, self.subdirs = self.get_image_files()
-
-        if split == "train":
-            self.files = self.files[100:]
-            self.subdirs = self.subdirs[100:]
-        elif split == "val":
-            self.files = self.files[:5] + self.files[100:105] 
-            self.subdirs = self.subdirs[:5] + self.subdirs[100:105]
-
-        self.transform = torchvision.transforms.Compose([
-            torchvision.transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5]),  # Normalize to [-1, 1]
-            torchvision.transforms.Resize(512),  # Resize the image to 512x512
-        ])
-        # read prompt 
-        with open(os.path.join(DATASET_ROOT_DIR, "prompts.json")) as f:
-            self.prompt = json.load(f)
-
-    def get_image_files(self):
-        files = []
-        subdirs = []
-        for subdir in sorted(os.listdir(os.path.join(DATASET_ROOT_DIR, "images"))):
-            for fname in sorted(os.listdir(os.path.join(DATASET_ROOT_DIR, "images", subdir))):
-                if fname.endswith(".png"):
-                    fname = fname.replace(".png","")
-                    files.append(fname)
-                    subdirs.append(subdir)
-        return files, subdirs
-
-    def __len__(self):
-        return len(self.files)
-    
-    def convert_to_grayscale(self, v):
-        """convert RGB to grayscale
-
-        Args:
-            v (np.array): RGB in shape of [3,...]
-        Returns:
-            np.array: gray scale array in shape [...] (1 dimension less)
-        """
-        assert v.shape[0] == 3
-        return 0.299*v[0] + 0.587*v[1] + 0.114*v[2]
-
-    def get_light_direction(self, idx):
-        light = np.load(os.path.join(self.root_dir, "light", self.subdirs[idx], f"{self.files[idx]}_light.npy")) 
-        light = self.convert_to_grayscale(light.transpose())
-        assert len(light) == 9
-        if light[1] < 0.0:
-            return 0 #left
-        else:
-            return 1 #right
-        
-    def get_image(self, idx):
-        image_path = os.path.join(self.root_dir, "images",  self.subdirs[idx], f"{self.files[idx]}.png")
-        image = torchvision.io.read_image(image_path) / 255.0
-        return image
-
-    def __getitem__(self, idx):
-        
-        return {
-            'name': self.files[idx],
-            'pixel_values': self.transform(self.get_image(idx)),
-            'light': self.get_light_direction(idx),
-            'text': self.prompt[self.files[idx]]
-        }
-
-class LeftRightAffine(L.LightningModule):
-    def __init__(self, *args, **kwargs) -> None:
-        super().__init__()
+        self.face100_every = face100_every
+        self.learning_rate = learning_rate
         self.save_hyperparameters()
         MASTER_TYPE = torch.float32
 
 
         # load pipeline
         sd_path = "runwayml/stable-diffusion-v1-5"
-        self.pipe = StableDiffusionPipeline.from_pretrained(sd_path, torch_dtype=MASTER_TYPE)
-        self.pipe.safty_checker = None
+        self.pipe = StableDiffusionPipeline.from_pretrained(sd_path, safety_checker=None, torch_dtype=MASTER_TYPE)
+        #self.pipe.safety_checker = None
         # load unet from pretrain 
         self.pipe.unet.requires_grad_(False)
         self.pipe.vae.requires_grad_(False)
         self.pipe.text_encoder.requires_grad_(False)
         
         add_light_block(self.pipe.unet)        
-
         self.pipe.to('cuda')
+        # filter trainable layer
+        unet_trainable = filter(lambda p: p.requires_grad, self.pipe.unet.parameters())
+        self.unet_trainable = torch.nn.ParameterList(unet_trainable)
 
 
     def training_step(self, batch, batch_idx):
@@ -178,19 +113,9 @@ class LeftRightAffine(L.LightningModule):
                     generator=torch.Generator().manual_seed(seed)
                 )
                 image[0].save(f"{output_dir}/{seed:03d}.png")
-
-    def test_step(self, batch, batch_idx):
-        self.generate_face100()
-
-
-    def validation_step(self, batch, batch_idx):
-        if batch_idx == 0 and self.global_step and self.current_epoch % 20 == 0 and self.global_step > 9000 :
-            self.generate_face100()
-
-        assert batch['light'][0] in [0, 1]  # currently support only left and right
-        assert len(batch['light']) == 1 #current support only batch size = 1
+                
+    def generate_tensorboard(self, batch, batch_idx):
         set_light_direction(self.pipe.unet, batch['light'][0])
-        #self.pipe.unet.set_direction(batch['light'][0]) 
         pt_image, _ = self.pipe(
             batch['text'], 
             output_type="pt",
@@ -206,23 +131,54 @@ class LeftRightAffine(L.LightningModule):
         if self.global_step == 0 and batch_idx == 0:
             self.logger.experiment.add_text('text', batch['text'][0], self.global_step)
             self.logger.experiment.add_text('params', str(args), self.global_step)
-            self.logger.experiment.add_text('learning_rate', str(args.learning_rate), self.global_step)
+            self.logger.experiment.add_text('learning_rate', str(self.learning_rate), self.global_step)
+        
+    def generate_tensorboard_guidance(self, batch, batch_idx):
+        set_light_direction(self.pipe.unet, batch['light'][0])
+        for guidance_scale in np.arange(1,11,0.5):
+            pt_image, _ = self.pipe(
+                batch['text'], 
+                output_type="pt",
+                guidance_scale=guidance_scale,
+                num_inference_steps=50,
+                return_dict = False,
+                generator=torch.Generator().manual_seed(42)
+            )
+            gt_image = (batch["pixel_values"] + 1.0) / 2.0
+            images = torch.cat([gt_image, pt_image], dim=0)
+            image = torchvision.utils.make_grid(images, nrow=2, normalize=True)
+            self.logger.experiment.add_image(f'guidance_scale/{guidance_scale:0.2f}', image, self.global_step)
+        
+    def test_step(self, batch, batch_idx):
+        self.generate_face100()
+        #self.generate_tensorboard(batch, batch_idx)
+        self.generate_tensorboard_guidance(batch, batch_idx)
+
+
+    def validation_step(self, batch, batch_idx):
+        if batch_idx == 0 and self.current_epoch % self.face100_every == 0 and self.global_step > 1 :
+            self.generate_face100()
+
+        assert batch['light'][0] in [0, 1]  # currently support only left and right
+        assert len(batch['light']) == 1 #current support only batch size = 1
+        
+        self.generate_tensorboard(batch, batch_idx)
         return torch.zeros(1, )
     
 
 
     def configure_optimizers(self):
-        #optimizer = torch.optim.Adam(self.parameters(), lr=args.learning_rate)
-        lora_layers = filter(lambda p: p.requires_grad, self.pipe.unet.parameters())
-        optimizer = torch.optim.Adam(lora_layers, lr=args.learning_rate)
+        optimizer = torch.optim.Adam(self.parameters(), lr=self.learning_rate)
+        
+        #optimizer = torch.optim.Adam(lora_layers, lr=args.learning_rate)
         return optimizer
 
 
 
 def main():
-    model = LeftRightAffine()
-    train_dataset = LeftRightAffineDataset(split="train")
-    val_dataset = LeftRightAffineDataset(split="val")
+    model = FaceLeftRightAffine(learning_rate=args.learning_rate)
+    train_dataset = FaceLeftRightDataset(split="train")
+    val_dataset = FaceLeftRightDataset(split="val")
     train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=1, shuffle=True)
     val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=1, shuffle=False)
     trainer = L.Trainer(max_epochs =1000, precision=32, check_val_every_n_epoch=1, default_root_dir=OUTPUT_MULTI)
