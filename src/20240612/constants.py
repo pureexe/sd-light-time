@@ -1,0 +1,6 @@
+OUTPUT = "output/20240612/"
+SRC = "src/20240612/"
+DATASET_ROOT_DIR = "datasets/face/face2000_single/"
+MAN_FACE = "src/20240601/man.png"
+OUTPUT_MULTI = "output/20240612/multi_fit"
+OUTPUT_SINGLE = "output/20240612/single_fit/"
