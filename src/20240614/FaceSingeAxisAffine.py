@@ -104,8 +104,9 @@ class FaceSingleAxisAffine(L.LightningModule):
             print("GENERATING FACE ID: ", face_id)
             output_dir = f"{self.logger.log_dir}/face/step{self.global_step:06d}/{face_id}"
             os.makedirs(output_dir, exist_ok=True)
-            VID_FRAME = 32
+            VID_FRAME = 24
             VID_BATCH = 4
+            output_frames = []
             directions = torch.linspace(-1, 1, VID_FRAME)[..., None] #[b,1]
             for vid_batch_id in range(VID_FRAME // VID_BATCH):
                 set_light_direction(self.pipe.unet, torch.tensor(directions[VID_BATCH*vid_batch_id:VID_BATCH*(vid_batch_id+1)]))
@@ -120,6 +121,9 @@ class FaceSingleAxisAffine(L.LightningModule):
                 )
                 for frame_id in range(VID_BATCH):
                     image[frame_id].save(f"{output_dir}/{(VID_BATCH*vid_batch_id) + frame_id:03d}.png")
+                    output_frames.append(torchvision.transforms.functional.pil_to_tensor(image[frame_id])[None,None]) #B,T,C,H,W
+            output_frames = torch.cat(output_frames, dim=1)
+            self.logger.experiment.add_video(f'face/{face_id:03d}', output_frames, self.global_step, fps=6)
         
     def generate_tensorboard(self, batch, batch_idx):
         set_light_direction(self.pipe.unet, batch['light'])
@@ -163,7 +167,7 @@ class FaceSingleAxisAffine(L.LightningModule):
 
 
     def validation_step(self, batch, batch_idx):
-        self.generate_video_light() #need to disable soon
+        #self.generate_video_light() #need to disable soon
         if batch_idx == 0 and self.current_epoch % self.face100_every == 0 and self.current_epoch > 1 :
             self.generate_video_light()
 
