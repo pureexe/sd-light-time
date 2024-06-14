@@ -5,28 +5,39 @@ import torchvision
 import numpy as np
 from constants import DATASET_ROOT_DIR
 
-class FaceLeftRightDataset(torch.utils.data.Dataset):
+
+
+class FaceSingleAxisDataset(torch.utils.data.Dataset):
     
     def __init__(self, 
-        num_files=1, 
         root_dir=DATASET_ROOT_DIR,
         split="train",
+        specific_file=None,
         val_hold=100,
         val_fly=5,
+        train_count=2000,
+        normal_axis=True,
         dataset_multiplier=1,
         *args,
         **kwargs
     ) -> None:
         super().__init__()
         self.root_dir = root_dir
-        self.num_files = num_files
+        self.normal_axis = normal_axis
+        self.train_count = train_count
         self.val_hold = val_hold
         self.val_fly = val_fly
         self.split = split
+        self.specific_file = specific_file
         self.dataset_multiplier = dataset_multiplier
         self.files, self.subdirs = self.get_image_files()
+
+        if self.normal_axis:
+            self.axis_low_end, self.axis_high_end = self.compute_normalize_bound(percentile=99.9)
+            
         self.files, self.subdirs = self.get_split_dataset(split)
-        self.prompt = self.get_prompt_from_file("prompts.json")
+        self.prompt = self.get_prompt_from_file("prompts.json") 
+        
 
         self.transform = torchvision.transforms.Compose([
             torchvision.transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5]),  # Normalize to [-1, 1]
@@ -41,28 +52,52 @@ class FaceLeftRightDataset(torch.utils.data.Dataset):
     def get_image(self, idx):
         image_path = os.path.join(self.root_dir, "images",  self.subdirs[idx], f"{self.files[idx]}.png")
         image = torchvision.io.read_image(image_path) / 255.0
-        return image,
+        return image
 
     def get_image_files(self):
         files = []
         subdirs = []
-        for subdir in sorted(os.listdir(os.path.join(self.root_dir, "images"))):
-            for fname in sorted(os.listdir(os.path.join(self.root_dir, "images", subdir))):
-                if fname.endswith(".png"):
-                    fname = fname.replace(".png","")
-                    files.append(fname)
-                    subdirs.append(subdir)
+        if self.specific_file is not None:
+            with open(os.path.join(self.root_dir,  self.specific_file)) as f:
+                data = json.load(f)
+            for idx in range(len(data)):
+                path = data[idx]
+                subdir, fname = path.split("/")
+                files.append(fname)
+                subdirs.append(subdir)
+        else:
+            for subdir in sorted(os.listdir(os.path.join(self.root_dir, "images"))):
+                for fname in sorted(os.listdir(os.path.join(self.root_dir, "images", subdir))):
+                    if fname.endswith(".png"):
+                        fname = fname.replace(".png","")
+                        files.append(fname)
+                        subdirs.append(subdir)
         return files, subdirs
 
     def get_split_dataset(self, split):
-        if split == "train":
-            return self.files[self.val_hold:], self.subdirs[self.val_hold:]
+        # if split is index slice 
+        if type(split) != str:
+            return self.files[split], self.subdirs[split]
+        elif split == "train":
+            return self.files[self.val_hold:self.val_hold+self.train_count], self.subdirs[self.val_hold:self.val_hold+self.train_count]
         elif split == "val":
             return self.files[:self.val_fly] + self.files[self.val_hold:self.val_hold+self.val_fly], self.subdirs[:self.val_fly] + self.subdirs[self.val_hold:self.val_hold+self.val_fly]
         elif ":" in split:
             start, end = map(int, split.split(":"))
             return self.files[start:end], self.subdirs[start:end]
         raise ValueError(f"split {split} not supported")
+    
+    def compute_normalize_bound(self, percentile=99.9):
+        axis = []
+        files, subdirs = self.get_split_dataset('train')
+        for idx in range(len(files)):
+            light = np.load(os.path.join(self.root_dir, "light", subdirs[idx], f"{files[idx]}_light.npy")) 
+            light = self.convert_to_grayscale(light.transpose())
+            axis.append(light[1])
+        axis = np.array(axis)
+        low_end = np.percentile(axis, 100-percentile)
+        high_end = np.percentile(axis, percentile)
+        return low_end, high_end
         
     def __len__(self):
         return len(self.files) * self.dataset_multiplier 
@@ -82,11 +117,13 @@ class FaceLeftRightDataset(torch.utils.data.Dataset):
         light = np.load(os.path.join(self.root_dir, "light", self.subdirs[idx], f"{self.files[idx]}_light.npy")) 
         light = self.convert_to_grayscale(light.transpose())
         assert len(light) == 9
-        if light[1] < 0.0:
-            return 0 #left
-        else:
-            return 1 #right
-
+        direction = light[1]
+        if self.normal_axis:    
+            direction = (direction - self.axis_low_end) / (self.axis_high_end - self.axis_low_end)
+            direction = np.clip(direction, 0.0, 1.0)
+            direction = direction * 2.0 - 1.0
+        return np.array([direction]) 
+    
     def __getitem__(self, idx):
         # flip_type = idx % 2
         # idx = idx // 2

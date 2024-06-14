@@ -1,8 +1,10 @@
 import os
 import numpy as np
 import json 
+STEPS = [22000, 42000]
+
 #DIR_NAME =  "20240604_TimeEmbedingV2"
-DIR_NAME = "20240609/multi_fit"
+DIR_NAME = "20240612/multi_fit_manual"
 LIGHT_DIR = "/home/pakkapon/mnt_tl_vision17/data2/pakkapon/relight/sd-light-time/output/{}/lightning_logs/version_{}/face/step{}/{}"
 RENDER_DIR ="/home/pakkapon/mnt_tl_vision17/data2/pakkapon/relight/sd-light-time/output/{}/lightning_logs/version_{}/face_light/step{}/{}"
 RENDER_DIR_NO_STEP ="/home/pakkapon/mnt_tl_vision17/data2/pakkapon/relight/sd-light-time/output/{}/lightning_logs/version_{}/face_light/step{}"
@@ -24,8 +26,9 @@ def main():
     #         for light_direction in [0,1]:
     for version in range(4):
         #for step in [39900, 77900, 115900, 153900, 191900, 229900,267900, 305900, 343900, 381900, 419900]:
-        for step in [1900, 20900, 39900, 58900, 77900]:
+        #for step in [1900, 20900, 39900, 58900, 77900]:
         # for step in [1,3,5]:
+        for step in STEPS:
             for light_direction in [0,1]:
                 # output_dir= RENDER_DIR.format(DIR_NAME,version,step,light_direction)
                 # input_dir = LIGHT_DIR.format(DIR_NAME,version,step,light_direction)
