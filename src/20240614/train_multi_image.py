@@ -25,8 +25,19 @@ def main():
         save_top_k=-1,  # <--- this is important!
     )
 
-    trainer = L.Trainer(max_epochs=1000, precision=16, check_val_every_n_epoch=1, callbacks=[checkpoint_callback], default_root_dir=OUTPUT_MULTI)
-    trainer.fit(model=model, train_dataloaders=train_dataloader, val_dataloaders=val_dataloader)
+    trainer = L.Trainer(
+        max_epochs=1000,
+        precision=16,
+        check_val_every_n_epoch=1,
+        callbacks=[checkpoint_callback],
+        default_root_dir=OUTPUT_MULTI,
+    )
+    trainer.fit(
+        model=model,
+        train_dataloaders=train_dataloader,
+        val_dataloaders=val_dataloader,
+        #ckpt_path=OUTPUT_MULTI + "/lightning_logs/version_3/checkpoints/epoch=000062.ckpt"
+    )
 
 if __name__ == '__main__':
     main()

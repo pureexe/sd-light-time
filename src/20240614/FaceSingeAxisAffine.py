@@ -21,7 +21,7 @@ args = parser.parse_args()
  
  
 class FaceSingleAxisAffine(L.LightningModule):
-    def __init__(self, learning_rate=1e-3, face100_every=10, guidance_scale=7.5, *args, **kwargs) -> None:
+    def __init__(self, learning_rate=1e-3, face100_every=20, guidance_scale=7.5, *args, **kwargs) -> None:
         super().__init__()
         self.guidance_scale = guidance_scale
         self.use_set_guidance_scale = False
@@ -109,7 +109,7 @@ class FaceSingleAxisAffine(L.LightningModule):
             output_frames = []
             directions = torch.linspace(-1, 1, VID_FRAME)[..., None] #[b,1]
             for vid_batch_id in range(VID_FRAME // VID_BATCH):
-                set_light_direction(self.pipe.unet, torch.tensor(directions[VID_BATCH*vid_batch_id:VID_BATCH*(vid_batch_id+1)]))
+                set_light_direction(self.pipe.unet, directions[VID_BATCH*vid_batch_id:VID_BATCH*(vid_batch_id+1)])
                 image, _ = self.pipe(
                     prompts[f"{face_id:05d}"],
                     num_images_per_prompt=VID_BATCH,
@@ -168,7 +168,7 @@ class FaceSingleAxisAffine(L.LightningModule):
 
     def validation_step(self, batch, batch_idx):
         #self.generate_video_light() #need to disable soon
-        if batch_idx == 0 and self.current_epoch % self.face100_every == 0 and self.current_epoch > 1 :
+        if batch_idx == 0 and (self.current_epoch+1) % self.face100_every == 0 and self.current_epoch > 1 :
             self.generate_video_light()
 
         assert batch['light'][0] <= 1.0 and batch['light'][0]>=-1.0  # currently support only left and right
