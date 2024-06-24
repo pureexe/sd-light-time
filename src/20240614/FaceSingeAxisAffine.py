@@ -102,7 +102,10 @@ class FaceSingleAxisAffine(L.LightningModule):
         # generate 8 face with 32 frame
         for face_id in range(8):
             print("GENERATING FACE ID: ", face_id)
-            output_dir = f"{self.logger.log_dir}/face/step{self.global_step:06d}/{face_id}"
+            if self.use_set_guidance_scale:
+                output_dir = f"{self.logger.log_dir}/face/step{self.global_step:06d}/g{self.guidance_scale:.2f}/{face_id}"
+            else:
+                output_dir = f"{self.logger.log_dir}/face/step{self.global_step:06d}/{face_id}"
             os.makedirs(output_dir, exist_ok=True)
             VID_FRAME = 24
             VID_BATCH = 4

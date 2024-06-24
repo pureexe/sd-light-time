@@ -46,8 +46,6 @@ class LightEmbedBlock(torch.nn.Module):
 
 
     def forward(self, x):
-        h = 0
-        
         # print("BEFORE", x.shape)
         # if using cfg (classifier guidance-free), only apply light condition to non cfg part
         if self.is_apply_cfg and x.shape[0] % 2 == 0:
@@ -57,10 +55,11 @@ class LightEmbedBlock(torch.nn.Module):
         else:
             v = x
         
-        direction = self.get_direction_feature().to(v.device)
+        direction = self.get_direction_feature().to(v.device).to(v.dtype)
         
         # compute light condition
         adagn = v* self.light_mul(direction)[...,None,None] + self.light_add(direction)[...,None,None]
+        print(self.gate)
         y = v + (self.gate * adagn)
 
         #  concat part that not apply light condition back
@@ -68,6 +67,7 @@ class LightEmbedBlock(torch.nn.Module):
             y = torch.cat([x[:h], y], dim=0)
             
         # print("AFTER", y.shape)
+
         return y
 
 def get_mlp(in_dim, hidden_dim, hidden_layers, out_dim):
