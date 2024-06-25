@@ -10,7 +10,7 @@ class LightEmbedBlock(torch.nn.Module):
     def __init__(self, out_dim, in_dim=1, hidden_layers=2, hidden_dim=256, posenc=None, *args, **kwargs):
         super().__init__()
         # possible posenc [nerf:10]
-        self.direction = torch.zeros(in_dim)
+        self.light_direction = torch.zeros(in_dim)
         self.pos_enc = None
         self.in_dim = in_dim
         if posenc is not None and posenc.startswith("nerf"):
@@ -21,13 +21,16 @@ class LightEmbedBlock(torch.nn.Module):
         self.light_mul = get_mlp(in_dim, hidden_dim,  hidden_layers, out_dim)
         self.light_add = get_mlp(in_dim, hidden_dim, hidden_layers,out_dim)
         self.gate = torch.nn.Parameter(torch.zeros(1))
-        self.is_apply_cfg = True
+        self.is_apply_cfg = False
     
     def enable_apply_cfg(self):
         self.is_apply_cfg = True
         
     def disable_apply_cfg(self):
         self.is_apply_cfg = False
+        
+    def set_apply_cfg(self, is_apply_cfg):
+        self.is_apply_cfg = is_apply_cfg
     
     def set_light_direction(self, direction):
         assert direction.shape[-1] == self.in_dim
@@ -37,35 +40,39 @@ class LightEmbedBlock(torch.nn.Module):
         # apply pos enc
         if self.pos_enc == "nerf":
             assert direction.shape[0] == 1 # currently support only single batch training for PE.
-            sin_branh = torch.sin(2.0**torch.arange(self.pe_level) * np.pi * self.direction[None])
-            cos_branh = torch.cos(2.0**torch.arange(self.pe_level) * np.pi * self.direction[None])
+            sin_branh = torch.sin(2.0**torch.arange(self.pe_level) * np.pi * self.light_direction[None])
+            cos_branh = torch.cos(2.0**torch.arange(self.pe_level) * np.pi * self.light_direction[None])
             direction = torch.cat([sin_branh.flatten(), cos_branh.flatten()], dim=0)
         else:
-            direction = self.direction
+            direction = self.light_direction
         return direction
 
 
     def forward(self, x):
-        # print("BEFORE", x.shape)
         # if using cfg (classifier guidance-free), only apply light condition to non cfg part
-        if self.is_apply_cfg and x.shape[0] % 2 == 0:
+        use_cfg = self.is_apply_cfg and x.shape[0] % 2 == 0
+        if use_cfg:
             # apply only non cfg part
             h = x.shape[0] // 2
             v = x[h:]
         else:
-            v = x
+            v = x #[B,C,H,W]
         
-        direction = self.get_direction_feature().to(v.device).to(v.dtype)
+        direction = self.get_direction_feature().to(v.device).to(v.dtype) #[B,C]
+
+        light_m = self.light_mul(direction) 
+        light_a = self.light_add(direction)
         
         # compute light condition
-        adagn = v* self.light_mul(direction)[...,None,None] + self.light_add(direction)[...,None,None]
+        
+        adagn = v * light_m[...,None,None] + light_a[...,None,None]
+        
         y = v + (self.gate * adagn)
 
         #  concat part that not apply light condition back
-        if h > 0:
+        if use_cfg:
             y = torch.cat([x[:h], y], dim=0)
             
-        # print("AFTER", y.shape)
 
         return y
 
@@ -145,15 +152,17 @@ def forward_lightcondition(self, input_tensor: torch.Tensor, temb: torch.Tensor,
 
 
 # Inject to Unet
-def set_light_direction(self, direction):
+def set_light_direction(self, direction, is_apply_cfg=False):
     for block_id in range(len(self.down_blocks)):
         for resblock_id in range(len(self.down_blocks[block_id].resnets)):
             if hasattr(self.down_blocks[block_id].resnets[resblock_id], 'time_emb_proj'):
                 self.down_blocks[block_id].resnets[resblock_id].light_block.set_light_direction(direction)
+                self.down_blocks[block_id].resnets[resblock_id].light_block.set_apply_cfg(is_apply_cfg) 
     for block_id in range(len(self.up_blocks)):
         for resblock_id in range(len(self.up_blocks[block_id].resnets)):
             if hasattr(self.up_blocks[block_id].resnets[resblock_id], 'time_emb_proj'):
                 self.up_blocks[block_id].resnets[resblock_id].light_block.set_light_direction(direction)
+                self.up_blocks[block_id].resnets[resblock_id].light_block.set_apply_cfg(is_apply_cfg) 
 
 def add_light_block(self):
     for block_id in range(len(self.down_blocks)):

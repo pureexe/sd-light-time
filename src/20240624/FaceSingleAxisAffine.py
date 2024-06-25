@@ -96,8 +96,7 @@ class FaceSingleAxisAffine(L.LightningModule):
         #assert batch['light'][0] <= 1.0 and batch['light'][0]>=-1.0  # currently support [-1,1]
         #assert len(batch['light']) == 1 #current support only batch size = 1
         #self.pipe.unet.set_direction(batch['light'][0]) 
-        print(batch['light'])
-        set_light_direction(self.pipe.unet, batch['light'])
+        set_light_direction(self.pipe.unet, batch['light'], is_apply_cfg=False)
 
         model_pred = self.pipe.unet(noisy_latents, timesteps, encoder_hidden_states, return_dict=False)[0]
 
@@ -124,7 +123,7 @@ class FaceSingleAxisAffine(L.LightningModule):
             output_frames = []
             directions = torch.linspace(-1, 1, VID_FRAME)[..., None] #[b,1]
             for vid_batch_id in range(VID_FRAME // VID_BATCH):
-                set_light_direction(self.pipe.unet, directions[VID_BATCH*vid_batch_id:VID_BATCH*(vid_batch_id+1)])
+                set_light_direction(self.pipe.unet, directions[VID_BATCH*vid_batch_id:VID_BATCH*(vid_batch_id+1)], is_apply_cfg=True)
                 image, _ = self.pipe(
                     prompts[f"{face_id:05d}"],
                     num_images_per_prompt=VID_BATCH,
@@ -141,7 +140,7 @@ class FaceSingleAxisAffine(L.LightningModule):
             self.logger.experiment.add_video(f'face/{face_id:03d}', output_frames, self.global_step, fps=6)
         
     def generate_tensorboard(self, batch, batch_idx):
-        set_light_direction(self.pipe.unet, batch['light'])
+        set_light_direction(self.pipe.unet, batch['light'], is_apply_cfg=True)
         pt_image, _ = self.pipe(
             batch['text'], 
             output_type="pt",
@@ -167,9 +166,9 @@ class FaceSingleAxisAffine(L.LightningModule):
             if not self.use_set_guidance_scale:
                 output_dir = f"{self.logger.log_dir}/face/step{self.global_step:06d}/{light_name}"
             else:
-                output_dir = f"{self.logger.log_dir}/face/step{self.global_step:06d}/guidance_{self.guidance_scale}/{direction}"
+                output_dir = f"{self.logger.log_dir}/face/step{self.global_step:06d}/guidance_{self.guidance_scale}/{light_name}"
             os.makedirs(output_dir, exist_ok=True)
-            set_light_direction(self.pipe.unet, torch.tensor([light_direction]))
+            set_light_direction(self.pipe.unet, torch.tensor([light_direction]), is_apply_cfg=True)
             for seed in range(100):
                 image, _ = self.pipe(
                     prompts[f"{seed:05d}"], 
