@@ -10,7 +10,7 @@ from tqdm.auto import tqdm
 from constants import *
 from diffusers import StableDiffusionPipeline
 from LightEmbedingBlock import set_light_direction, add_light_block
-from FaceSingleAxisDataset import FaceSingleAxisDataset
+from FaceThreeAxisDataset import FaceThreeAxisDataset
 
 
 import argparse 
@@ -20,7 +20,7 @@ parser.add_argument('-lr', '--learning_rate', type=float, default=1e-4)
 args = parser.parse_args()
  
  
-class FaceSingleAxisAffine(L.LightningModule):
+class FaceThreeAxisAffine(L.LightningModule):
     def __init__(self, learning_rate=1e-3, face100_every=20, guidance_scale=7.5, *args, **kwargs) -> None:
         super().__init__()
         self.guidance_scale = guidance_scale
@@ -30,18 +30,18 @@ class FaceSingleAxisAffine(L.LightningModule):
         self.save_hyperparameters()
         MASTER_TYPE = torch.float16
 
-
         # load pipeline
         sd_path = "runwayml/stable-diffusion-v1-5"
         self.pipe = StableDiffusionPipeline.from_pretrained(sd_path, safety_checker=None, torch_dtype=MASTER_TYPE)
-        #self.pipe.safety_checker = None
+
         # load unet from pretrain 
         self.pipe.unet.requires_grad_(False)
         self.pipe.vae.requires_grad_(False)
         self.pipe.text_encoder.requires_grad_(False)
         
-        add_light_block(self.pipe.unet)        
+        add_light_block(self.pipe.unet, in_channel=3)
         self.pipe.to('cuda')
+        
         # filter trainable layer
         unet_trainable = filter(lambda p: p.requires_grad, self.pipe.unet.parameters())
         self.unet_trainable = torch.nn.ParameterList(unet_trainable)
@@ -82,10 +82,6 @@ class FaceSingleAxisAffine(L.LightningModule):
         
         # set light direction
         assert torch.logical_and(batch['light'] <= 1.0, batch['light'] >= -1.0).all()  
-        #assert batch['light'][0] <= 1.0 and batch['light'][0]>=-1.0  # currently support [-1,1]
-        #assert len(batch['light']) == 1 #current support only batch size = 1
-        #self.pipe.unet.set_direction(batch['light'][0]) 
-        
         set_light_direction(self.pipe.unet, batch['light'], is_apply_cfg=False) #B,C
 
         model_pred = self.pipe.unet(noisy_latents, timesteps, encoder_hidden_states, return_dict=False)[0]
@@ -101,7 +97,9 @@ class FaceSingleAxisAffine(L.LightningModule):
         with open(os.path.join(DATASET_ROOT_DIR, "prompts.json")) as f:
             prompts = json.load(f)
         # generate 8 face with 32 frame
-        for face_id in range(8):
+        TOTAL_FACE = 24
+        PER_FACE = TOTAL_FACE // 3
+        for face_id in range(TOTAL_FACE):
             print("GENERATING FACE ID: ", face_id)
             if self.use_set_guidance_scale:
                 output_dir = f"{self.logger.log_dir}/face/step{self.global_step:06d}/g{self.guidance_scale:.2f}/{face_id}"
@@ -111,7 +109,15 @@ class FaceSingleAxisAffine(L.LightningModule):
             VID_FRAME = 24
             VID_BATCH = 4
             output_frames = []
+            direction_mode = face_id // PER_FACE
             directions = torch.linspace(-1, 1, VID_FRAME)[..., None] #[b,1]
+
+            # create 3 axis control seperately
+            directions = directions.repeat(1, 3) #B,3
+            new_directions = torch.zeros_like(directions)
+            new_directions[:, direction_mode] = directions[:, direction_mode]
+            directions = new_directions
+
             need_cfg = self.guidance_scale > 1
             for vid_batch_id in range(VID_FRAME // VID_BATCH):
                 set_light_direction(self.pipe.unet, directions[VID_BATCH*vid_batch_id:VID_BATCH*(vid_batch_id+1)], is_apply_cfg=need_cfg)
@@ -167,17 +173,13 @@ class FaceSingleAxisAffine(L.LightningModule):
         
     def test_step(self, batch, batch_idx):
         self.generate_video_light()
-        #self.generate_tensorboard(batch, batch_idx)
-        #self.generate_tensorboard_guidance(batch, batch_idx)
 
 
     def validation_step(self, batch, batch_idx):
-        #self.generate_video_light() #need to disable soon
         if batch_idx == 0 and (self.current_epoch+1) % self.face100_every == 0 and self.current_epoch > 1 :
             self.generate_video_light()
 
-        assert batch['light'][0] <= 1.0 and batch['light'][0]>=-1.0  # currently support only left and right
-        assert len(batch['light']) == 1 #current support only batch size = 1
+        assert (batch['light'] <= 1.0).all() and (batch['light'] >=-1.0).all()  # currently support only left and right
         
         self.generate_tensorboard(batch, batch_idx)
         return torch.zeros(1, )

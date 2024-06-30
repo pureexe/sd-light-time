@@ -1,6 +1,6 @@
 import torch
-from FaceSingeAxisAffine import FaceSingleAxisAffine
-from FaceSingleAxisDataset import FaceSingleAxisDataset
+from FaceThreeAxisAffine import FaceThreeAxisAffine
+from FaceThreeAxisDataset import FaceThreeAxisDataset
 import lightning as L
 
 import argparse 
@@ -12,16 +12,16 @@ parser.add_argument('-lr', '--learning_rate', type=float, default=1e-3)
 args = parser.parse_args()
 
 def main():
-    model = FaceSingleAxisAffine(learning_rate=args.learning_rate)
-    train_dataset = FaceSingleAxisDataset(split="train")
-    val_dataset = FaceSingleAxisDataset(split="val")
+    model = FaceThreeAxisAffine(learning_rate=args.learning_rate)
+    train_dataset = FaceThreeAxisDataset(split="train")
+    val_dataset = FaceThreeAxisDataset(split="val")
     train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=4, shuffle=True, num_workers=4)
     val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=1, shuffle=False)
     
     checkpoint_callback = L.pytorch.callbacks.ModelCheckpoint(
         # dirpath=checkpoints_path, # <--- specify this on the trainer itself for version control
         filename="{epoch:06d}",
-        every_n_epochs=1,
+        every_n_epochs=5,
         save_top_k=-1,  # <--- this is important!
     )
 

@@ -7,14 +7,14 @@ from constants import DATASET_ROOT_DIR
 
 
 
-class FaceSingleAxisDataset(torch.utils.data.Dataset):
+class FaceThreeAxisDataset(torch.utils.data.Dataset):
     
     def __init__(self, 
         root_dir=DATASET_ROOT_DIR,
         split="train",
         specific_file=None,
         val_hold=100,
-        val_fly=5,
+        val_fly=2,
         train_count=2000,
         normal_axis=True,
         dataset_multiplier=1,
@@ -34,6 +34,7 @@ class FaceSingleAxisDataset(torch.utils.data.Dataset):
 
         if self.normal_axis:
             self.axis_low_end, self.axis_high_end = self.compute_normalize_bound(percentile=99.9)
+            assert (np.abs(self.axis_high_end - self.axis_low_end)).sum() > 0.0
             
         self.files, self.subdirs = self.get_split_dataset(split)
         self.prompt = self.get_prompt_from_file("prompts.json") 
@@ -90,14 +91,24 @@ class FaceSingleAxisDataset(torch.utils.data.Dataset):
     def compute_normalize_bound(self, percentile=99.9):
         axis = []
         files, subdirs = self.get_split_dataset('train')
+        axis_ids = [1,2,3]
+        rows = {}
         for idx in range(len(files)):
             light = np.load(os.path.join(self.root_dir, "light", subdirs[idx], f"{files[idx]}_light.npy")) 
             light = self.convert_to_grayscale(light.transpose())
-            axis.append(light[1])
-        axis = np.array(axis)
-        low_end = np.percentile(axis, 100-percentile)
-        high_end = np.percentile(axis, percentile)
-        return low_end, high_end
+            for axis_id in axis_ids:
+                if axis_id not in rows:
+                    rows[axis_id] = []
+                rows[axis_id].append(light[axis_id])
+        low_ends = []
+        high_ends = []
+        for axis_id in axis_ids:
+            axis = np.array(rows[axis_id])
+            low_end = np.percentile(axis, 100-percentile)
+            high_end = np.percentile(axis, percentile)
+            low_ends.append(low_end)
+            high_ends.append(high_end)
+        return np.array(low_ends), np.array(high_ends)
         
     def __len__(self):
         return len(self.files) * self.dataset_multiplier 
@@ -117,12 +128,13 @@ class FaceSingleAxisDataset(torch.utils.data.Dataset):
         light = np.load(os.path.join(self.root_dir, "light", self.subdirs[idx], f"{self.files[idx]}_light.npy")) 
         light = self.convert_to_grayscale(light.transpose())
         assert len(light) == 9
-        direction = light[1]
+        direction = light[1:4]
         if self.normal_axis:    
             direction = (direction - self.axis_low_end) / (self.axis_high_end - self.axis_low_end)
             direction = np.clip(direction, 0.0, 1.0)
             direction = direction * 2.0 - 1.0
-        return np.array([direction]) 
+        
+        return direction 
     
     def __getitem__(self, idx):
         # flip_type = idx % 2

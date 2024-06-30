@@ -164,17 +164,17 @@ def set_light_direction(self, direction, is_apply_cfg=False):
                 self.up_blocks[block_id].resnets[resblock_id].light_block.set_light_direction(direction)
                 self.up_blocks[block_id].resnets[resblock_id].light_block.set_apply_cfg(is_apply_cfg) 
 
-def add_light_block(self):
+def add_light_block(self, in_channel=3):
     for block_id in range(len(self.down_blocks)):
         for resblock_id in range(len(self.down_blocks[block_id].resnets)):
             num_channel = self.down_blocks[block_id].resnets[resblock_id].time_emb_proj.out_features
-            self.down_blocks[block_id].resnets[resblock_id].light_block = LightEmbedBlock(num_channel)
+            self.down_blocks[block_id].resnets[resblock_id].light_block = LightEmbedBlock(num_channel, in_dim=in_channel)
             self.down_blocks[block_id].resnets[resblock_id].forward = types.MethodType(forward_lightcondition, self.down_blocks[block_id].resnets[resblock_id])
 
     for block_id in range(len(self.up_blocks)):
         for resblock_id in range(len(self.up_blocks[block_id].resnets)):
             num_channel = self.up_blocks[block_id].resnets[resblock_id].time_emb_proj.out_features
-            self.up_blocks[block_id].resnets[resblock_id].light_block = LightEmbedBlock(num_channel)
+            self.up_blocks[block_id].resnets[resblock_id].light_block = LightEmbedBlock(num_channel, in_dim=in_channel)
             self.up_blocks[block_id].resnets[resblock_id].forward = types.MethodType(forward_lightcondition, self.up_blocks[block_id].resnets[resblock_id])
 
 

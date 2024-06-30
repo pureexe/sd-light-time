@@ -1,5 +1,5 @@
 import os 
-FOLDER_NAME = "20240614"
+FOLDER_NAME = "20240626"
 OUTPUT = f"output/{FOLDER_NAME}/"
 SRC = f"src/{FOLDER_NAME}/"
 DATASET_ROOT_DIR = "datasets/face/face2000_single/"
