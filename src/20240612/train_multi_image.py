@@ -15,7 +15,7 @@ def main():
     model = FaceLeftRightAffine(learning_rate=args.learning_rate)
     train_dataset = FaceLeftRightDataset(split=slice(0, 2000, 1), specific_file="hardlight.json")
     val_dataset = FaceLeftRightDataset(split=slice(0, 2000, 500))
-    train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=1, shuffle=True)
+    train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=1, shuffle=False)
     val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=1, shuffle=False)
     
     checkpoint_callback = L.pytorch.callbacks.ModelCheckpoint(
