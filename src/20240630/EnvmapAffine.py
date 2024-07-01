@@ -161,7 +161,7 @@ class EnvmapAffine(L.LightningModule):
                 rolled_hdr_normalized = []
                 rolled_ldr = []
                 for frame_id in range(VID_BATCH):
-                    roll_ratio = frame_id / VID_BATCH
+                    roll_ratio = (vid_batch_id * VID_BATCH + frame_id) / VID_FRAME
                     roll_cnt = int(roll_ratio * MAP_SIZE)
                     rolled_ldr.append(torch.roll(ldr, roll_cnt, dims=(-1))[None]) #C,H,W
                     rolled_hdr_normalized.append(torch.roll(hdr_normalized, roll_cnt, dims=(-1))[None]) #C,H,W
