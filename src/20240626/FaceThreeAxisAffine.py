@@ -135,6 +135,54 @@ class FaceThreeAxisAffine(L.LightningModule):
                     output_frames.append(torchvision.transforms.functional.pil_to_tensor(image[frame_id])[None,None]) #B,T,C,H,W
             output_frames = torch.cat(output_frames, dim=1)
             self.logger.experiment.add_video(f'face/{face_id:03d}', output_frames, self.global_step, fps=6)
+
+    def generate_video_light_circle(self):
+        prompts = []
+        with open(os.path.join(DATASET_ROOT_DIR, "prompts.json")) as f:
+            prompts = json.load(f)
+        # generate 8 face with 32 frame
+        TOTAL_FACE = 24
+        PER_FACE = TOTAL_FACE // 3
+        for face_id in range(TOTAL_FACE):
+            print("GENERATING FACE ID: ", face_id)
+            if self.use_set_guidance_scale:
+                output_dir = f"{self.logger.log_dir}/face/step{self.global_step:06d}/g{self.guidance_scale:.2f}/{face_id}"
+            else:
+                output_dir = f"{self.logger.log_dir}/face/step{self.global_step:06d}/{face_id}"
+            os.makedirs(output_dir, exist_ok=True)
+            VID_FRAME = 48
+            VID_BATCH = 4
+            output_frames = []
+            direction_mode = face_id // PER_FACE
+            #directions = torch.linspace(-1, 1, VID_FRAME)[..., None] #[b,1]
+            directions = torch.linspace(0, 1, VID_FRAME)[..., None] #[b,1]
+
+            # create 3 axis control seperately
+            directions = directions.repeat(1, 3) #B,3
+            new_directions = torch.zeros_like(directions)
+            #new_directions[:, direction_mode] = directions[:, direction_mode]
+            new_directions[:, 0] = torch.cos(directions[:, 0] * 2 * np.pi)
+            new_directions[:, 1] = torch.sin(directions[:, 1] * 2 * np.pi)
+            print(new_directions)
+            directions = new_directions
+
+            need_cfg = self.guidance_scale > 1
+            for vid_batch_id in range(VID_FRAME // VID_BATCH):
+                set_light_direction(self.pipe.unet, directions[VID_BATCH*vid_batch_id:VID_BATCH*(vid_batch_id+1)], is_apply_cfg=need_cfg)
+                image, _ = self.pipe(
+                    prompts[f"{face_id:05d}"],
+                    num_images_per_prompt=VID_BATCH,
+                    output_type="pil",
+                    guidance_scale=self.guidance_scale,
+                    num_inference_steps=50,
+                    return_dict = False,
+                    generator=[torch.Generator().manual_seed(42) for _ in range(VID_BATCH)]
+                )
+                for frame_id in range(VID_BATCH):
+                    image[frame_id].save(f"{output_dir}/{(VID_BATCH*vid_batch_id) + frame_id:03d}.png")
+                    output_frames.append(torchvision.transforms.functional.pil_to_tensor(image[frame_id])[None,None]) #B,T,C,H,W
+            output_frames = torch.cat(output_frames, dim=1)
+            self.logger.experiment.add_video(f'face/{face_id:03d}', output_frames, self.global_step, fps=6)
         
     def generate_tensorboard(self, batch, batch_idx):
         set_light_direction(self.pipe.unet, batch['light'], is_apply_cfg=True)
@@ -172,7 +220,8 @@ class FaceThreeAxisAffine(L.LightningModule):
             self.logger.experiment.add_image(f'guidance_scale/{guidance_scale:0.2f}', image, self.global_step)
         
     def test_step(self, batch, batch_idx):
-        self.generate_video_light()
+        #self.generate_video_light()
+        self.generate_video_light_circle()
 
 
     def validation_step(self, batch, batch_idx):
