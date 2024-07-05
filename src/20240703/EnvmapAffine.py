@@ -234,7 +234,7 @@ class EnvmapAffine(L.LightningModule):
             output_frames = torch.cat(output_frames, dim=1)
             self.logger.experiment.add_video(f'face/{face_id:03d}', output_frames, self.global_step, fps=6)
         
-    def generate_tensorboard(self, batch, batch_idx):
+    def generate_tensorboard(self, batch, batch_idx, is_save_image=False):
         set_light_direction(self.pipe.unet, self.get_light_features(batch['ldr_envmap'],batch['normalized_hdr_envmap']), is_apply_cfg=True)
         pt_image, _ = self.pipe(
             batch['text'], 
@@ -248,6 +248,9 @@ class EnvmapAffine(L.LightningModule):
         images = torch.cat([gt_image, pt_image], dim=0)
         image = torchvision.utils.make_grid(images, nrow=2, normalize=True)
         self.logger.experiment.add_image(f'image/{batch["name"][0]}', image, self.global_step)
+        if is_save_image:
+            os.makedirs(f"{self.logger.log_dir}/rendered_image", exist_ok=True)
+            torchvision.utils.save_image(image, f"{self.logger.log_dir}/rendered_image/{batch['name'][0]}_{batch['word_name'][0]}.png")
         if self.global_step == 0 and batch_idx == 0:
             self.logger.experiment.add_text('text', batch['text'][0], self.global_step)
             self.logger.experiment.add_text('params', str(args), self.global_step)
@@ -272,14 +275,13 @@ class EnvmapAffine(L.LightningModule):
             self.logger.experiment.add_image(f'guidance_scale/{guidance_scale:0.2f}', image, self.global_step)
         
     def test_step(self, batch, batch_idx):
-        self.generate_video_light()
+        #self.generate_video_light()
+        self.generate_tensorboard(batch, batch_idx, is_save_image=True)
 
 
     def validation_step(self, batch, batch_idx):
         if batch_idx == 0 and (self.current_epoch+1) % self.face100_every == 0 and self.current_epoch > 1 :
             self.generate_video_light()
-
-       # assert (batch['light'] <= 1.0).all() and (batch['light'] >=-1.0).all()  # currently support only left and right
         
         self.generate_tensorboard(batch, batch_idx)
         return torch.zeros(1, )

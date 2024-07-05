@@ -155,10 +155,13 @@ class EnvmapAffineDataset(torch.utils.data.Dataset):
         return direction 
     
     def __getitem__(self, idx):
-        # flip_type = idx % 2
-        # idx = idx // 2
         if self.dataset_multiplier > 1:
+            word_idx = idx % self.dataset_multiplier
+            word_name = f"{word_idx:05d}"
             idx = idx // self.dataset_multiplier
+        else:
+            word_name = self.files[idx]
+            
         pixel_values = self.transform(self.get_image(idx))
         # if flip_type == 1:
         #     pixel_values = torchvision.transforms.functional.hflip(pixel_values)
@@ -167,7 +170,9 @@ class EnvmapAffineDataset(torch.utils.data.Dataset):
             'pixel_values': pixel_values,
             'ldr_envmap': self.get_ldr(idx),
             'normalized_hdr_envmap': self.get_normalized_hdr(idx),
-            'text': self.prompt[self.files[idx]]
+            'text': self.prompt[word_name],
+            'word_name': word_name,
+            'idx': idx,
         }
     
 def log_map_to_range(arr):
