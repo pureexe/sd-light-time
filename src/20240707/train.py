@@ -1,6 +1,6 @@
 import torch
-from EnvmapAffine import EnvmapAffine
-from EnvmapAffineDataset import EnvmapAffineDataset
+from AlbedoAffine import AlbedoAffine
+from AlbedoDataset import AlbedoDataset
 import lightning as L
 
 import argparse 
@@ -13,9 +13,9 @@ parser.add_argument('-em', '--envmap_embedder', type=str, default="dino2")
 args = parser.parse_args()
 
 def main():
-    model = EnvmapAffine(learning_rate=args.learning_rate,envmap_embedder=args.envmap_embedder)
-    train_dataset = EnvmapAffineDataset(split=slice(0, 2000, 1))
-    val_dataset = EnvmapAffineDataset(split=slice(0, 2000, 500))
+    model = AlbedoAffine(learning_rate=args.learning_rate,envmap_embedder=args.envmap_embedder)
+    train_dataset = AlbedoDataset(split=slice(0, 2000, 1))
+    val_dataset = AlbedoDataset(split=slice(0, 2000, 1000))
     train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=4, shuffle=True, num_workers=4)
     val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=1, shuffle=False)
     
@@ -42,3 +42,6 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+
+    # 5e-5, 1e-5, 1e-4
