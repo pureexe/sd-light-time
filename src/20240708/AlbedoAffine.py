@@ -9,10 +9,10 @@ from tqdm.auto import tqdm
 import ezexr
 
 from constants import *
-from diffusers import StableDiffusionPipeline
+from diffusers import StableDiffusionInpaintPipeline
 
-from LightEmbedingBlock import set_light_direction, add_light_block
-from EnvmapAffineDataset import EnvmapAffineDataset, log_map_to_range
+from LightEmbedingBlock import set_light_direction, add_light_block, GateConvBlock
+from AlbedoDataset import  AlbedoDataset, log_map_to_range
 
 
 import argparse 
@@ -22,8 +22,9 @@ parser.add_argument('-lr', '--learning_rate', type=float, default=1e-4)
 parser.add_argument('-em', '--envmap_embedder', type=str, default="dino2")
 args = parser.parse_args()
  
+MASTER_TYPE = torch.float16
  
-class EnvmapAffine(L.LightningModule):
+class AlbedoAffine(L.LightningModule):
     def __init__(self, learning_rate=1e-3, face100_every=20, guidance_scale=7.5, envmap_embedder="dino2", *args, **kwargs) -> None:
         super().__init__()
         self.guidance_scale = guidance_scale
@@ -31,11 +32,10 @@ class EnvmapAffine(L.LightningModule):
         self.face100_every = face100_every
         self.learning_rate = learning_rate
         self.save_hyperparameters()
-        MASTER_TYPE = torch.float16
-
+        # (conv_in): Conv2d(4, 320, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)
         # load pipeline
         sd_path = "runwayml/stable-diffusion-v1-5"
-        self.pipe = StableDiffusionPipeline.from_pretrained(sd_path, safety_checker=None, torch_dtype=MASTER_TYPE)
+        self.pipe = StableDiffusionInpaintPipeline.from_pretrained(sd_path, safety_checker=None, torch_dtype=MASTER_TYPE)
 
         # load unet from pretrain 
         self.pipe.unet.requires_grad_(False)
@@ -85,6 +85,13 @@ class EnvmapAffine(L.LightningModule):
         # filter trainable layer
         unet_trainable = filter(lambda p: p.requires_grad, self.pipe.unet.parameters())
         self.unet_trainable = torch.nn.ParameterList(unet_trainable)
+
+        # inject conv2d layer from 4 channel to 9 channel
+        # self.conv_in = torch.nn.Conv2d(9, 320, kernel_size=3, stride=1, padding=1)
+        self.conv_in = GateConvBlock(in_dim=4, out_dim=320)
+        self.conv_in.set_conv_in(self.pipe.unet.conv_in)
+        self.pipe.unet.config.in_channels = 9
+        self.pipe.unet.conv_in = self.conv_in
     
     def get_clip_features(self, images):
         with torch.inference_mode():
@@ -136,8 +143,9 @@ class EnvmapAffine(L.LightningModule):
         )
         text_input_ids = text_inputs.input_ids
 
-
-        latents = self.pipe.vae.encode(batch['pixel_values']).latent_dist.sample().detach()
+        with torch.inference_mode():
+            latents = self.pipe.vae.encode(batch['pixel_values']).latent_dist.sample()
+            albedo_latents = self.pipe.vae.encode(batch['albedo_values']).latent_dist.sample()
 
         latents = latents * self.pipe.vae.config.scaling_factor
 
@@ -161,7 +169,11 @@ class EnvmapAffine(L.LightningModule):
         # set light direction        
         light_features = self.get_light_features(batch['ldr_envmap'],batch['normalized_hdr_envmap'])
         set_light_direction(self.pipe.unet, light_features, is_apply_cfg=False) #B,C
-
+        
+        # concat albedo 
+        mask = torch.ones_like(noisy_latents[:, :1]) # we use always accept mask
+        noisy_latents = torch.cat([noisy_latents, mask, albedo_latents], dim=1)
+ 
         model_pred = self.pipe.unet(noisy_latents, timesteps, encoder_hidden_states, return_dict=False)[0]
 
         loss = torch.nn.functional.mse_loss(model_pred, target, reduction="mean")
@@ -236,8 +248,14 @@ class EnvmapAffine(L.LightningModule):
         
     def generate_tensorboard(self, batch, batch_idx, is_save_image=False):
         set_light_direction(self.pipe.unet, self.get_light_features(batch['ldr_envmap'],batch['normalized_hdr_envmap']), is_apply_cfg=True)
+        albedo = (batch['albedo_values'] + 1.0) / 2.0 #change scale from [-1,1] to [0,1]
+        mask = torch.ones_like(albedo[:, :1]) # we use always accept mask
+        assert self.pipe.unet.conv_in.conv_in.weight.shape[1] == 4, "Conv_in should have 4 channel"
+        assert self.pipe.unet.conv_in.conv_cond.weight.shape[1] == 4, "Conv_cond should have 4 channel"
         pt_image, _ = self.pipe(
             batch['text'], 
+            image = albedo,
+            mask_image = mask,
             output_type="pt",
             guidance_scale=self.guidance_scale,
             num_inference_steps=50,
@@ -249,15 +267,26 @@ class EnvmapAffine(L.LightningModule):
         image = torchvision.utils.make_grid(images, nrow=2, normalize=True)
         self.logger.experiment.add_image(f'image/{batch["name"][0]}', image, self.global_step)
         if is_save_image:
-            #os.makedirs(f"{self.logger.log_dir}/rendered_image", exist_ok=True)
-            #torchvision.utils.save_image(image, f"{self.logger.log_dir}/rendered_image/{batch['name'][0]}_{batch['word_name'][0]}.png")
-            os.makedirs(f"{self.logger.log_dir}/crop_image", exist_ok=True)
-            torchvision.utils.save_image(pt_image, f"{self.logger.log_dir}/crop_image/{batch['name'][0]}_{batch['word_name'][0]}.png")
+            append_path = '' if is_save_image == True else f'{self.current_epoch:06d}' + '/' + is_save_image
+            os.makedirs(f"{self.logger.log_dir}/rendered_image/{append_path}", exist_ok=True)
+            torchvision.utils.save_image(pt_image, f"{self.logger.log_dir}/rendered_image/{append_path}/{batch['name'][0]}_{batch['word_name'][0]}.png")
         if self.global_step == 0 and batch_idx == 0:
             self.logger.experiment.add_text('text', batch['text'][0], self.global_step)
             self.logger.experiment.add_text('params', str(args), self.global_step)
             self.logger.experiment.add_text('learning_rate', str(self.learning_rate), self.global_step)
             self.logger.experiment.add_text('envmap_embedder', str(self.envmap_embbeder_name), self.global_step)
+
+    def generate_axis6(self):
+        VAL_FILES = ['light_x_minus', 'light_x_plus', 'light_y_minus', 'light_y_plus', 'light_z_minus', 'light_z_plus']
+        for val_file in VAL_FILES:
+            val_dataset = AlbedoDataset(split="0:10", specific_file=""+val_file+".json", dataset_multiplier=10, val_hold=0)
+            val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=1, shuffle=False)
+            for batch_idx, batch in enumerate(val_dataloader):
+                for key in batch:
+                    if torch.is_tensor(batch[key]):
+                        batch[key] = batch[key].to('cuda').to(MASTER_TYPE)
+
+                self.generate_tensorboard(batch, batch_idx, is_save_image=val_file)
         
     def generate_tensorboard_guidance(self, batch, batch_idx):
         raise NotImplementedError("Not implemented yet")
@@ -282,9 +311,10 @@ class EnvmapAffine(L.LightningModule):
 
 
     def validation_step(self, batch, batch_idx):
-        #if batch_idx == 0 and (self.current_epoch+1) % self.face100_every == 0 and self.current_epoch > 1 :
-        #    self.generate_video_light()
-        #self.generate_tensorboard(batch, batch_idx)
+        self.generate_axis6()
+        if batch_idx == 0 and (self.current_epoch+1) % self.face100_every == 0 and self.current_epoch >= 1 :
+            self.generate_axis6()
+        self.generate_tensorboard(batch, batch_idx)
         return torch.zeros(1, )
 
     def configure_optimizers(self):

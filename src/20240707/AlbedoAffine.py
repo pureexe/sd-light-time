@@ -309,7 +309,7 @@ class AlbedoAffine(L.LightningModule):
 
     def validation_step(self, batch, batch_idx):
         if batch_idx == 0 and (self.current_epoch+1) % self.face100_every == 0 and self.current_epoch > 1 :
-            self.generate_video_light(generate_axis6)
+            self.generate_axis6()
         self.generate_tensorboard(batch, batch_idx)
         return torch.zeros(1, )
 

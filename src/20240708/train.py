@@ -5,7 +5,6 @@ import lightning as L
 
 import argparse 
 
-
 from constants import OUTPUT_MULTI
 
 parser = argparse.ArgumentParser()
@@ -48,7 +47,7 @@ if __name__ == '__main__':
         try:
             from LineNotify import LineNotify
             line = LineNotify()
-            line.send(f"STOP 20240707 lr:{args.learning_rate} / em:{args.envmap_embedder}", with_hostname=True)
+            line.send(f"STOP 20240708 lr:{args.learning_rate} / em:{args.envmap_embedder}", with_hostname=True)
         except:
             pass
         raise  # Re-raise the original exception
