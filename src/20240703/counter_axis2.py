@@ -69,15 +69,13 @@ def process_job(meta):
 
 def main():
     process_files = []
-    for version in range(15,19):
-        lr = LRS[version]
-        name = NAMES[version]
-        for chk_pt in CHK_PTS:
+    if True:
+        if True:
             #print(f"Processing {name} {lr} {chk_pt}")
             for val_dir in VAL_FILES:
-                dir_path = f"output/20240703/val_axis/{name}/{lr}/chk{chk_pt}/{val_dir}/lightning_logs/version_0/"
-                in_dir = os.path.join(dir_path, "face_light")
-                out_dir = dir_path
+                dir_path = f"output/20240703/val_axis_control/vae/5e-5/chk299/g5.00/lightning_logs/version_1/face_light"
+                in_dir = os.path.join(dir_path, val_dir)
+                out_dir = in_dir
                 try:
                     files = sorted(os.listdir(in_dir))
                 except FileNotFoundError:
@@ -91,7 +89,7 @@ def main():
     
     with Pool(32) as p:
       r = list(tqdm(p.imap(process_job, process_files), total=len(process_files)))
-    LineNotify().send("counter_axis.py finished successfully", with_hostname=True)
+    LineNotify().send("counter_axis2.py finished successfully", with_hostname=True)
 
 
 
