@@ -19,6 +19,7 @@ class EnvmapAffineDataset(torch.utils.data.Dataset):
         train_count=2000,
         normal_axis=True,
         dataset_multiplier=1,
+        use_sh_light=False,
         *args,
         **kwargs
     ) -> None:
@@ -31,9 +32,10 @@ class EnvmapAffineDataset(torch.utils.data.Dataset):
         self.split = split
         self.specific_file = specific_file
         self.dataset_multiplier = dataset_multiplier
+        self.use_sh_light = use_sh_light
         self.files, self.subdirs = self.get_image_files()
 
-        if self.normal_axis:
+        if self.use_sh_light and self.normal_axis:
             self.axis_low_end, self.axis_high_end = self.compute_normalize_bound(percentile=99.9)
             assert (np.abs(self.axis_high_end - self.axis_low_end)).sum() > 0.0
             
@@ -54,6 +56,7 @@ class EnvmapAffineDataset(torch.utils.data.Dataset):
     def get_image(self, idx):
         image_path = os.path.join(self.root_dir, "images",  self.subdirs[idx], f"{self.files[idx]}.png")
         image = torchvision.io.read_image(image_path) / 255.0
+        image = image[:3]
         return image
     
     def get_ldr(self, idx):
