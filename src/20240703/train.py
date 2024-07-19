@@ -6,15 +6,17 @@ import lightning as L
 import argparse 
 
 from constants import OUTPUT_MULTI
+from LineNotify import notify
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-lr', '--learning_rate', type=float, default=1e-3)
 parser.add_argument('-em', '--envmap_embedder', type=str, default="dino2") 
 args = parser.parse_args()
 
+@notify
 def main():
-    model = EnvmapAffine(learning_rate=args.learning_rate,envmap_embedder=args.envmap_embedder)
-    train_dataset = EnvmapAffineDataset(split=slice(0, 2000, 1))
+    model = EnvmapAffine(learning_rate=args.learning_rate,envmap_embedder=args.envmap_embedder, face100_every=5)
+    train_dataset = EnvmapAffineDataset(split=slice(0, 5000, 1))
     val_dataset = EnvmapAffineDataset(split=slice(0, 2000, 500))
     train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=4, shuffle=True, num_workers=4)
     val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=1, shuffle=False)
@@ -22,7 +24,7 @@ def main():
     checkpoint_callback = L.pytorch.callbacks.ModelCheckpoint(
         # dirpath=checkpoints_path, # <--- specify this on the trainer itself for version control
         filename="{epoch:06d}",
-        every_n_epochs=20,
+        every_n_epochs=5,
         save_top_k=-1,  # <--- this is important!
     )
 
