@@ -1,6 +1,8 @@
 import requests 
 import socket
 import os 
+import sys
+
 
 class LineNotify:
     def __init__(self, token=None, with_hostname=True):
@@ -52,14 +54,18 @@ class LineNotify:
 def notify(func):
     def wrapper(*args, **kwargs):
         line = LineNotify()
+        arg_stirng = ""
+        for arg_id in (range(len(sys.argv))):
+            arg_stirng += f" {sys.argv[arg_id]}"
         try:
+            line.send(f":START / {arg_stirng}", with_hostname=True)
             result = func(*args, **kwargs)
             file_path = os.path.realpath(__file__)
-            line.send(f":{file_path}:{func.__name__} finished successfully", with_hostname=True)
+            line.send(f":DONE / {arg_stirng}", with_hostname=True)
             return result
         except Exception as e:
             file_path = os.path.realpath(__file__)
-            line.send(f":{file_path}:{func.__name__} FAILED", with_hostname=True)
+            line.send(f":FAIL / {arg_stirng}", with_hostname=True)
             raise e
     return wrapper
 

@@ -9,8 +9,8 @@ from constants import OUTPUT_MULTI
 from LineNotify import notify
 
 parser = argparse.ArgumentParser()
-parser.add_argument('-lr', '--learning_rate', type=float, default=1e-3)
-parser.add_argument('-em', '--envmap_embedder', type=str, default="dino2") 
+parser.add_argument('-lr', '--learning_rate', type=float, default=1e-4)
+parser.add_argument('-em', '--envmap_embedder', type=str, default="vae") 
 args = parser.parse_args()
 
 @notify
