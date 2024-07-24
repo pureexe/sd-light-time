@@ -9,9 +9,36 @@ from tqdm.auto import tqdm
 import skimage
 import torch
 
-ENVMAP_DIR = "output/20240703/val_axis_lightdirection/{}/chk{}/{}/lightning_logs/version_0/envmap"
-LIGHT_DIR = "output/20240703/val_axis_lightdirection/{}/chk{}/{}/lightning_logs/version_0/light"
-BALL_DIR  = "output/20240703/val_axis_lightdirection/{}/chk{}/{}/lightning_logs/version_0/ball2"
+# ENVMAP_DIR = "output/20240703/val_axis_lightdirection/{}/chk{}/{}/lightning_logs/version_0/envmap"
+# LIGHT_DIR = "output/20240703/val_axis_lightdirection/{}/chk{}/{}/lightning_logs/version_0/light"
+# BALL_DIR  = "output/20240703/val_axis_lightdirection/{}/chk{}/{}/lightning_logs/version_0/ball2"
+
+#ENVMAP_DIR = "output/20240703/val_axis/{}/chk{}/{}/lightning_logs/version_0/envmap"
+#LIGHT_DIR = "output/20240703/val_axis/{}/chk{}/{}/lightning_logs/version_0/light"
+#BALL_DIR  = "output/20240703/val_axis/{}/chk{}/{}/lightning_logs/version_0/ball"
+#CHECKPOINTS = [59, 79, 99]
+#CHECKPOINTS = [159, 179, 199]
+#LIGHT_AXIS = ['axis_x','axis_y','axis_z']
+#LIGHT_AXIS = ['light_x_minus', 'light_x_plus', 'light_y_minus', 'light_y_plus', 'light_z_minus', 'light_z_plus']
+#VERSIONS = ['vae5000/3e-4', 'vae5000/1e-4', 'vae5000/5e-5']
+#VERSIONS = ['vae5000/1e-4', 'vae5000/5e-5']
+#VERSIONS = ['vae5000/3e-4']
+
+#output/20240703/val_axis_lightdirection/vae5000/3e-4/chk179/axis_y/lightning_logs/version_0/crop_image
+
+# ENVMAP_DIR = "output/20240703/val_axis_lightdirection/{}/chk{}/{}/lightning_logs/version_0/envmap"
+# LIGHT_DIR = "output/20240703/val_axis_lightdirection/{}/chk{}/{}/lightning_logs/version_0/light"
+# BALL_DIR  = "output/20240703/val_axis_lightdirection/{}/chk{}/{}/lightning_logs/version_0/ball"
+# CHECKPOINTS = [ 179]
+# LIGHT_AXIS = ['axis_x','axis_y','axis_z']
+# VERSIONS = ['vae5000/3e-4']
+
+ENVMAP_DIR = "output/20240703/val_axis_maskquater/{}/chk{}/{}/lightning_logs/version_0/envmap"
+LIGHT_DIR = "output/20240703/val_axis_maskquater/{}/chk{}/{}/lightning_logs/version_0/light"
+BALL_DIR  = "output/20240703/val_axis_maskquater/{}/chk{}/{}/lightning_logs/version_0/ball"
+CHECKPOINTS = [ 179]
+LIGHT_AXIS = ['mask_topleft','mask_topright']
+VERSIONS = ['vae5000/3e-4']
 
 def process_file(data):
     version, checkpoint, light_direction, filename = data
@@ -39,9 +66,9 @@ def process_file(data):
 @notify
 def main():
     jobs = []
-    for version in ['vae5000/3e-4', 'vae5000/1e-4', 'vae5000/5e-5']:
-        for checkpoint in [59, 79, 99]:
-            for light_direction in ['axis_x','axis_y','axis_z']:
+    for version in VERSIONS:
+        for checkpoint in CHECKPOINTS:
+            for light_direction in LIGHT_AXIS:
                 light_dir = LIGHT_DIR.format(version, checkpoint, light_direction)
                 
                 for filename in os.listdir(light_dir):

@@ -7,8 +7,9 @@ from LineNotify import notify
 
 @notify
 def main():
-    CONTROLNET_LR = "1e-4"
-    CKPT_PATH = "output/20240703/multi_mlp_fit/lightning_logs/version_5/checkpoints/epoch=000159.ckpt"
+    CONTROLNET_LR = "1e-6"
+    #CKPT_PATH = "output/20240703/multi_mlp_fit/lightning_logs/version_5/checkpoints/epoch=000159.ckpt"
+    CKPT_PATH = "output/20240703/multi_mlp_fit/lightning_logs/version_20/checkpoints/epoch=000179.ckpt"
     model = EnvMapControlAlbedoAffine.load_from_checkpoint(CKPT_PATH)
     model.load_controlnet(f"../controlnet-albedo/output/albedo_controlnet/face2000/lr{CONTROLNET_LR}/checkpoint-50000/controlnet")
     model.eval() # disable randomness, dropout, etc...
@@ -18,7 +19,8 @@ def main():
 
     
     for guidance_scale in [3]:
-        trainer = L.Trainer(max_epochs =1000, precision=16, check_val_every_n_epoch=1, default_root_dir=f"output/20240703/val_axis_control_albedo_v2/vae/5e-5/chk159/g{guidance_scale:.2f}/albedo{CONTROLNET_LR}")
+        #trainer = L.Trainer(max_epochs =1000, precision=16, check_val_every_n_epoch=1, default_root_dir=f"output/20240703/val_axis_control_albedo_v2/vae/5e-5/chk159/g{guidance_scale:.2f}/albedo{CONTROLNET_LR}")
+        trainer = L.Trainer(max_epochs =1000, precision=16, check_val_every_n_epoch=1, default_root_dir=f"output/20240703/val_axis_control_albedo_v2/vae5000/3e-4/chk179/g{guidance_scale:.2f}/albedo{CONTROLNET_LR}")
         print(f"guidance_scale: {guidance_scale}")
         model.set_guidance_scale(guidance_scale)
         # test (pass in the loader)
