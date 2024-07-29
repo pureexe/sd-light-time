@@ -46,7 +46,7 @@ class RelightDDIMInverse(L.LightningModule):
 
         # DEFAULT VARIABLE 
         self.target_timestep = 1000
-        self.num_inference_steps = 999 # may need to use many steps to get the best result
+        self.num_inference_steps = 300 # may need to use many steps to get the best result
 
         # load pipeline
         sd_path = "runwayml/stable-diffusion-v1-5"
@@ -310,6 +310,7 @@ class RelightDDIMInverse(L.LightningModule):
             ), 
             is_apply_cfg=GUIDANCE_SCALE > 1
         )
+        #set_light_direction(self.pipe.unet,None)
         
         # we first find the z0_noise before doing inversion
         with torch.inference_mode():
@@ -339,32 +340,32 @@ class RelightDDIMInverse(L.LightningModule):
             ),
             is_apply_cfg=GUIDANCE_SCALE > 1
         )
+        #set_light_direction(self.pipe.unet,None)
 
-        print(text_embbeding.shape)
 
-        self.reactive_source_light = False
-        def sd_callback(pipe, step_idx, t, callback_kwargs):
-            if t.item() % 4 == 1:
-                set_light_direction(
-                    self.pipe.unet,
-                    self.get_light_features(
-                        batch['source_envmap_ldr'],
-                        batch['source_envmap_hdr'],
-                        ),
-                    is_apply_cfg=GUIDANCE_SCALE > 1
-                )
-                #self.reactive_source_light = True
-            elif t.item() % 4 == 0:
-                set_light_direction(
-                    self.pipe.unet,
-                    self.get_light_features(
-                        batch['target_envmap_ldr'],
-                        batch['target_envmap_hdr'],
-                        ),
-                    is_apply_cfg=GUIDANCE_SCALE > 1
-                )
-                #self.reactive_source_light = False
-            return callback_kwargs
+        # self.reactive_source_light = False
+        # def sd_callback(pipe, step_idx, t, callback_kwargs):
+        #     if t.item() % 10 == 2:
+        #         set_light_direction(
+        #             self.pipe.unet,
+        #             self.get_light_features(
+        #                 batch['source_envmap_ldr'],
+        #                 batch['source_envmap_hdr'],
+        #                 ),
+        #             is_apply_cfg=GUIDANCE_SCALE > 1
+        #         )
+        #         #self.reactive_source_light = True
+        #     elif t.item() % 10 == 5:
+        #         set_light_direction(
+        #             self.pipe.unet,
+        #             self.get_light_features(
+        #                 batch['target_envmap_ldr'],
+        #                 batch['target_envmap_hdr'],
+        #                 ),
+        #             is_apply_cfg=GUIDANCE_SCALE > 1
+        #         )
+        #         #self.reactive_source_light = False
+        #     return callback_kwargs
 
         pt_image, _ = self.pipe(
             prompt_embeds=text_embbeding, 
@@ -374,8 +375,7 @@ class RelightDDIMInverse(L.LightningModule):
             guidance_scale=GUIDANCE_SCALE, 
             num_inference_steps=self.num_inference_steps,
             return_dict = False,
-            callback_on_step_end=sd_callback,
-            #callback_steps =1,
+            #callback_on_step_end=sd_callback,
             generator=torch.Generator().manual_seed(42)
         )
 

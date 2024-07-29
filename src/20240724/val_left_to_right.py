@@ -17,7 +17,8 @@ line = LineNotify()
 line.send(f"val_axis.py started at version {VERSION}", with_hostname=True)
 
 for chk_pt in CHK_PTS:
-    CKPT_PATH = f"output/20240703/multi_mlp_fit/lightning_logs/version_{VERSION}/checkpoints/epoch={chk_pt:06d}.ckpt"
+    #CKPT_PATH = f"output/20240703/multi_mlp_fit/lightning_logs/version_{VERSION}/checkpoints/epoch={chk_pt:06d}.ckpt"
+    CKPT_PATH = "output/20240726/multi_mlp_fit/lightning_logs/version_5/checkpoints/epoch=000044.ckpt"
     model = RelightDDIMInverse.load_from_checkpoint(CKPT_PATH)
     model.set_guidance_scale(1.0)
     model.eval() # disable randomness, dropout, etc...
