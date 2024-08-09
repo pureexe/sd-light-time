@@ -46,7 +46,7 @@ class RelightDDIMInverse(L.LightningModule):
 
         # DEFAULT VARIABLE 
         self.target_timestep = 1000
-        self.num_inference_steps = 300 # may need to use many steps to get the best result
+        self.num_inference_steps = 200 # may need to use many steps to get the best result
 
         # load pipeline
         sd_path = "runwayml/stable-diffusion-v1-5"
@@ -393,7 +393,6 @@ class RelightDDIMInverse(L.LightningModule):
             self.logger.experiment.add_text('params', str(args), self.global_step)
             self.logger.experiment.add_text('learning_rate', str(self.learning_rate), self.global_step)
             self.logger.experiment.add_text('envmap_embedder', str(self.envmap_embbeder_name), self.global_step)
-        exit()
         
     def test_step(self, batch, batch_idx):
         self.generate_tensorboard(batch, batch_idx, is_save_image=True)

@@ -7,9 +7,9 @@ import numpy as np
 import json 
 from LineNotify import LineNotify
 #CHK_PTS = [19, 39, 59, 79, 99, 119]
-CHK_PTS = [34]
-LRS = ['1e-4', '5e-4', '1e-4']
-NAMES = ['vae_r2_g0', 'vae_r2_g0', 'vae_r2']
+CHK_PTS = [4, 9, 14, 19, 24, 29, 34, 39, 44, 49]
+LRS = ['1e-4', '5e-4',  '5e-5', '1e-4', '5e-4',  '5e-5']
+NAMES = ['vae_r2', 'vae_r2', 'vae_r2', 'vae_r2_g0', 'vae_r2_g0', 'vae_r2_g0']
 VAL_FILES = ['light_x_minus', 'light_x_plus', 'light_y_minus', 'light_y_plus', 'light_z_minus', 'light_z_plus']
 
 
@@ -64,12 +64,14 @@ def process_job(meta):
         else:
             outputs['failed'].append(fname)
     # save json file 
+    #print(os.path.join(output_dir, "scores.json"))
     with open(os.path.join(output_dir, "scores.json"), "w") as f:
+        #print(outputs)
         json.dump(outputs, f, indent=4)
 
 def main():
     process_files = []
-    for version in range(2,3):
+    for version in range(6):
         lr = LRS[version]
         name = NAMES[version]
         for chk_pt in CHK_PTS:
@@ -81,6 +83,7 @@ def main():
                 try:
                     files = sorted(os.listdir(in_dir))
                 except FileNotFoundError:
+                    #print(f"SKIP: {in_dir}",)
                     continue
                 process_files.append({
                     "in_dir": in_dir,

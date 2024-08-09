@@ -1,0 +1,13 @@
+import os 
+import socket
+
+FOLDER_NAME = "20240807"
+OUTPUT = f"output/{FOLDER_NAME}/"
+SRC = f"src/{FOLDER_NAME}/"
+DATASET_ROOT_DIR = "/data/pakkapon/datasets/unsplash-lite/"
+
+
+OUTPUT_MULTI = f"output/{FOLDER_NAME}/multi_mlp_fit"
+OUTPUT_MULTI_MANUAL = f"output/{FOLDER_NAME}/multi_fit_manual"
+OUTPUT_SINGLE = f"output/{FOLDER_NAME}/single_fit/"
+

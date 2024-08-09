@@ -8,13 +8,13 @@ from LineNotify import LineNotify
 #VERSION = 21
 VERSIONS = [5]
 #CHK_PTS = [4, 9, 14, 19, 24, 44]
-CHK_PTS = [4, 9, 14, 19, 24, 29, 44]
+CHK_PTS = [44]
 LRS = ['1e-4', '5e-4', '5e-5', '3e-4', '8e-5', '1e-4', '5e-4', '5e-5', '1e-4', '5e-4', '5e-5', '3e-4']
-NAMES = ['vae_r1', 'vae_r1', 'vae_r1', 'vae_r1', 'vae_r1', 'vae_r2_g0', 'vae_r2_g0', 'vae_r2_g0', 'vae_r1', 'vae_r1', 'vae_r1', 'vae_r1']
+NAMES = ['vae_r1', 'vae_r1', 'vae_r1', 'vae_r1', 'vae_r1', 'vae_r2', 'vae_r2', 'vae_r2', 'vae_r1', 'vae_r1', 'vae_r1', 'vae_r1']
 #VAL_FILES = ['light_x_minus', 'light_x_plus', 'light_y_minus', 'light_y_plus', 'light_z_minus', 'light_z_plus']
-VAL_FILES = ['light_z_minus', 'light_z_plus', 'light_y_minus', 'light_y_plus', 'light_x_minus', 'light_x_plus']
+VAL_FILES = ['light_z_minus', 'light_y_minus', 'light_z_plus', 'light_y_plus', 'light_x_minus', 'light_x_plus']
 
-ENV_MODE = "light_axis"
+ENV_MODE = "light_axis_self"
 
 line = LineNotify()
 for version in VERSIONS:
@@ -41,6 +41,13 @@ for version in VERSIONS:
             for val_file in VAL_FILES:
                 trainer = L.Trainer(max_epochs=1000, precision=16, check_val_every_n_epoch=1, default_root_dir=f"output/20240726/val_axis/{NAMES[version]}/{LRS[version]}/chk{chk_pt}/{val_file}")
                 val_dataset = EnvmapAffineDataset(split="0:10", specific_file="split/20k_"+val_file+".json", dataset_multiplier=10, val_hold=0)
+                val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=1, shuffle=False)
+                trainer.test(model, dataloaders=val_dataloader, ckpt_path=CKPT_PATH)
+        elif ENV_MODE == "light_axis_self":
+            from EnvmapSelfAffineDataset import EnvmapSelfAffineDataset
+            for val_file in VAL_FILES:
+                trainer = L.Trainer(max_epochs=1000, precision=16, check_val_every_n_epoch=1, default_root_dir=f"output/20240726/val_axis_self/{NAMES[version]}/{LRS[version]}/chk{chk_pt}/{val_file}")
+                val_dataset = EnvmapSelfAffineDataset(split="0:10", specific_file="split/20k_"+val_file+".json", dataset_multiplier=10, val_hold=0)
                 val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=1, shuffle=False)
                 trainer.test(model, dataloaders=val_dataloader, ckpt_path=CKPT_PATH)
         else:
