@@ -1,3 +1,9 @@
+"""
+AffineConsistancy.py
+Affine transform (Adaptive group norm) that condition with environment map passthrough the VAE 
+We also provide the consistancy loss from the chrome ball.
+"""
+
 import os 
 import torch 
 import torchvision
@@ -9,19 +15,20 @@ from tqdm.auto import tqdm
 import ezexr
 
 from constants import *
-from diffusers import StableDiffusionPipeline
+from diffusers import StableDiffusionPipeline, ControlNetModel
 
+from  ball_helper import create_circle_tensor
 from LightEmbedingBlock import set_light_direction, add_light_block
 from UnsplashLiteDataset import log_map_to_range
  
  
-class EnvmapAffine(L.LightningModule):
-    def __init__(self, learning_rate=1e-3, face100_every=20, guidance_scale=3.0, envmap_embedder="vae", *args, **kwargs) -> None:
+class AffineConsistancy(L.LightningModule):
+    def __init__(self, learning_rate=1e-3, guidance_scale=3.0, use_consistancy_loss=True, *args, **kwargs) -> None:
         super().__init__()
         self.guidance_scale = guidance_scale
         self.use_set_guidance_scale = False
-        self.face100_every = face100_every
         self.learning_rate = learning_rate
+        self.use_consistancy_loss = use_consistancy_loss
         self.save_hyperparameters()
         MASTER_TYPE = torch.float16
 
@@ -33,63 +40,28 @@ class EnvmapAffine(L.LightningModule):
         self.pipe.unet.requires_grad_(False)
         self.pipe.vae.requires_grad_(False)
         self.pipe.text_encoder.requires_grad_(False)
-    
-        # load envmap_embedder
-        self.envmap_embbeder_name = envmap_embedder
-        if envmap_embedder == "dino2":
-            mlp_in_channel = 768*2
-            from transformers import AutoImageProcessor, AutoModel
-            dino_path = "facebook/dinov2-base"
-            self.envmap_processor = AutoImageProcessor.from_pretrained(dino_path)
-            self.envmap_embbeder = [AutoModel.from_pretrained(dino_path)]
-            self.envmap_embbeder[0].requires_grad_(False)
-            self.envmap_embbeder[0].to('cuda')
-        elif envmap_embedder == "slimnet":
-            mlp_in_channel = 1024*2
-            self.envmap_embbeder = torch.nn.Sequential(
-                torch.nn.Conv2d(in_channels=3, out_channels=16, kernel_size=3, stride=2, padding=1),  
-                torch.nn.ReLU(),
-                torch.nn.Conv2d(in_channels=16, out_channels=64, kernel_size=3, stride=2, padding=1), 
-                torch.nn.ReLU(),
-                torch.nn.Conv2d(in_channels=64, out_channels=16, kernel_size=3, stride=2, padding=1),
-                torch.nn.ReLU(),
-                torch.nn.Conv2d(in_channels=16, out_channels=4, kernel_size=3, stride=2, padding=1),
-            )
-        elif envmap_embedder == "clip":
-            # load clip image encoder 
-            mlp_in_channel = 1024*2
-            from transformers import AutoProcessor, CLIPVisionModel
-            clip_path = "openai/clip-vit-large-patch14"
-            self.envmap_embbeder = [CLIPVisionModel.from_pretrained(clip_path, torch_dtype=MASTER_TYPE)]
-            self.envmap_processor = AutoProcessor.from_pretrained(clip_path)
-            self.envmap_embbeder[0].requires_grad_(False)
-            self.envmap_embbeder[0].to('cuda')
-        elif envmap_embedder == "vae":
-            mlp_in_channel = 32*32*4*2
-        else:
-            raise NotImplementedError("Not support {envmap_embedder} yet")
+
+        # load controlnet from pretrain
+        if self.use_consistancy_loss:
+            self.pipe.controlnet = ControlNetModel.from_pretrained("lllyasviel/sd-controlnet-depth", torch_dtype=torch.float16)
+            self.pipe.controlnet.requires_grad_(False)
+
+        mlp_in_channel = 32*32*4*2
 
         #  add light block to unet, 1024 is the shape of output of both LDR and HDR_Normalized clip combine
         add_light_block(self.pipe.unet, in_channel=mlp_in_channel)
         self.pipe.to('cuda')
+        self.pipe.controlnet.to('cuda')
 
 
         # filter trainable layer
         unet_trainable = filter(lambda p: p.requires_grad, self.pipe.unet.parameters())
         self.unet_trainable = torch.nn.ParameterList(unet_trainable)
-    
-    def get_clip_features(self, images):
-        with torch.inference_mode():
-            inputs = self.envmap_processor(images=images, return_tensors="pt")
-            inputs = {k: v.to(images.device).to(images.dtype) for k, v in inputs.items()}
-            outputs = self.envmap_embbeder[0](**inputs)
-            return outputs.pooler_output
-    
-    def get_slimnet_features(self, images):
-        emb =  self.envmap_embbeder(images)
-        flattened_emb = emb.view(emb.size(0), -1)
-        return flattened_emb
 
+        #create circle mask 
+        with torch.no_grad():
+            self.circle_mask = create_circle_tensor(16, 16)
+   
     def get_vae_features(self, images):
         assert images.shape[1] == 3, "Only support RGB image"
         assert images.shape[2] == 256 and images.shape[3] == 256, "Only support 256x256 image"
@@ -101,21 +73,102 @@ class EnvmapAffine(L.LightningModule):
             flattened_emb = emb.view(emb.size(0), -1)
             return flattened_emb
 
-    def get_embedder_features(self, images):
-        if self.envmap_embbeder_name in ["clip","dino2"]:
-            return self.get_clip_features(images) #CLIP and Dino2 HuggingFace version is compatible
-        elif self.envmap_embbeder_name == "slimnet":
-            return self.get_slimnet_features(images)
-        elif self.envmap_embbeder_name == "vae":
-            return self.get_vae_features(images)
-        else:
-            raise NotImplementedError("Not support {self.envmap_embbeder_name} yet")
         
     def get_light_features(self, ldr_images, normalized_hdr_images):
-        ldr_features = self.get_embedder_features(ldr_images)
-        hdr_features = self.get_embedder_features(normalized_hdr_images)
+        ldr_features = self.get_vae_features(ldr_images)
+        hdr_features = self.get_vae_features(normalized_hdr_images)
         # concat ldr and hdr features
         return torch.cat([ldr_features, hdr_features], dim=-1)
+
+    def get_envmap_consistancy_loss(self, source_latent, target_image, noise, timesteps):
+        """compute consistancy loss from chrome ball
+        Given: target_image, 
+        1. encode the target_image to target_latent with vae 
+        2. add noise to the target_latent to be at the same timestep
+        3. mask both source latent and target latent with circle mask
+        4. compute mse (only inside the mask)
+
+        Args:
+            source_latent (torch.tensor): noise latent 
+            target_image (torch.tensor): target image in range of [-1, 1]
+            noise (torch.tensor): gaussian noise in channel of latent
+            timesteps (torch.tensor): diffusion timesteps 
+
+        Returns:
+            torch.tensor: envmap consistancy loss
+        """
+        
+        # check if the target_image is in range of [-1, 1]
+        assert target_image.min() >= -1.0 and target_image.max() <= 1.0, "Only support [-1, 1] range image"    
+
+        # check if target_image is 512x512         
+        assert target_image.shape[2] == 512 and target_image.shape[3] == 512, "Only support 512x512 image"
+
+        # check if source_latent is 64x64
+        assert source_latent.shape[2] == 64 and source_latent.shape[3] == 64, "Only support 64x64 latent"
+
+
+        # encode the target_image to target_latent with vae
+        target_latent = self.pipe.vae.encode(target_image).latent_dist.sample().detach()
+        target_latent = target_latent * self.pipe.vae.config.scaling_factor        
+        noisy_latents = self.pipe.scheduler.add_noise(target_latent, noise, timesteps)
+
+        # compute loss only the middle of latent size 16
+        middle_source_latent = source_latent[:,:,24:40,24:40]
+        middle_target_latent = noisy_latents[:,:,24:40,24:40]
+
+        # apply circle mask on source and target latent
+        mask = self.circle_mask.to(source_latent.device)
+        middle_source_latent = middle_source_latent * mask
+        middle_target_latent = middle_target_latent * mask
+
+        # calculate consistancy loss
+        loss = torch.nn.functional.mse_loss(middle_source_latent, middle_target_latent, reduction="mean")
+
+        return loss
+    
+    def inpaint_chromeball(self, latents, depth_map, prompt_embeds, t, cond_scale=1.0):
+        """
+        forward controlnet for 1 time step to inpaint the chrome ball
+
+        Args:
+            latents (_type_): _description_
+            depth_map (_type_): depth_map in range of [-1, 1] (B,3,512,512)
+            prompt_embeds (_type_): text embedding
+            t (_type_): diffusion timesteps
+            cond_scale (float, optional): Controlnet scale. Defaults to 1.0.
+
+        Returns:
+            _type_: _description_
+        """
+
+        # forward the controlnet
+        down_block_res_samples, mid_block_res_sample = self.pipe.controlnet(
+            latents,
+            t,
+            encoder_hidden_states=prompt_embeds,
+            controlnet_cond=depth_map,
+            conditioning_scale=cond_scale,
+            guess_mode=False,
+            return_dict=False,
+        )
+        
+        ctrl_pred = self.pipe.unet(
+            latents,
+            t,
+            encoder_hidden_states=prompt_embeds,
+            down_block_additional_residuals=down_block_res_samples,
+            mid_block_additional_residual=mid_block_res_sample,
+            return_dict=False,
+        )[0]
+
+        next_latents = self.pipe.scheduler.step(ctrl_pred, t, latents, return_dict=False)[0] # compute next latent (t-1 latent)
+
+        return next_latents
+
+
+
+        
 
     def training_step(self, batch, batch_idx):
 
@@ -129,34 +182,49 @@ class EnvmapAffine(L.LightningModule):
         text_input_ids = text_inputs.input_ids
 
 
-        latents = self.pipe.vae.encode(batch['pixel_values']).latent_dist.sample().detach()
+        latents = self.pipe.vae.encode(batch['source_image']).latent_dist.sample().detach()
 
         latents = latents * self.pipe.vae.config.scaling_factor
 
         # Sample noise that we'll add to the latents
         noise = torch.randn_like(latents)
-
+        target = noise 
+    
         bsz = latents.shape[0]
 
         # Sample a random timestep for each image
-        timesteps = torch.randint(0, self.pipe.scheduler.config.num_train_timesteps, (bsz,), device=latents.device)
-        timesteps = timesteps.long().to(latents.device)
+        # sadly, schuduler.step does not support different timesteps for each image, so we use same time step for entire batch
+        if False: 
+            timesteps = torch.randint(0, self.pipe.scheduler.config.num_train_timesteps, (bsz,), device=latents.device)
+            timesteps = timesteps.long().to(latents.device)
+        else:
+            timesteps = torch.randint(0, self.pipe.scheduler.config.num_train_timesteps, (1,), device=latents.device)
+            timesteps = timesteps.expand(bsz)
+            timesteps = timesteps.long().to(latents.device)
+
 
         text_input_ids = text_input_ids.to(latents.device)
         encoder_hidden_states = self.pipe.text_encoder(text_input_ids)[0]
 
-        # 
-        target = noise 
-    
         noisy_latents = self.pipe.scheduler.add_noise(latents, noise, timesteps)
         
         # set light direction        
-        light_features = self.get_light_features(batch['ldr_envmap'],batch['normalized_hdr_envmap'])
+        light_features = self.get_light_features(batch['ldr_envmap'],batch['norm_envmap'])
         set_light_direction(self.pipe.unet, light_features, is_apply_cfg=False) #B,C
 
         model_pred = self.pipe.unet(noisy_latents, timesteps, encoder_hidden_states, return_dict=False)[0]
 
-        loss = torch.nn.functional.mse_loss(model_pred, target, reduction="mean")
+        diffusion_loss = torch.nn.functional.mse_loss(model_pred, target, reduction="mean")
+        if self.use_consistancy_loss:
+            # inpainting chrome ball to the model_pred 
+            self.pipe.scheduler.set_timesteps(1000) # set time step to 1000 for training step
+            next_latents = self.pipe.scheduler.step(model_pred, timesteps[0], latents, return_dict=False)[0] # compute next latent (t-1 latent)
+            chromeball_pred = self.inpaint_chromeball(next_latents, batch['control_depth'], encoder_hidden_states, torch.clamp(timesteps[0] - 1, min = 0))
+            envconsistancy_loss = self.get_envmap_consistancy_loss(chromeball_pred, batch['chromeball_image'], noise, torch.clamp(timesteps[0] - 2, min = 0))
+
+            loss = diffusion_loss + envconsistancy_loss
+        else:
+            loss = diffusion_loss
 
         self.log('train_loss', loss)
 
@@ -227,7 +295,7 @@ class EnvmapAffine(L.LightningModule):
             self.logger.experiment.add_video(f'face/{face_id:03d}', output_frames, self.global_step, fps=6)
         
     def generate_tensorboard(self, batch, batch_idx, is_save_image=False):
-        set_light_direction(self.pipe.unet, self.get_light_features(batch['ldr_envmap'],batch['normalized_hdr_envmap']), is_apply_cfg=True)
+        set_light_direction(self.pipe.unet, self.get_light_features(batch['ldr_envmap'],batch['norm_envmap']), is_apply_cfg=True)
         pt_image, _ = self.pipe(
             batch['text'], 
             output_type="pt",
@@ -236,7 +304,7 @@ class EnvmapAffine(L.LightningModule):
             return_dict = False,
             generator=torch.Generator().manual_seed(42)
         )
-        gt_image = (batch["pixel_values"] + 1.0) / 2.0
+        gt_image = (batch["source_image"] + 1.0) / 2.0
         images = torch.cat([gt_image, pt_image], dim=0)
         image = torchvision.utils.make_grid(images, nrow=2, normalize=True)
         self.logger.experiment.add_image(f'image/{batch["name"][0]}', image, self.global_step)
@@ -246,15 +314,15 @@ class EnvmapAffine(L.LightningModule):
         self.log('psnr', psnr)
         if is_save_image:
             os.makedirs(f"{self.logger.log_dir}/crop_image", exist_ok=True)
-            torchvision.utils.save_image(pt_image, f"{self.logger.log_dir}/crop_image/{batch['name'][0]}_{batch['word_name'][0]}.png")
+            torchvision.utils.save_image(pt_image, f"{self.logger.log_dir}/crop_image/{batch['name'][0]}.png")
             # save psnr to file
             os.makedirs(f"{self.logger.log_dir}/psnr", exist_ok=True)
             with open(f"{self.logger.log_dir}/psnr/{batch['name'][0]}_{batch['word_name'][0]}.txt", "w") as f:
                 f.write(f"{psnr.item()}\n")
         if self.global_step == 0 and batch_idx == 0:
-            self.logger.experiment.add_text('text', batch['text'][0], self.global_step)
+            self.logger.experiment.add_text(f'text/{batch["name"][0]}', batch['text'][0], self.global_step)
             self.logger.experiment.add_text('learning_rate', str(self.learning_rate), self.global_step)
-            self.logger.experiment.add_text('envmap_embedder', str(self.envmap_embbeder_name), self.global_step)
+        return mse
         
     def generate_tensorboard_guidance(self, batch, batch_idx):
         raise NotImplementedError("Not implemented yet")
@@ -262,9 +330,9 @@ class EnvmapAffine(L.LightningModule):
     def test_step(self, batch, batch_idx):
         self.generate_tensorboard(batch, batch_idx, is_save_image=True)
 
-
     def validation_step(self, batch, batch_idx):
-        return torch.zeros(1, )
+        mse = self.generate_tensorboard(batch, batch_idx, is_save_image=False)
+        return mse
 
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.parameters(), lr=self.learning_rate)

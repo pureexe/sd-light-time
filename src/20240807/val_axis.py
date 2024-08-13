@@ -88,7 +88,7 @@ for version in VERSIONS:
                     print("================================")
                     print(f"output/{FOLDER_NAME}/val_{VAL_MODE}/{guidance_scale}/{NAMES[version]}/{LRS[version]}/chk{chk_pt}")
                     print("================================")
-                    trainer = L.Trainer(max_epochs=1000, precision=16, check_val_every_n_epoch=1, default_root_dir=f"output/{FOLDER_NAME}/val_{VAL_MODE}/{guidance_scale}/{NAMES[version]}/{LRS[version]}/chk{chk_pt}/")
+                    trainer = L.Trainer(max_epochs=1000, precision=16, check_val_every_n_epoch=1,    default_root_dir=f"output/{FOLDER_NAME}/val_{VAL_MODE}/{guidance_scale}/{NAMES[version]}/{LRS[version]}/chk{chk_pt}/")
                     if VAL_MODE == "z":
                         val_root = VAL_Z_ROOT_DIR
                     else:

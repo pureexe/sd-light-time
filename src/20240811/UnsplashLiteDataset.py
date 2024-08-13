@@ -10,7 +10,7 @@ ACCEPT_EXTENSION = ['jpg', 'png', 'jpeg', 'exr']
 LDR_DIR = "env_ldr"
 NORM_DIR = "env_norm"
 IMAGE_DIR = "images"
-IS_DEBUG = False
+IS_DEBUG = True
 
 class UnsplashLiteDataset(torch.utils.data.Dataset):
     
@@ -38,16 +38,19 @@ class UnsplashLiteDataset(torch.utils.data.Dataset):
             prompt = json.load(f)
         return prompt
     
-    def get_image(self, idx: int):
+    def get_image(self, idx: int, directory:str, height =512, width=512):
         for ext in ACCEPT_EXTENSION:
-            image_path = os.path.join(self.root_dir,  IMAGE_DIR, f"{self.files[idx]}.{ext}")
+            image_path = os.path.join(self.root_dir,  directory, f"{self.files[idx]}.{ext}")
             if os.path.exists(image_path):
                 image = torchvision.io.read_image(image_path) / 255.0
                 image = image[:3]
-                image = torchvision.transforms.functional.resize(image, (512, 512),  antialias=True)
-                assert image.shape[1] == 512 and image.shape[2] == 512, "Only support 512x512 image"
+                # if image is one channel, repeat it to 3 channels
+                if image.shape[0] == 1:
+                    image = torch.cat([image, image, image], dim=0)
+                assert image.shape[1] == height and image.shape[2] == width, "Only support 512x512 image"
                 return image
         raise FileNotFoundError(f"File not found for {self.files[idx]}")
+    
     
     def get_env_ldr(self, idx: int):
         for ext in ACCEPT_EXTENSION:
@@ -96,12 +99,19 @@ class UnsplashLiteDataset(torch.utils.data.Dataset):
         idx = idx % len(self.files)
         try:
             word_name = self.files[idx]
-            pixel_values = self.transform(self.get_image(idx))
+            pixel_values = self.transform(self.get_image(idx,"images", 512, 512))
+            control_depth = self.transform(self.get_image(idx,"control_depth", 512, 512))
+            ldr_envmap = self.get_image(idx,"env_ldr", 256, 256)
+            norm_envmap = self.get_image(idx,"env_norm", 256, 256)
+            chromeball = self.get_image(idx,"chromeball", 512, 512)
+            
             return {
                     'name': self.files[idx],
-                    'pixel_values': pixel_values,
-                    'ldr_envmap': self.get_env_ldr(idx),
-                    'normalized_hdr_envmap': self.get_env_norm(idx),
+                    'source_image': pixel_values,
+                    'control_depth': control_depth,
+                    'chromeball_image': chromeball,
+                    'ldr_envmap': ldr_envmap,
+                    'norm_envmap': norm_envmap,
                     'text': self.prompt[word_name],
                     'word_name': word_name,
                     'idx': idx,
