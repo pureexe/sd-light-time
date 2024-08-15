@@ -45,13 +45,13 @@ class AffineConsistancy(L.LightningModule):
         if self.use_consistancy_loss:
             self.pipe.controlnet = ControlNetModel.from_pretrained("lllyasviel/sd-controlnet-depth", torch_dtype=torch.float16)
             self.pipe.controlnet.requires_grad_(False)
+            self.pipe.controlnet.to('cuda')
 
         mlp_in_channel = 32*32*4*2
 
         #  add light block to unet, 1024 is the shape of output of both LDR and HDR_Normalized clip combine
         add_light_block(self.pipe.unet, in_channel=mlp_in_channel)
         self.pipe.to('cuda')
-        self.pipe.controlnet.to('cuda')
 
 
         # filter trainable layer
@@ -168,10 +168,7 @@ class AffineConsistancy(L.LightningModule):
 
 
 
-        
-
-    def training_step(self, batch, batch_idx):
-
+    def compute_train_loss(self, batch, batch_idx, timesteps=None, seed=None):
         text_inputs = self.pipe.tokenizer(
                 batch['text'],
                 padding="max_length",
@@ -187,18 +184,29 @@ class AffineConsistancy(L.LightningModule):
         latents = latents * self.pipe.vae.config.scaling_factor
 
         # Sample noise that we'll add to the latents
-        noise = torch.randn_like(latents)
+        if seed is not None:
+            # create random genration seed
+            torch.manual_seed(seed)
+            noise = torch.randn_like(latents, memory_format=torch.contiguous_format)
+        else:
+            noise = torch.randn_like(latents)
         target = noise 
     
         bsz = latents.shape[0]
 
-        # Sample a random timestep for each image
-        # sadly, schuduler.step does not support different timesteps for each image, so we use same time step for entire batch
-        if False: 
-            timesteps = torch.randint(0, self.pipe.scheduler.config.num_train_timesteps, (bsz,), device=latents.device)
-            timesteps = timesteps.long().to(latents.device)
+        if timesteps is None:
+            # Sample a random timestep for each image
+            # sadly, schuduler.step does not support different timesteps for each image, so we use same time step for entire batch
+            if False: 
+                timesteps = torch.randint(0, self.pipe.scheduler.config.num_train_timesteps, (bsz,), device=latents.device)
+                timesteps = timesteps.long().to(latents.device)
+            else:
+                timesteps = torch.randint(0, self.pipe.scheduler.config.num_train_timesteps, (1,), device=latents.device)
+                timesteps = timesteps.expand(bsz)
+                timesteps = timesteps.long().to(latents.device)
         else:
-            timesteps = torch.randint(0, self.pipe.scheduler.config.num_train_timesteps, (1,), device=latents.device)
+            if isinstance(timesteps, int):
+                timesteps = torch.tensor([timesteps], device=latents.device)
             timesteps = timesteps.expand(bsz)
             timesteps = timesteps.long().to(latents.device)
 
@@ -225,9 +233,11 @@ class AffineConsistancy(L.LightningModule):
             loss = diffusion_loss + envconsistancy_loss
         else:
             loss = diffusion_loss
+        return loss
 
+    def training_step(self, batch, batch_idx):
+        loss = self.compute_train_loss(batch, batch_idx)
         self.log('train_loss', loss)
-
         return loss
     
     def generate_video_light(self):
@@ -329,8 +339,22 @@ class AffineConsistancy(L.LightningModule):
         
     def test_step(self, batch, batch_idx):
         self.generate_tensorboard(batch, batch_idx, is_save_image=True)
+        self.plot_train_loss(batch, batch_idx, is_save_image=True, seed=42)
+
+    def plot_train_loss(self, batch, batch_idx, is_save_image=False, seed=None):
+        for timestep in range(100, 1000, 100):
+            loss = self.compute_train_loss(batch, batch_idx, timesteps=timestep, seed=seed)
+            #self.log(f'plot_train_loss/{timestep}', loss)
+            #self.log(f'plot_train_loss/average', loss)   
+            self.logger.experiment.add_scalar(f'plot_train_loss/{timestep}', loss, self.global_step)
+            self.logger.experiment.add_scalar(f'plot_train_loss/average', loss, self.global_step)
+            if is_save_image:
+                os.makedirs(f"{self.logger.log_dir}/train_loss/{timestep}", exist_ok=True)
+                with open(f"{self.logger.log_dir}/train_loss/{timestep}/{batch['name'][0]}.txt", "w") as f:
+                    f.write(f"{loss.item()}")
 
     def validation_step(self, batch, batch_idx):
+        self.plot_train_loss(batch, batch_idx, seed=42)
         mse = self.generate_tensorboard(batch, batch_idx, is_save_image=False)
         return mse
 

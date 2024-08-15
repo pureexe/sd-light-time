@@ -6,6 +6,6 @@ ver4=with1e-6
 
 # without consistancy loss
 ver0=no1e-4
-ver1=no5e-4
+ver1=no5e-5
 ver3=no1e-5
-ver4=no1e-6
+ver4=no5-e4
