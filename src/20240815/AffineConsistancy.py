@@ -166,8 +166,6 @@ class AffineConsistancy(L.LightningModule):
 
         return next_latents
 
-
-
     def compute_train_loss(self, batch, batch_idx, timesteps=None, seed=None):
         text_inputs = self.pipe.tokenizer(
                 batch['text'],
@@ -324,19 +322,16 @@ class AffineConsistancy(L.LightningModule):
         self.log('psnr', psnr)
         if is_save_image:
             os.makedirs(f"{self.logger.log_dir}/crop_image", exist_ok=True)
-            torchvision.utils.save_image(pt_image, f"{self.logger.log_dir}/crop_image/{batch['name'][0]}.png")
+            torchvision.utils.save_image(pt_image, f"{self.logger.log_dir}/crop_image/{batch['word_name'][0]}.png")
             # save psnr to file
             os.makedirs(f"{self.logger.log_dir}/psnr", exist_ok=True)
-            with open(f"{self.logger.log_dir}/psnr/{batch['name'][0]}_{batch['word_name'][0]}.txt", "w") as f:
+            with open(f"{self.logger.log_dir}/psnr/{batch['word_name'][0]}.txt", "w") as f:
                 f.write(f"{psnr.item()}\n")
         if self.global_step == 0 and batch_idx == 0:
-            self.logger.experiment.add_text(f'text/{batch["name"][0]}', batch['text'][0], self.global_step)
+            self.logger.experiment.add_text(f'text/{batch["word_name"][0]}', batch['text'][0], self.global_step)
             self.logger.experiment.add_text('learning_rate', str(self.learning_rate), self.global_step)
         return mse
-        
-    def generate_tensorboard_guidance(self, batch, batch_idx):
-        raise NotImplementedError("Not implemented yet")
-        
+                
     def test_step(self, batch, batch_idx):
         self.generate_tensorboard(batch, batch_idx, is_save_image=True)
         self.plot_train_loss(batch, batch_idx, is_save_image=True, seed=42)

@@ -17,6 +17,7 @@ class UnsplashLiteDataset(torch.utils.data.Dataset):
     def __init__(self, 
         root_dir=DATASET_ROOT_DIR,
         dataset_multiplier=1,
+        specific_prompt=None,
         *args,
         **kwargs
     ) -> None:
@@ -25,8 +26,15 @@ class UnsplashLiteDataset(torch.utils.data.Dataset):
         self.dataset_multiplier = dataset_multiplier
         self.files= self.get_image_files()
         if 'split' in kwargs:
-            self.files = self.files[kwargs['split']]
+            if type(kwargs['split']) == list:
+                self.files = kwargs['split']
+            else:
+                self.files = self.files[kwargs['split']]
         self.prompt = self.get_prompt_from_file("prompts.json") 
+        if specific_prompt is not None:
+            self.specific_prompt = specific_prompt
+            if type(specific_prompt) == list:
+                self.dataset_multiplier = self.dataset_multiplier * len(specific_prompt)
         self.transform = torchvision.transforms.Compose([
             torchvision.transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5]),  # Normalize to [-1, 1]
             torchvision.transforms.Resize(512,  antialias=True),  # Resize the image to 512x512
@@ -69,6 +77,7 @@ class UnsplashLiteDataset(torch.utils.data.Dataset):
         # support dataset_multiplier
         idx = idx % len(self.files)
         try:
+            name = self.files[idx]
             word_name = self.files[idx]
             pixel_values = self.transform(self.get_image(idx,"images", 512, 512))
             ldr_envmap = self.get_image(idx,"env_ldr", 256, 256)
@@ -82,15 +91,24 @@ class UnsplashLiteDataset(torch.utils.data.Dataset):
                 chromeball = self.get_image(idx,"chromeball", 512, 512)
             except:
                 chromeball = torch.zeros(3, 512, 512)
-            
+
+            if self.specific_prompt is not None:
+                if type(self.specific_prompt) == list:
+                    prompt_id = idx // len(self.files)
+                    prompt = self.specific_prompt[prompt_id]
+                    word_name = f"{word_name}_{prompt_id}"
+                else:
+                    prompt = self.specific_prompt
+            else:
+                prompt = self.prompt[word_name]
             return {
-                    'name': self.files[idx],
+                    'name': name,
                     'source_image': pixel_values,
                     'control_depth': control_depth,
                     'chromeball_image': chromeball,
                     'ldr_envmap': ldr_envmap,
                     'norm_envmap': under_envmap,
-                    'text': self.prompt[word_name],
+                    'text': prompt,
                     'word_name': word_name,
                     'idx': idx,
                 }

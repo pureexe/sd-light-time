@@ -33,9 +33,7 @@ class LightEmbedBlock(torch.nn.Module):
         self.is_apply_cfg = is_apply_cfg
     
     def set_light_direction(self, direction):
-        #print(direction.shape)
-        #print(self.in_dim)
-        assert direction.shape[-1] == self.in_dim
+        assert direction == None or direction.shape[-1] == self.in_dim
         self.light_direction = direction
 
     def get_direction_feature(self):
@@ -60,16 +58,21 @@ class LightEmbedBlock(torch.nn.Module):
         else:
             v = x #[B,C,H,W]
         
-        direction = self.get_direction_feature().to(v.device).to(v.dtype) #[B,C]
-
-        light_m = self.light_mul(direction) 
-        light_a = self.light_add(direction)
+        direction = self.get_direction_feature()
         
-        # compute light condition
-        
-        adagn = v * light_m[...,None,None] + light_a[...,None,None]
-        
-        y = v + (self.gate * adagn)
+        # apply light direction when set
+        if direction is not None:
+            direction = direction.to(v.device).to(v.dtype) #[B,C]
+            light_m = self.light_mul(direction) 
+            light_a = self.light_add(direction)
+            
+            # compute light condition
+            
+            adagn = v * light_m[...,None,None] + light_a[...,None,None]
+            
+            y = v + (self.gate * adagn)
+        else:
+            y = v
 
         #  concat part that not apply light condition back
         if use_cfg:
