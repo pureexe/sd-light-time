@@ -5,6 +5,8 @@ from AffineConsistancy import AffineConsistancy
 from LightEmbedingBlock import set_light_direction
 from PIL import Image
 import numpy as np
+from diffusers import AutoencoderKL
+
 
 
 
@@ -55,10 +57,50 @@ def test_set_guidance_scale(guidance_scale):
 
 
 def test_get_vae_features():
-    pass 
+    # create random image size 256x256 in range [-1,1]
+    torch.manual_seed(42)
+    image = torch.rand((1,3,256,256))
+    image = image / image.max() # expect to have exactly 0 as lowbound and 1 as upperbound
+    image = image.to('cuda').half()
+    # check if the vae feature is computed correctly
+    
+    with torch.inference_mode():
+        # compute VAE feature
+        vae = AutoencoderKL.from_pretrained("runwayml/stable-diffusion-v1-5", subfolder="vae", torch_dtype=torch.float16).to('cuda')
+        image_for_input = image * 2 - 1
+        assert torch.abs(image_for_input.min() - (-1)) < 1e-3
+        assert torch.abs(image_for_input.max() - 1) < 1e-3
+        expected_emb = vae.encode(image_for_input).latent_dist.sample(generator=torch.Generator(device='cuda').manual_seed(42)) * vae.config.scaling_factor
+        #expected_emb = expected_emb.view(expected_emb.size(0), -1).float()
+        
+
+        # compute the emb from the model
+        model = AffineConsistancy(learning_rate=1e-4, use_consistancy_loss = False)
+        assert torch.abs(image.min() - 0) < 1e-3
+        assert torch.abs(image.max() - 1) < 1e-3
+        emb = model.get_vae_features(image, torch.Generator(device='cuda').manual_seed(42))
+        print("==_________==")
+        print("---------->>>>>", np.sum(np.abs(emb.float().cpu().numpy() - expected_emb.float().cpu().numpy())))
+        assert torch.allclose(expected_emb, emb, atol=1e-3)
+        return
+
+
+
+        print("+++++++++++++++==========================+++++++++++++")
+        print("---------->>>>>", np.sum(np.abs(emb.cpu().numpy() - expected_emb.cpu().numpy())))
+        print(expected_emb.shape)
+        print(emb.shape)
+        print("+++++++++++++++==========================+++++++++++++")
+
+        assert torch.allclose(emb, expected_emb, atol=1e-3)
+
 
 def test_get_light_features():
-    pass
+    # create random image size 256x256 in range [-1,1]
+    torch.manual_seed(42)
+    image = torch.rand((1,3,256,256))
+    image = image / image.max() # expect to have exactly 0 as lowbound and 1 as upperbound
+    image = image.to('cuda').half()
 
 def test_compute_train_loss():
     pass
@@ -72,8 +114,6 @@ def test_set_light_direction():
     pass
 
 
-# 2. test that we load correct depth controlnet 
-# 6. test that circle mask is create correctly
 
 
 # 4. test that light block shape is match the vae 
@@ -85,4 +125,10 @@ def test_set_light_direction():
 # 8 the that get_light_feautres function is work correctly 
 
 # 9. test that get_envmap_consisitancy is work correctly
+
+
+###################
+# 2. test that we load correct depth controlnet 
+# 6. test that circle mask is create correctly
+
 

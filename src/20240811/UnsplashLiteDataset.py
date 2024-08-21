@@ -10,7 +10,7 @@ ACCEPT_EXTENSION = ['jpg', 'png', 'jpeg', 'exr']
 LDR_DIR = "env_ldr"
 NORM_DIR = "env_norm"
 IMAGE_DIR = "images"
-IS_DEBUG = True
+IS_DEBUG = False
 
 class UnsplashLiteDataset(torch.utils.data.Dataset):
     

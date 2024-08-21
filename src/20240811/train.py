@@ -41,6 +41,7 @@ def main():
         check_val_every_n_epoch=1,
         callbacks=[checkpoint_callback],
         default_root_dir=OUTPUT_MULTI,
+        val_check_interval=100
     )
     if not args.checkpoint or not os.path.exists(args.checkpoint):
        trainer.validate(model, val_dataloader)

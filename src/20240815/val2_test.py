@@ -12,13 +12,12 @@ from constants import FOLDER_NAME
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument("-i", "--version", type=str, default="3")
-parser.add_argument("-m", "--mode", type=str, default="unsplash-trainset") #unslpash-trainset or multishoe-trainset
+parser.add_argument("-i", "--version", type=str, default="0,1,2,3")
+parser.add_argument("-m", "--mode", type=str, default="human_left2") #unslpash-trainset or multishoe-trainset
 #parser.add_argument("-g", "--guidance_scale", type=str, default="1.0,3.0,5.0,7.0")
-parser.add_argument("-g", "--guidance_scale", type=str, default="1.0")
+parser.add_argument("-g", "--guidance_scale", type=str, default="7.0,5.0,3.0,1.0")
 #parser.add_argument("-c", "--checkpoint", type=str, default=','.join([str(f) for f in range(22)]) )
-#parser.add_argument("-c", "--checkpoint", type=str, default='0,1,2,3,4,5,10,15,20,25,30,35,40,45, 50')
-parser.add_argument("-c", "--checkpoint", type=str, default='6,7,8,9,11,12,13,14,16,17,18,19,21,22,23,24,26,27,28,29,31,32,33,34,36,37,38,39')
+parser.add_argument("-c", "--checkpoint", type=str, default='0,1,2,3,4,5,10,15,20,25,30,35,40,45')
 
 #9,19,29,39,49
 #199, 399, 599, 799, 999, 1199, 1399, 1599, 1799, 1999, 2199, 2399, 2599, 2799, 2999
@@ -43,7 +42,7 @@ def get_from_mode(mode):
         return "/data/pakkapon/datasets/pointlight_shoe_z/validation", 60, UnsplashLiteDataset, None
     elif mode == "sunrise":
         return "/data/pakkapon/datasets/sunrise/validation", 60, UnsplashLiteDataset, None
-    elif mode == "unsplash-trainset":
+    elif mode == "unslpash-trainset":
         return "/data/pakkapon/datasets/unsplash-lite/train", 10, UnsplashLiteDataset, None
     elif mode == "multishoe-trainset":
         return "/data/pakkapon/datasets/pointlight_multishoe/train", 20, UnsplashLiteDataset, None
@@ -94,22 +93,22 @@ def main():
         for version in versions:
                 for checkpoint in checkpoints:
                      for guidance_scale in guidance_scales:
-                        if version < 17:
-                            model_class = AffineConsistancyVaeCompatible
-                        else:
-                            model_class = AffineConsistancy
-                        if checkpoint == 0:
-                            model = model_class(learning_rate=1e-4,envmap_embedder='vae', use_consistancy_loss = False)
-                            CKPT_PATH = None
-                        else:
-                            CKPT_PATH = f"output/{FOLDER_NAME}/multi_mlp_fit/lightning_logs/version_{version}/checkpoints/epoch={checkpoint:06d}.ckpt"
-                            model = model_class.load_from_checkpoint(CKPT_PATH)
-                        model.set_guidance_scale(guidance_scale)
-                        model.eval() # disable randomness, dropout, etc...
+                        # if version < 17:
+                        #     model_class = AffineConsistancyVaeCompatible
+                        # else:
+                        #     model_class = AffineConsistancy
+                        # if checkpoint == 0:
+                        #     model = model_class(learning_rate=1e-4,envmap_embedder='vae', use_consistancy_loss = False)
+                        #     CKPT_PATH = None
+                        # else:
+                        #     CKPT_PATH = f"output/{FOLDER_NAME}/multi_mlp_fit/lightning_logs/version_{version}/checkpoints/epoch={checkpoint:06d}.ckpt"
+                        #     model = model_class.load_from_checkpoint(CKPT_PATH)
+                        # model.set_guidance_scale(guidance_scale)
+                        # model.eval() # disable randomness, dropout, etc...
                         print("================================")
                         print(f"output/{FOLDER_NAME}/val_{mode}/{guidance_scale}/{NAMES[version]}/{LRS[version]}/chk{checkpoint}")
                         print("================================")
-                        trainer = L.Trainer(max_epochs=1000, precision=16, check_val_every_n_epoch=1, default_root_dir=f"output/{FOLDER_NAME}/val_{mode}/{guidance_scale}/{NAMES[version]}/{LRS[version]}/chk{checkpoint}/")
+                        # trainer = L.Trainer(max_epochs=1000, precision=16, check_val_every_n_epoch=1, default_root_dir=f"output/{FOLDER_NAME}/val_{mode}/{guidance_scale}/{NAMES[version]}/{LRS[version]}/chk{checkpoint}/")
                         val_root, count_file, dataset_class, specific_prompt = get_from_mode(mode)
                         if type(count_file) == int:
                             split = slice(0, count_file, 1)
@@ -117,7 +116,10 @@ def main():
                             split = count_file
                         val_dataset = dataset_class(split=split, root_dir=val_root, specific_prompt=specific_prompt)
                         val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=1, shuffle=False)
-                        trainer.test(model, dataloaders=val_dataloader, ckpt_path=CKPT_PATH)
+                        for batch in val_dataloader:
+                            print(batch['word_name'])
+                        exit()
+                        # trainer.test(model, dataloaders=val_dataloader, ckpt_path=CKPT_PATH)
 
                                 
 if __name__ == "__main__":

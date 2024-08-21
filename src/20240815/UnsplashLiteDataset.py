@@ -31,8 +31,8 @@ class UnsplashLiteDataset(torch.utils.data.Dataset):
             else:
                 self.files = self.files[kwargs['split']]
         self.prompt = self.get_prompt_from_file("prompts.json") 
+        self.specific_prompt = specific_prompt
         if specific_prompt is not None:
-            self.specific_prompt = specific_prompt
             if type(specific_prompt) == list:
                 self.dataset_multiplier = self.dataset_multiplier * len(specific_prompt)
         self.transform = torchvision.transforms.Compose([
@@ -73,9 +73,9 @@ class UnsplashLiteDataset(torch.utils.data.Dataset):
     def __len__(self):
         return len(self.files) * self.dataset_multiplier 
     
-    def __getitem__(self, idx):
+    def __getitem__(self, batch_idx):
         # support dataset_multiplier
-        idx = idx % len(self.files)
+        idx = batch_idx % len(self.files)
         try:
             name = self.files[idx]
             word_name = self.files[idx]
@@ -94,7 +94,7 @@ class UnsplashLiteDataset(torch.utils.data.Dataset):
 
             if self.specific_prompt is not None:
                 if type(self.specific_prompt) == list:
-                    prompt_id = idx // len(self.files)
+                    prompt_id = batch_idx // len(self.files)
                     prompt = self.specific_prompt[prompt_id]
                     word_name = f"{word_name}_{prompt_id}"
                 else:
