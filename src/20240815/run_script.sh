@@ -33,3 +33,7 @@ ev_train_mixed_5e-4 #v24
 15lr5e-5 #v30
 15lr1e-4_randtime #v31
 15lr5e_5_randtime #v32
+15lr1e-6_randtime #v33
+15lr1e-7_randtime #v34
+15lr1e-4_randtime_valnooseed1e-4 #v35
+15lr1e-4_randtime_valnooseed1e-5 #v36

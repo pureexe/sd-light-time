@@ -22,7 +22,7 @@ from LightEmbedingBlock import set_light_direction, add_light_block
 from UnsplashLiteDataset import log_map_to_range
  
  
-class AffineConsistancy(L.LightningModule):
+class SDTuner(L.LightningModule):
     def __init__(self, learning_rate=1e-3, guidance_scale=3.0, use_consistancy_loss=True, *args, **kwargs) -> None:
         super().__init__()
         self.guidance_scale = guidance_scale
@@ -347,7 +347,7 @@ class AffineConsistancy(L.LightningModule):
                     f.write(f"{loss.item()}")
 
     def validation_step(self, batch, batch_idx):
-        self.plot_train_loss(batch, batch_idx, seed=None) # DEFAULT USE SEED 42
+        self.plot_train_loss(batch, batch_idx, seed=None)
         mse = self.generate_tensorboard(batch, batch_idx, is_save_image=False)
         return mse
 

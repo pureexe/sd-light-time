@@ -18,12 +18,14 @@ class UnsplashLiteDataset(torch.utils.data.Dataset):
         root_dir=DATASET_ROOT_DIR,
         dataset_multiplier=1,
         specific_prompt=None,
+        is_fliplr=False,
         *args,
         **kwargs
     ) -> None:
         super().__init__()
         self.root_dir = root_dir
         self.dataset_multiplier = dataset_multiplier
+        self.flip_lr = is_fliplr
         self.files= self.get_image_files()
         if 'split' in kwargs:
             if type(kwargs['split']) == list:
@@ -39,7 +41,11 @@ class UnsplashLiteDataset(torch.utils.data.Dataset):
             torchvision.transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5]),  # Normalize to [-1, 1]
             torchvision.transforms.Resize(512,  antialias=True),  # Resize the image to 512x512
         ])
-
+        transform_env = []
+        if is_fliplr:
+            transform_env.append(torchvision.transforms.RandomHorizontalFlip(p=1.0))
+        transform_env.append(torchvision.transforms.Resize(256,  antialias=True))
+        self.transform_env = torchvision.transforms.Compose(transform_env)
 
     def get_prompt_from_file(self, filename):
         with open(os.path.join(self.root_dir, filename)) as f:
@@ -80,8 +86,8 @@ class UnsplashLiteDataset(torch.utils.data.Dataset):
             name = self.files[idx]
             word_name = self.files[idx]
             pixel_values = self.transform(self.get_image(idx,"images", 512, 512))
-            ldr_envmap = self.get_image(idx,"env_ldr", 256, 256)
-            under_envmap = self.get_image(idx,"env_under", 256, 256)
+            ldr_envmap = self.transform_env(self.get_image(idx,"env_ldr", 256, 256))
+            under_envmap = self.transform_env(self.get_image(idx,"env_under", 256, 256))
             try:
                 control_depth = self.transform(self.get_image(idx,"control_depth", 512, 512))
             except:
