@@ -22,7 +22,7 @@ from LightEmbedingBlock import set_light_direction, add_light_block
 from UnsplashLiteDataset import log_map_to_range
  
  
-class SDTuner(L.LightningModule):
+class AffineConsistancy(L.LightningModule):
     def __init__(self, learning_rate=1e-3, guidance_scale=3.0, use_consistancy_loss=True, *args, **kwargs) -> None:
         super().__init__()
         self.guidance_scale = guidance_scale
@@ -62,21 +62,21 @@ class SDTuner(L.LightningModule):
         with torch.no_grad():
             self.circle_mask = create_circle_tensor(16, 16)
    
-    def get_vae_features(self, images, generator=None):
+    def get_vae_features(self, images):
         assert images.shape[1] == 3, "Only support RGB image"
         assert images.shape[2] == 256 and images.shape[3] == 256, "Only support 256x256 image"
         #assert images.min() >= 0.0 and images.max() <= 1.0, "Only support [0, 1] range image"
         with torch.inference_mode():
             # VAE need input in range of [-1,1]
             images = images * 2.0 - 1.0
-            emb = self.pipe.vae.encode(images).latent_dist.sample(generator=generator) #* self.pipe.vae.config.scaling_factor 
+            emb = self.pipe.vae.encode(images).latent_dist.sample()
             flattened_emb = emb.view(emb.size(0), -1)
             return flattened_emb
 
         
-    def get_light_features(self, ldr_images, normalized_hdr_images, generator=None):
-        ldr_features = self.get_vae_features(ldr_images, generator)
-        hdr_features = self.get_vae_features(normalized_hdr_images, generator)
+    def get_light_features(self, ldr_images, normalized_hdr_images):
+        ldr_features = self.get_vae_features(ldr_images)
+        hdr_features = self.get_vae_features(normalized_hdr_images)
         # concat ldr and hdr features
         return torch.cat([ldr_features, hdr_features], dim=-1)
 
@@ -166,6 +166,8 @@ class SDTuner(L.LightningModule):
 
         return next_latents
 
+
+
     def compute_train_loss(self, batch, batch_idx, timesteps=None, seed=None):
         text_inputs = self.pipe.tokenizer(
                 batch['text'],
@@ -195,12 +197,12 @@ class SDTuner(L.LightningModule):
         if timesteps is None:
             # Sample a random timestep for each image
             # sadly, schuduler.step does not support different timesteps for each image, so we use same time step for entire batch
-            if self.use_consistancy_loss: 
-                timesteps = torch.randint(0, self.pipe.scheduler.config.num_train_timesteps, (1,), device=latents.device)
-                timesteps = timesteps.expand(bsz)
+            if False: 
+                timesteps = torch.randint(0, self.pipe.scheduler.config.num_train_timesteps, (bsz,), device=latents.device)
                 timesteps = timesteps.long().to(latents.device)
             else:
-                timesteps = torch.randint(0, self.pipe.scheduler.config.num_train_timesteps, (bsz,), device=latents.device)
+                timesteps = torch.randint(0, self.pipe.scheduler.config.num_train_timesteps, (1,), device=latents.device)
+                timesteps = timesteps.expand(bsz)
                 timesteps = timesteps.long().to(latents.device)
         else:
             if isinstance(timesteps, int):
@@ -322,16 +324,19 @@ class SDTuner(L.LightningModule):
         self.log('psnr', psnr)
         if is_save_image:
             os.makedirs(f"{self.logger.log_dir}/crop_image", exist_ok=True)
-            torchvision.utils.save_image(pt_image, f"{self.logger.log_dir}/crop_image/{batch['word_name'][0]}.jpg")
+            torchvision.utils.save_image(pt_image, f"{self.logger.log_dir}/crop_image/{batch['name'][0]}.png")
             # save psnr to file
             os.makedirs(f"{self.logger.log_dir}/psnr", exist_ok=True)
-            with open(f"{self.logger.log_dir}/psnr/{batch['word_name'][0]}.txt", "w") as f:
+            with open(f"{self.logger.log_dir}/psnr/{batch['name'][0]}_{batch['word_name'][0]}.txt", "w") as f:
                 f.write(f"{psnr.item()}\n")
         if self.global_step == 0 and batch_idx == 0:
-            self.logger.experiment.add_text(f'text/{batch["word_name"][0]}', batch['text'][0], self.global_step)
+            self.logger.experiment.add_text(f'text/{batch["name"][0]}', batch['text'][0], self.global_step)
             self.logger.experiment.add_text('learning_rate', str(self.learning_rate), self.global_step)
         return mse
-                
+        
+    def generate_tensorboard_guidance(self, batch, batch_idx):
+        raise NotImplementedError("Not implemented yet")
+        
     def test_step(self, batch, batch_idx):
         self.generate_tensorboard(batch, batch_idx, is_save_image=True)
         self.plot_train_loss(batch, batch_idx, is_save_image=True, seed=42)
@@ -339,6 +344,8 @@ class SDTuner(L.LightningModule):
     def plot_train_loss(self, batch, batch_idx, is_save_image=False, seed=None):
         for timestep in range(100, 1000, 100):
             loss = self.compute_train_loss(batch, batch_idx, timesteps=timestep, seed=seed)
+            #self.log(f'plot_train_loss/{timestep}', loss)
+            #self.log(f'plot_train_loss/average', loss)   
             self.logger.experiment.add_scalar(f'plot_train_loss/{timestep}', loss, self.global_step)
             self.logger.experiment.add_scalar(f'plot_train_loss/average', loss, self.global_step)
             if is_save_image:
