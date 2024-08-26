@@ -17,10 +17,10 @@ from EnvmapAffineDataset import EnvmapAffineDataset, log_map_to_range
 
 import argparse 
 
-parser = argparse.ArgumentParser()
-parser.add_argument('-lr', '--learning_rate', type=float, default=1e-4)
-parser.add_argument('-em', '--envmap_embedder', type=str, default="dino2")
-args = parser.parse_args()
+# parser = argparse.ArgumentParser()
+# parser.add_argument('-lr', '--learning_rate', type=float, default=1e-4)
+# parser.add_argument('-em', '--envmap_embedder', type=str, default="dino2")
+# args = parser.parse_args()
  
  
 class EnvmapAffine(L.LightningModule):

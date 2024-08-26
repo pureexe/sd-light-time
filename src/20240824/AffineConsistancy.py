@@ -18,12 +18,12 @@ from constants import *
 from diffusers import StableDiffusionPipeline, ControlNetModel
 
 from  ball_helper import create_circle_tensor
-from LightEmbedingBlock import set_light_direction, add_light_block
+from LightEmbedingBlock import set_light_direction, add_light_block, set_gate_shift_scale
 from UnsplashLiteDataset import log_map_to_range
  
  
 class AffineConsistancy(L.LightningModule):
-    def __init__(self, learning_rate=1e-3, guidance_scale=3.0, use_consistancy_loss=True, *args, **kwargs) -> None:
+    def __init__(self, learning_rate=1e-3, guidance_scale=3.0, use_consistancy_loss=False, *args, **kwargs) -> None:
         super().__init__()
         self.guidance_scale = guidance_scale
         self.use_set_guidance_scale = False
@@ -61,6 +61,15 @@ class AffineConsistancy(L.LightningModule):
         #create circle mask 
         with torch.no_grad():
             self.circle_mask = create_circle_tensor(16, 16)
+
+        self.seed = 42
+        self.is_plot_train_loss = True
+
+    def set_seed(self, seed):
+        self.seed = seed
+
+    def set_gate_shift_scale(self, gate_shift, gate_scale):
+        set_gate_shift_scale(self.pipe.unet, gate_shift, gate_scale)
    
     def get_vae_features(self, images, generator=None):
         assert images.shape[1] == 3, "Only support RGB image"
@@ -294,7 +303,7 @@ class AffineConsistancy(L.LightningModule):
                     guidance_scale=self.guidance_scale,
                     num_inference_steps=50,
                     return_dict = False,
-                    generator=[torch.Generator().manual_seed(42) for _ in range(VID_BATCH)]
+                    generator=[torch.Generator().manual_seed(self.seed) for _ in range(VID_BATCH)]
                 )
                 for frame_id in range(VID_BATCH):
                     image[frame_id].save(f"{output_dir}/{(VID_BATCH*vid_batch_id) + frame_id:03d}.png")
@@ -310,7 +319,7 @@ class AffineConsistancy(L.LightningModule):
             guidance_scale=self.guidance_scale,
             num_inference_steps=50,
             return_dict = False,
-            generator=torch.Generator().manual_seed(42)
+            generator=torch.Generator().manual_seed(self.seed)
         )
         gt_image = (batch["source_image"] + 1.0) / 2.0
         images = torch.cat([gt_image, pt_image], dim=0)
@@ -333,8 +342,16 @@ class AffineConsistancy(L.LightningModule):
         return mse
                 
     def test_step(self, batch, batch_idx):
-        self.generate_tensorboard(batch, batch_idx, is_save_image=True)
-        self.plot_train_loss(batch, batch_idx, is_save_image=True, seed=42)
+        if self.is_plot_train_loss:
+            self.plot_train_loss(batch, batch_idx, is_save_image=True, seed=self.seed)
+        else:
+            self.generate_tensorboard(batch, batch_idx, is_save_image=True)
+    
+    def disable_plot_train_loss(self):
+        self.is_plot_train_loss = False
+    
+    def enable_plot_train_loss(self):
+        self.is_plot_train_loss = True
 
     #TODO: let's create seperate file that take checkpoint and compute the loss. this loss code should be re-implememet
     def plot_train_loss(self, batch, batch_idx, is_save_image=False, seed=None):

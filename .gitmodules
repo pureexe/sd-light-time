@@ -1,0 +1,3 @@
+[submodule "thrid_party/DECA"]
+	path = thrid_party/DECA
+	url = https://github.com/yfeng95/DECA.git

@@ -22,6 +22,14 @@ class LightEmbedBlock(torch.nn.Module):
         self.light_add = get_mlp(in_dim, hidden_dim, hidden_layers,out_dim)
         self.gate = torch.nn.Parameter(torch.zeros(1))
         self.is_apply_cfg = False
+
+        # gate shift_scale for debug
+        self.gate_shift = 0.0
+        self.gate_scale = 1.0
+
+    def set_gate_shift_scale(self, shift, scale):
+        self.gate_shift = shift
+        self.gate_scale = scale
     
     def enable_apply_cfg(self):
         self.is_apply_cfg = True
@@ -69,8 +77,10 @@ class LightEmbedBlock(torch.nn.Module):
             # compute light condition
             
             adagn = v * light_m[...,None,None] + light_a[...,None,None]
+
+            gate = self.gate * self.gate_scale + self.gate_shift
             
-            y = v + (self.gate * adagn)
+            y = v + (gate * adagn)
         else:
             y = v
 
@@ -167,7 +177,18 @@ def set_light_direction(self, direction, is_apply_cfg=False):
         for resblock_id in range(len(self.up_blocks[block_id].resnets)):
             if hasattr(self.up_blocks[block_id].resnets[resblock_id], 'time_emb_proj'):
                 self.up_blocks[block_id].resnets[resblock_id].light_block.set_light_direction(direction)
-                self.up_blocks[block_id].resnets[resblock_id].light_block.set_apply_cfg(is_apply_cfg) 
+                self.up_blocks[block_id].resnets[resblock_id].light_block.set_apply_cfg(is_apply_cfg)
+
+def set_gate_shift_scale(self, shift, scale):
+    for block_id in range(len(self.down_blocks)):
+        for resblock_id in range(len(self.down_blocks[block_id].resnets)):
+            if hasattr(self.down_blocks[block_id].resnets[resblock_id], 'time_emb_proj'):
+                self.down_blocks[block_id].resnets[resblock_id].light_block.set_gate_shift_scale(shift, scale)
+    for block_id in range(len(self.up_blocks)):
+        for resblock_id in range(len(self.up_blocks[block_id].resnets)):
+            if hasattr(self.up_blocks[block_id].resnets[resblock_id], 'time_emb_proj'):
+                self.up_blocks[block_id].resnets[resblock_id].light_block.set_gate_shift_scale(shift, scale)
+
 
 def add_light_block(self, in_channel=3):
     for block_id in range(len(self.down_blocks)):
