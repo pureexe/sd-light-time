@@ -11,12 +11,12 @@ from constants import FOLDER_NAME
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument("-i", "--version", type=str, default="1")
-parser.add_argument("-m", "--mode", type=str, default="left_chromeball_v1.1") #unslpash-trainset or multishoe-trainset
+parser.add_argument("-i", "--version", type=str, default="0")
+parser.add_argument("-m", "--mode", type=str, default="left_chromeball_v1.1,left_chromeball_v1.1") #unslpash-trainset or multishoe-trainset
 parser.add_argument("-g", "--guidance_scale", type=str, default="3.0,5.0,7.0,1.0")
 #parser.add_argument("-c", "--checkpoint", type=str, default=",".join([str(i) for i in range(30, 33)]) ) 
 #parser.add_argument("-c", "--checkpoint", type=str, default="35,30,25,20,15,10,5" )
-parser.add_argument("-c", "--checkpoint", type=str, default="20" )
+parser.add_argument("-c", "--checkpoint", type=str, default="80" )
 
 #9,19,29,39,49
 #199, 399, 599, 799, 999, 1199, 1399, 1599, 1799, 1999, 2199, 2399, 2599, 2799, 2999

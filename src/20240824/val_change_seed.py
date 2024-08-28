@@ -11,12 +11,12 @@ from constants import FOLDER_NAME
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument("-i", "--version", type=str, default="1")
-parser.add_argument("-m", "--mode", type=str, default="left_chromeball") #unslpash-trainset or multishoe-trainset
+parser.add_argument("-i", "--version", type=str, default="0")
+parser.add_argument("-m", "--mode", type=str, default="left_chromeball_v1.1,right_chromeball_v1.1,left_chromeball,right_chromeball") #unslpash-trainset or multishoe-trainset
 parser.add_argument("-g", "--guidance_scale", type=str, default="3.0,5.0,7.0,1.0")
 #parser.add_argument("-c", "--checkpoint", type=str, default=",".join([str(i) for i in range(30, 33)]) ) 
 #parser.add_argument("-c", "--checkpoint", type=str, default="35,30,25,20,15,10,5" )
-parser.add_argument("-c", "--checkpoint", type=str, default="20" )
+parser.add_argument("-c", "--checkpoint", type=str, default="80" )
 
 #9,19,29,39,49
 #199, 399, 599, 799, 999, 1199, 1399, 1599, 1799, 1999, 2199, 2399, 2599, 2799, 2999
@@ -66,23 +66,23 @@ def get_from_mode(mode):
             content = f.readlines()
             content = [x.strip() for x in content[:10]]
         # "a photo of a chromeball placing in the middle of the grassfield"
-        return "/data/pakkapon/datasets/unsplash-lite/train", content, UnsplashLiteDataset,{}, ["a photo of a perfect mirrored reflective chrome ball sphere placing on beach"]
+        return "/data/pakkapon/datasets/unsplash-lite/train_under", content, UnsplashLiteDataset,{}, ["a photo of a perfect mirrored reflective chrome ball sphere placing on beach"]
     elif mode == "right_chromeball":
         with open("src/20240815/id_right.txt") as f:
             content = f.readlines()
             content = [x.strip() for x in content[:10]]
         # "a photo of a chromeball placing in the middle of the grassfield"
-        return "/data/pakkapon/datasets/unsplash-lite/train", content, UnsplashLiteDataset,{}, ["a photo of a perfect mirrored reflective chrome ball sphere placing on beach"]
+        return "/data/pakkapon/datasets/unsplash-lite/train_under", content, UnsplashLiteDataset,{}, ["a photo of a perfect mirrored reflective chrome ball sphere placing on beach"]
     elif mode == "left_chromeball_v1.1":
         with open("src/20240815/id_left.txt") as f:
             content = f.readlines()
             content = [x.strip() for x in content[:10]]
-        return "/data/pakkapon/datasets/unsplash-lite/train", content, UnsplashLiteDataset,{}, ["a photo of a chromeball placing in the middle of the grassfield"]
+        return "/data/pakkapon/datasets/unsplash-lite/train_under", content, UnsplashLiteDataset,{}, ["a photo of a chromeball placing in the middle of the grassfield"]
     elif mode == "right_chromeball_v1.1":
         with open("src/20240815/id_right.txt") as f:
             content = f.readlines()
             content = [x.strip() for x in content[:10]]
-        return "/data/pakkapon/datasets/unsplash-lite/train", content, UnsplashLiteDataset,{}, ["a photo of a chromeball placing in the middle of the grassfield"]
+        return "/data/pakkapon/datasets/unsplash-lite/train_under", content, UnsplashLiteDataset,{}, ["a photo of a chromeball placing in the middle of the grassfield"]
     else:
         raise Exception("mode not found")
 
@@ -97,16 +97,19 @@ def main():
     for mode in modes:
         for version in versions:
                 for checkpoint in checkpoints:
-                     for guidance_scale in guidance_scales:
-                        if checkpoint == 0:
-                            model = AffineConsistancy(learning_rate=1e-4,envmap_embedder='vae', use_consistancy_loss = False)
-                            CKPT_PATH = None
-                        else:
-                            CKPT_PATH = f"output/20240824/multi_mlp_fit/lightning_logs/version_{version}/checkpoints/epoch={checkpoint:06d}.ckpt"
-                            model = AffineConsistancy.load_from_checkpoint(CKPT_PATH)
+                    if checkpoint == 0:
+                        model = AffineConsistancy(learning_rate=1e-4,envmap_embedder='vae', use_consistancy_loss = False)
+                        CKPT_PATH = None
+                    else:
+                        CKPT_PATH = f"output/20240824/multi_mlp_fit/lightning_logs/version_{version}/checkpoints/epoch={checkpoint:06d}.ckpt"
+                        model = AffineConsistancy.load_from_checkpoint(CKPT_PATH)
+                    model.disable_plot_train_loss()
+                    model.eval() # disable randomness, dropout, etc...
+
+                    for guidance_scale in guidance_scales:
+                        
                         model.set_guidance_scale(guidance_scale)
-                        model.disable_plot_train_loss()
-                        model.eval() # disable randomness, dropout, etc...
+                        
                         val_root, count_file, dataset_class, dataset_args, specific_prompt = get_from_mode(mode)
                         if type(count_file) == int:
                             split = slice(0, count_file, 1)

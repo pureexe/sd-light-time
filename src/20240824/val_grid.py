@@ -11,11 +11,16 @@ from constants import FOLDER_NAME
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument("-i", "--version", type=str, default="1")
-#parser.add_argument("-m", "--mode", type=str, default="human_left") #unslpash-trainset or multishoe-trainset
-parser.add_argument("-m", "--mode", type=str, default="unsplash-trainset-under")
+parser.add_argument("-i", "--version", type=str, default="0")
+parser.add_argument("-m", "--mode", type=str, default="unsplash-trainset-under") #unslpash-trainset or multishoe-trainset
 parser.add_argument("-g", "--guidance_scale", type=str, default="1.0")
-parser.add_argument("-c", "--checkpoint", type=str, default=",".join([str(i) for i in range(32,61)]) ) 
+parser.add_argument("-c", "--checkpoint", type=str, default=",".join([str(i) for i in range(80,140)]))
+#parser.add_argument("-m", "--mode", type=str, default="human_under_right") #unslpash-trainset or multishoe-trainset
+#parser.add_argument("-m", "--mode", type=str, default="trainset_left, trainset_left_flip")
+#parser.add_argument("-m", "--mode", type=str, default="trainset_right, trainset_right_flip")
+# parser.add_argument("-g", "--guidance_scale", type=str, default="3.0,5.0,7.0,1.0")
+# parser.add_argument("-c", "--checkpoint", type=str, default="80")
+#parser.add_argument("-c", "--checkpoint", type=str, default=",".join([str(i) for i in range(32,61)]) ) 
 #parser.add_argument("-g", "--guidance_scale", type=str, default="1.0,3.0")
 #parser.add_argument("-c", "--checkpoint", type=str, default=",".join([str(i) for i in range(30, 33)]) ) 
 #parser.add_argument("-c", "--checkpoint", type=str, default="35,30,25,20,15,10,5" )
@@ -54,16 +59,26 @@ def get_from_mode(mode):
             return "/data/pakkapon/datasets/rainbow-backgroud/validation", 100, UnsplashLiteDataset,{}, None
     elif mode == "morning_cat":
         return "/data/pakkapon/datasets/morning_cat/validation", 60, UnsplashLiteDataset,{}, None
-    elif mode == "human_left":
-        with open("src/20240815/id_left.txt") as f:
-            content = f.readlines()
-            content = [x.strip() for x in content]
-        return "/data/pakkapon/datasets/unsplash-lite/train", content, UnsplashLiteDataset,{}, availble_face_prompts
-    elif mode == "human_right":
+    elif mode == "trainset_right" or mode == "trainset_right_flip":
         with open("src/20240815/id_right.txt") as f:
             content = f.readlines()
             content = [x.strip() for x in content]
-        return "/data/pakkapon/datasets/unsplash-lite/train", content, UnsplashLiteDataset,{}, availble_face_prompts
+        return "/data/pakkapon/datasets/unsplash-lite/train_under", content, UnsplashLiteDataset,{'is_fliplr': mode == "trainset_right_flip" }, None
+    elif mode == "trainset_left" or mode == "trainset_left_flip":
+        with open("src/20240815/id_left.txt") as f:
+            content = f.readlines()
+            content = [x.strip() for x in content]
+        return "/data/pakkapon/datasets/unsplash-lite/train_under", content, UnsplashLiteDataset,{'is_fliplr': mode == "trainset_left_flip" }, None
+    elif mode == "human_under_left":
+        with open("src/20240815/id_left.txt") as f:
+            content = f.readlines()
+            content = [x.strip() for x in content]
+        return "/data/pakkapon/datasets/unsplash-lite/train_under", content, UnsplashLiteDataset,{}, availble_face_prompts
+    elif mode == "human_under_right":
+        with open("src/20240815/id_right.txt") as f:
+            content = f.readlines()
+            content = [x.strip() for x in content]
+        return "/data/pakkapon/datasets/unsplash-lite/train_under", content, UnsplashLiteDataset,{}, availble_face_prompts
     else:
         raise Exception("mode not found")
 
@@ -76,15 +91,19 @@ def main():
     for mode in modes:
         for version in versions:
                 for checkpoint in checkpoints:
-                     for guidance_scale in guidance_scales:
-                        if checkpoint == 0:
-                            model = AffineConsistancy(learning_rate=1e-4,envmap_embedder='vae', use_consistancy_loss = False)
-                            CKPT_PATH = None
-                        else:
-                            CKPT_PATH = f"output/20240824/multi_mlp_fit/lightning_logs/version_{version}/checkpoints/epoch={checkpoint:06d}.ckpt"
-                            model = AffineConsistancy.load_from_checkpoint(CKPT_PATH)
-                        model.set_guidance_scale(guidance_scale)
-                        model.eval() # disable randomness, dropout, etc...
+                    if checkpoint == 0:
+                        model = AffineConsistancy(learning_rate=1e-4,envmap_embedder='vae', use_consistancy_loss = False)
+                        CKPT_PATH = None
+                    else:
+                        CKPT_PATH = f"output/20240824/multi_mlp_fit/lightning_logs/version_{version}/checkpoints/epoch={checkpoint:06d}.ckpt"
+                        model = AffineConsistancy.load_from_checkpoint(CKPT_PATH)
+                    model.eval() # disable randomness, dropout, etc...
+                    if mode in ['unsplash-trainset-under']:
+                        model.enable_plot_train_loss()
+                    else:
+                        model.disable_plot_train_loss()
+                    for guidance_scale in guidance_scales:
+                        model.set_guidance_scale(guidance_scale)                        
                         print("================================")
                         print(f"output/{FOLDER_NAME}/val_{mode}/{guidance_scale}/{NAMES[version]}/{LRS[version]}/chk{checkpoint}")
                         print("================================")
