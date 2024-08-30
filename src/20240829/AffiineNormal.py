@@ -1,7 +1,7 @@
 """
-AffineDepth.py
+AffineNormal.py
 Affine transform (Adaptive group norm) that condition with environment map passthrough the VAE 
-This version also compute the with depth condition to help the network guide where the light soruce 
+This version also compute the with normal map condition to help the network guide where the light soruce 
 """
 
 import torch 
