@@ -12,14 +12,13 @@ NORM_DIR = "env_norm"
 IMAGE_DIR = "images"
 IS_DEBUG = True
 
-class DDIMUnsplashLiteDataset(torch.utils.data.Dataset):
+class UnsplashLiteDataset(torch.utils.data.Dataset):
     
     def __init__(self, 
         root_dir=DATASET_ROOT_DIR,
         dataset_multiplier=1,
         specific_prompt=None,
         is_fliplr=False,
-        index_file=None,
         *args,
         **kwargs
     ) -> None:
@@ -27,18 +26,12 @@ class DDIMUnsplashLiteDataset(torch.utils.data.Dataset):
         self.root_dir = root_dir
         self.dataset_multiplier = dataset_multiplier
         self.flip_lr = is_fliplr
-
-        with open(index_file) as f:
-            indexes = json.load(f)
-            if not 'image_index' in indexes:
-                raise ValueError("image_index not found in index_file")
-            if not 'envmap_index' in indexes:
-                raise ValueError("envmap_index not found in index_file")
-            self.image_index = indexes['image_index']
-            self.envmap_index = indexes['envmap_index']
-            assert len(self.image_index) == len(self.envmap_index), "image_index and envmap_index should have the same length"
-
-
+        self.files= self.get_image_files()
+        if 'split' in kwargs:
+            if type(kwargs['split']) == list:
+                self.files = kwargs['split']
+            else:
+                self.files = self.files[kwargs['split']]
         self.prompt = self.get_prompt_from_file("prompts.json") 
         self.specific_prompt = specific_prompt
         if specific_prompt is not None:
@@ -53,15 +46,18 @@ class DDIMUnsplashLiteDataset(torch.utils.data.Dataset):
             transform_env.append(torchvision.transforms.RandomHorizontalFlip(p=1.0))
         transform_env.append(torchvision.transforms.Resize(256,  antialias=True))
         self.transform_env = torchvision.transforms.Compose(transform_env)
+        self.transform_depth = torchvision.transforms.Compose([
+            torchvision.transforms.Resize(512,  antialias=True),  # Resize the image to 512x512
+        ])
 
     def get_prompt_from_file(self, filename):
         with open(os.path.join(self.root_dir, filename)) as f:
             prompt = json.load(f)
         return prompt
     
-    def get_image(self, name:str, directory:str, height =512, width=512):
+    def get_image(self, idx: int, directory:str, height =512, width=512):
         for ext in ACCEPT_EXTENSION:
-            image_path = os.path.join(self.root_dir,  directory, f"{name}.{ext}")
+            image_path = os.path.join(self.root_dir,  directory, f"{self.files[idx]}.{ext}")
             if os.path.exists(image_path):
                 image = torchvision.io.read_image(image_path) / 255.0
                 image = image[:3]
@@ -70,7 +66,7 @@ class DDIMUnsplashLiteDataset(torch.utils.data.Dataset):
                     image = torch.cat([image, image, image], dim=0)
                 assert image.shape[1] == height and image.shape[2] == width, "Only support 512x512 image"
                 return image
-        raise FileNotFoundError(f"File not found for {name}")
+        raise FileNotFoundError(f"File not found for {self.files[idx]}")
     
 
     def get_image_files(self):
@@ -84,43 +80,43 @@ class DDIMUnsplashLiteDataset(torch.utils.data.Dataset):
         return files
     
     def __len__(self):
-        return len(self.image_index) * self.dataset_multiplier 
+        return len(self.files) * self.dataset_multiplier 
     
     def __getitem__(self, batch_idx):
         # support dataset_multiplier
-        idx = batch_idx % len(self.image_index)
-        image_index = self.image_index[idx]
-        envmap_index = self.envmap_index[idx]  
+        idx = batch_idx % len(self.files)
         try:
-            name = image_index
-            word_name = envmap_index
-            pixel_values = self.transform(self.get_image(image_index,"images", 512, 512))
-            source_ldr_envmap = self.transform_env(self.get_image(image_index,"env_ldr", 256, 256))
-            source_under_envmap = self.transform_env(self.get_image(image_index,"env_under", 256, 256))
-            target_ldr_envmap = self.transform_env(self.get_image(envmap_index,"env_ldr", 256, 256))
-            target_under_envmap = self.transform_env(self.get_image(envmap_index,"env_under", 256, 256))
-
-            control_depth = torch.zeros(3, 512, 512)
-            chromeball = torch.zeros(3, 512, 512)
+            name = self.files[idx]
+            word_name = self.files[idx]
+            pixel_values = self.transform(self.get_image(idx,"images", 512, 512))
+            ldr_envmap = self.transform_env(self.get_image(idx,"env_ldr", 256, 256))
+            under_envmap = self.transform_env(self.get_image(idx,"env_under", 256, 256))
+            try:
+                control_depth = self.transform_depth(self.get_image(idx,"control_depth", 512, 512))
+            except:
+                control_depth = torch.zeros(3, 512, 512)
+            
+            try:
+                chromeball = self.get_image(idx,"chromeball", 512, 512)
+            except:
+                chromeball = torch.zeros(3, 512, 512)
 
             if self.specific_prompt is not None:
                 if type(self.specific_prompt) == list:
-                    prompt_id = batch_idx // len(self.image_index)
+                    prompt_id = batch_idx // len(self.files)
                     prompt = self.specific_prompt[prompt_id]
                     word_name = f"{word_name}_{prompt_id}"
                 else:
                     prompt = self.specific_prompt
             else:
-                prompt = self.prompt[image_index]
+                prompt = self.prompt[word_name]
             return {
                     'name': name,
                     'source_image': pixel_values,
                     'control_depth': control_depth,
                     'chromeball_image': chromeball,
-                    'source_ldr_envmap': source_ldr_envmap,
-                    'source_norm_envmap': source_under_envmap,
-                    'target_ldr_envmap': target_ldr_envmap,
-                    'target_norm_envmap': target_under_envmap,
+                    'ldr_envmap': ldr_envmap,
+                    'norm_envmap': under_envmap,
                     'text': prompt,
                     'word_name': word_name,
                     'idx': idx,

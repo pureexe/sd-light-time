@@ -98,6 +98,25 @@ class RelightDDIMInverse(AffineConsistancy):
             torchvision.utils.save_image(image, f"{self.logger.log_dir}/with_groudtruth/{batch['name'][0]}_{batch['word_name'][0]}.jpg")
             os.makedirs(f"{self.logger.log_dir}/crop_image", exist_ok=True)
             torchvision.utils.save_image(pt_image, f"{self.logger.log_dir}/crop_image/{batch['name'][0]}_{batch['word_name'][0]}.jpg")
+            # save the target_ldr_envmap
+            os.makedirs(f"{self.logger.log_dir}/target_ldr_envmap", exist_ok=True)
+            torchvision.utils.save_image(batch['target_ldr_envmap'], f"{self.logger.log_dir}/target_ldr_envmap/{batch['name'][0]}_{batch['word_name'][0]}.jpg")
+            # save the target_norm_envmap
+            os.makedirs(f"{self.logger.log_dir}/target_norm_envmap", exist_ok=True)
+            torchvision.utils.save_image(batch['target_norm_envmap'], f"{self.logger.log_dir}/target_norm_envmap/{batch['name'][0]}_{batch['word_name'][0]}.jpg")
+            # save the source_ldr_envmap
+            os.makedirs(f"{self.logger.log_dir}/source_ldr_envmap", exist_ok=True)
+            torchvision.utils.save_image(batch['source_ldr_envmap'], f"{self.logger.log_dir}/source_ldr_envmap/{batch['name'][0]}_{batch['word_name'][0]}.jpg")
+            # save the source_norm_envmap
+            os.makedirs(f"{self.logger.log_dir}/source_norm_envmap", exist_ok=True)
+            torchvision.utils.save_image(batch['source_norm_envmap'], f"{self.logger.log_dir}/source_norm_envmap/{batch['name'][0]}_{batch['word_name'][0]}.jpg")
+            # save prompt
+            os.makedirs(f"{self.logger.log_dir}/prompt", exist_ok=True) 
+            with open(f"{self.logger.log_dir}/prompt/{batch['name'][0]}_{batch['word_name'][0]}.txt", 'w') as f:
+                f.write(batch['text'][0])
+            # save the source_image
+            os.makedirs(f"{self.logger.log_dir}/source_image", exist_ok=True)
+            torchvision.utils.save_image(batch['source_image'], f"{self.logger.log_dir}/source_image/{batch['name'][0]}_{batch['word_name'][0]}.jpg")
         if self.global_step == 0 and batch_idx == 0:
             self.logger.experiment.add_text('text', batch['text'][0], self.global_step)
             self.logger.experiment.add_text('learning_rate', str(self.learning_rate), self.global_step)

@@ -1,6 +1,6 @@
 # val_grid is a validation at step 
 
-from RelightDDIMInverse import RelightDDIMInverse
+from RelightDDIMDepthInverse import RelightDDIMDepthInverse
 
 from DDIMUnsplashLiteDataset import DDIMUnsplashLiteDataset
 import lightning as L
@@ -12,33 +12,22 @@ from constants import FOLDER_NAME
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument("-i", "--version", type=str, default="1")
-parser.add_argument("-m", "--mode", type=str, default="ddim_left2right") #unslpash-trainset or multishoe-trainset
+parser.add_argument("-i", "--version", type=str, default="0")
+parser.add_argument("-m", "--mode", type=str, default="left2right") #unslpash-trainset or multishoe-trainset
 parser.add_argument("-g", "--guidance_scale", type=str, default="3.0")
-parser.add_argument("-c", "--checkpoint", type=str, default="80")
+#parser.add_argument("-c", "--checkpoint", type=str, default="80")
+parser.add_argument("-c", "--checkpoint", type=str, default=",".join([str(i) for i in range(0,170, 10)]))
+
 
 args = parser.parse_args()
 NAMES = ['new_light_block', 'new_light_block', 'new_light_block', 'new_light_block', 'gate10', 'gate100']
 LRS = ['5e-4', '1e-4', '5e-5', '1e-5', '1e-4', '1e-4']
-
-# PROMPTS = [
-#     "a baby laying on a blue blanket",
-#     "a woman smiling while holding a pizza",
-#     "a woman with a black shirt on is looking at the camera",
-#     "a baby girl with a white shirt",
-#     "a woman wearing a pink hat and a pink scarf",
-#     "man wearing glasses",
-#     "a woman with red hair",
-#     "a little girl smiling at the camera",
-#     "asian woman with black hair",
-#     "a man with glasses on smiling"
-# ]
     
 
 def get_from_mode(mode):
-    if mode == "ddim_left2right":
+    if mode == "left2right":
         return "/data/pakkapon/datasets/unsplash-lite/train_under", 1, DDIMUnsplashLiteDataset,{'index_file': 'src/20240824/ddim_left2right100.json'}, None
-    elif mode == "ddim_left2right_dev":
+    elif mode == "left2right_dev":
         return "/data/pakkapon/datasets/unsplash-lite/train_under", 1, DDIMUnsplashLiteDataset,{'index_file': 'src/20240824/ddim_dev.json'}, None
     else:
         raise Exception("mode not found")
@@ -53,26 +42,29 @@ def main():
         for version in versions:
                 for checkpoint in checkpoints:
                     if checkpoint == 0:
-                        model = RelightDDIMInverse(learning_rate=1e-4,envmap_embedder='vae', use_consistancy_loss = False)
+                        model = RelightDDIMDepthInverse(learning_rate=1e-4,envmap_embedder='vae', use_consistancy_loss = False)
                         CKPT_PATH = None
                     elif version == 4:
                         CKPT_PATH = f"output/20240826/multi_mlp_fit/lightning_logs/version_0/checkpoints/epoch={checkpoint:06d}.ckpt"
+                        raise Exception("Not implemented")
                         from RelightDDIMInverse26 import RelightDDIMInverse26
                         model = RelightDDIMInverse26.load_from_checkpoint(CKPT_PATH)
                     elif version == 5:
                         CKPT_PATH = f"output/20240826/multi_mlp_fit/lightning_logs/version_1/checkpoints/epoch={checkpoint:06d}.ckpt"
+                        raise Exception("Not implemented")
                         from RelightDDIMInverse26 import RelightDDIMInverse26
                         model = RelightDDIMInverse26.load_from_checkpoint(CKPT_PATH)
                     else:
                         CKPT_PATH = f"output/20240824/multi_mlp_fit/lightning_logs/version_{version}/checkpoints/epoch={checkpoint:06d}.ckpt"
-                        model = RelightDDIMInverse.load_from_checkpoint(CKPT_PATH)
+                        model = RelightDDIMDepthInverse.load_from_checkpoint(CKPT_PATH)
                     model.eval() # disable randomness, dropout, etc...
                     model.disable_plot_train_loss()
+                    model.disable_ddim_inversion()
                     for guidance_scale in guidance_scales:
                         model.set_guidance_scale(guidance_scale)                        
-                        output_dir = f"output/{FOLDER_NAME}/val_v2_{mode}/{guidance_scale}/{NAMES[version]}/{LRS[version]}/chk{checkpoint}/"
+                        output_dir = f"output/{FOLDER_NAME}/val_noddim_depthctrl_{mode}/{guidance_scale}/{NAMES[version]}/{LRS[version]}/chk{checkpoint}"
                         print("================================")
-                        print(f"output/{FOLDER_NAME}/val_{mode}/{guidance_scale}/{NAMES[version]}/{LRS[version]}/chk{checkpoint}")
+                        print(output_dir)
                         print("================================")
                         trainer = L.Trainer(max_epochs=1000, precision=16, check_val_every_n_epoch=1, default_root_dir=output_dir)
                         val_root, count_file, dataset_class, dataset_args, specific_prompt = get_from_mode(mode)
