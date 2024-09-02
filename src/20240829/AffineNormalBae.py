@@ -9,11 +9,11 @@ from AffineControl import AffineControl
  
 MASTER_TYPE = torch.float16
  
-class AffineDepth(AffineControl):
+class AffineNormalBae(AffineControl):
    
     def setup_sd(self):
-        super().setup_sd(sd_path="runwayml/stable-diffusion-v1-5", controlnet_path="lllyasviel/sd-controlnet-depth")
+        super().setup_sd(sd_path="runwayml/stable-diffusion-v1-5", controlnet_path="lllyasviel/control_v11p_sd15_normalbae")
 
     def get_control_image(self, batch):
-        assert torch.any(torch.abs(batch['control_depth'] - (-1)) > 1e-3)
-        return batch['control_depth']
+        assert torch.all(batch['control_normal_bae'] >= 0.0) and torch.all(batch['control_normal_bae'] <= 1.0)
+        return batch['control_normal_bae']

@@ -16,6 +16,7 @@ import ezexr
 
 from constants import *
 from diffusers import StableDiffusionPipeline, ControlNetModel, StableDiffusionControlNetPipeline, UniPCMultistepScheduler
+from diffusers.pipelines.controlnet.multicontrolnet import MultiControlNetModel
 
 from LightEmbedingBlock import set_light_direction, add_light_block, set_gate_shift_scale
 from UnsplashLiteDataset import log_map_to_range
@@ -23,20 +24,34 @@ from UnsplashLiteDataset import log_map_to_range
 MASTER_TYPE = torch.float16
  
 class AffineControl(L.LightningModule):
+    # def __init__(self, learning_rate=1e-4, guidance_scale=3.0, gate_multipiler=1, *args, **kwargs) -> None:
+    #     super().__init__()
+    #     # set parameter
+    #     self.gate_multipiler = gate_multipiler
+    #     self.guidance_scale = guidance_scale
+    #     self.condition_scale = 1.0
+    #     self.use_set_guidance_scale = False
+    #     self.learning_rate = learning_rate
+    #     self.seed = 42
+    #     self.save_hyperparameters()
+
+    #     self.is_plot_train_loss = True
+
+    #     # setup trainable componenet
+    #     self.setup_sd()
+    #     self.setup_light_block()
+
     def __init__(self, learning_rate=1e-4, guidance_scale=3.0, gate_multipiler=1, *args, **kwargs) -> None:
         super().__init__()
-        # set parameter
         self.gate_multipiler = gate_multipiler
+        self.condition_scale = 1.0
         self.guidance_scale = guidance_scale
-
         self.use_set_guidance_scale = False
         self.learning_rate = learning_rate
-        self.seed = 42
         self.save_hyperparameters()
 
+        self.seed = 42
         self.is_plot_train_loss = True
-
-        # setup trainable componenet
         self.setup_sd()
         self.setup_light_block()
 
@@ -56,7 +71,15 @@ class AffineControl(L.LightningModule):
 
     def setup_sd(self, sd_path="runwayml/stable-diffusion-v1-5", controlnet_path="lllyasviel/sd-controlnet-depth"):
         # load controlnet from pretrain
-        controlnet = ControlNetModel.from_pretrained(controlnet_path, torch_dtype=MASTER_TYPE)
+        
+        # check if controlnet_path is list
+        if isinstance(controlnet_path, list):
+            controlnet = MultiControlNetModel([
+                ControlNetModel.from_pretrained(path, torch_dtype=MASTER_TYPE) for path in controlnet_path
+            ])
+            self.condition_scale = [1.0] * len(controlnet_path)
+        else:
+            controlnet = ControlNetModel.from_pretrained(controlnet_path, torch_dtype=MASTER_TYPE)
 
         # load pipeline
         self.pipe =  StableDiffusionControlNetPipeline.from_pretrained(
@@ -70,7 +93,12 @@ class AffineControl(L.LightningModule):
         self.pipe.vae.requires_grad_(False)
         self.pipe.text_encoder.requires_grad_(False)
         self.pipe.controlnet.requires_grad_(False)
-        self.pipe.scheduler = UniPCMultistepScheduler.from_config(self.pipe.scheduler.config)
+        #self.pipe.scheduler = UniPCMultistepScheduler.from_config(self.pipe.scheduler.config)
+        is_save_memory = False
+        if is_save_memory:
+            self.pipe.enable_model_cpu_offload()
+            self.pipe.enable_xformers_memory_efficient_attention()
+        
     
     def set_seed(self, seed):
         self.seed = seed
@@ -94,7 +122,7 @@ class AffineControl(L.LightningModule):
         hdr_features = self.get_vae_features(normalized_hdr_images, generator)
         # concat ldr and hdr features
         return torch.cat([ldr_features, hdr_features], dim=-1)    
-
+    
     def compute_train_loss(self, batch, batch_idx, timesteps=None, seed=None):
         text_inputs = self.pipe.tokenizer(
                 batch['text'],
@@ -140,26 +168,34 @@ class AffineControl(L.LightningModule):
         light_features = self.get_light_features(batch['ldr_envmap'],batch['norm_envmap'])
         set_light_direction(self.pipe.unet, light_features, is_apply_cfg=False) #B,C
 
-        cond_scale = 1.0
-        # forward the controlnet
-        down_block_res_samples, mid_block_res_sample = self.pipe.controlnet(
-            noisy_latents,
-            timesteps,
-            encoder_hidden_states=encoder_hidden_states,
-            controlnet_cond=self.get_control_image(batch),
-            conditioning_scale=cond_scale,
-            guess_mode=False,
-            return_dict=False,
-        )
-        
-        model_pred = self.pipe.unet(
-            noisy_latents,
-            timesteps,
-            encoder_hidden_states=encoder_hidden_states,
-            down_block_additional_residuals=down_block_res_samples,
-            mid_block_additional_residual=mid_block_res_sample,
-            return_dict=False,
-        )[0]
+        if False: #use controlnet when computing loss
+            # forward the controlnet
+            down_block_res_samples, mid_block_res_sample = self.pipe.controlnet(
+                noisy_latents,
+                timesteps,
+                encoder_hidden_states=encoder_hidden_states,
+                controlnet_cond=self.get_control_image(batch),
+                conditioning_scale=self.condition_scale,
+                guess_mode=False,
+                return_dict=False,
+            )
+            
+            model_pred = self.pipe.unet(
+                noisy_latents,
+                timesteps,
+                encoder_hidden_states=encoder_hidden_states,
+                down_block_additional_residuals=down_block_res_samples,
+                mid_block_additional_residual=mid_block_res_sample,
+                return_dict=False,
+            )[0]
+        else:
+            model_pred = self.pipe.unet(
+                noisy_latents,
+                timesteps,
+                encoder_hidden_states=encoder_hidden_states,
+                return_dict=False,
+            )[0]
+
 
         #model_pred = self.pipe.unet(noisy_latents, timesteps, encoder_hidden_states, return_dict=False)[0]
         loss = torch.nn.functional.mse_loss(model_pred, target, reduction="mean")
@@ -175,21 +211,33 @@ class AffineControl(L.LightningModule):
         raise NotImplementedError("get_control_image must be implemented")
     
     def generate_tensorboard(self, batch, batch_idx, is_save_image=False):
-        set_light_direction(self.pipe.unet, self.get_light_features(batch['ldr_envmap'],batch['norm_envmap']), is_apply_cfg=True)
+        set_light_direction(self.pipe.unet, self.get_light_features(batch['ldr_envmap'],batch['norm_envmap']), is_apply_cfg=False)
         
         # control_depth should not be entirely black (all -1)
-        pt_image, _ = self.pipe(
-            batch['text'], 
-            image = self.get_control_image(batch),
-            output_type="pt",
-            guidance_scale=self.guidance_scale,
-            num_inference_steps=50,
-            return_dict = False,
-            generator=torch.Generator().manual_seed(self.seed)
-        )
+        pipe_args = {
+            "prompt": batch['text'],
+            "output_type": "pt",
+            "guidance_scale": self.guidance_scale,
+            "num_inference_steps": 50,
+            "return_dict": False,
+            "generator": torch.Generator().manual_seed(self.seed)
+        }
+        if hasattr(self.pipe, "controlnet"):
+            pipe_args["image"] = self.get_control_image(batch)
+        pt_image, _ = self.pipe(**pipe_args)
         gt_image = (batch["source_image"] + 1.0) / 2.0
-        images = torch.cat([gt_image, pt_image, self.get_control_image(batch)], dim=0)
+        tb_image = [gt_image, pt_image]
+
+        if hasattr(self.pipe, "controlnet"):
+            ctrl_image = self.get_control_image(batch)
+            if isinstance(ctrl_image, list):
+                tb_image += ctrl_image
+            else:
+                tb_image.append(ctrl_image)
+
+        images = torch.cat(tb_image, dim=0)
         image = torchvision.utils.make_grid(images, nrow=2, normalize=True)
+        
         self.logger.experiment.add_image(f'{batch["name"][0]}', image, self.global_step)
         # calcuarte psnr 
         mse = torch.nn.functional.mse_loss(gt_image, pt_image, reduction="none").mean()
@@ -202,11 +250,18 @@ class AffineControl(L.LightningModule):
             os.makedirs(f"{self.logger.log_dir}/psnr", exist_ok=True)
             with open(f"{self.logger.log_dir}/psnr/{batch['word_name'][0]}.txt", "w") as f:
                 f.write(f"{psnr.item()}\n")
+        if batch_idx == 0:
+            if hasattr(self, "gate_trainable"):
+                # plot gate_trainable
+                for gate_id, gate in enumerate(self.gate_trainable):
+                    self.logger.experiment.add_scalar(f'gate/{gate_id:02d}', gate, self.global_step)
+                    self.logger.experiment.add_scalar(f'gate/average', gate, self.global_step)
         if self.global_step == 0:
-                self.logger.experiment.add_text(f'text/{batch["word_name"][0]}', batch['text'][0], self.global_step)
+            self.logger.experiment.add_text(f'text/{batch["word_name"][0]}', batch['text'][0], self.global_step)
         if self.global_step == 0 and batch_idx == 0:
             self.logger.experiment.add_text('learning_rate', str(self.learning_rate), self.global_step)
-            self.logger.experiment.add_text('gate_multipiler', str(self.gate_multipiler), self.global_step)
+            if hasattr(self, "gate_multipiler"):
+                self.logger.experiment.add_text('gate_multipiler', str(self.gate_multipiler), self.global_step)
         return mse
                 
     def test_step(self, batch, batch_idx):
@@ -238,12 +293,12 @@ class AffineControl(L.LightningModule):
         mse = self.generate_tensorboard(batch, batch_idx, is_save_image=False)
         return mse
 
-    def configure_optimizers(self):
-        optimizer = torch.optim.Adam([
-            {'params': self.unet_trainable, 'lr': self.learning_rate},
-            {'params': self.gate_trainable, 'lr': self.learning_rate * self.gate_multipiler}
-        ])
-        return optimizer
+    # def configure_optimizers(self):
+    #     optimizer = torch.optim.Adam([
+    #         {'params': self.unet_trainable, 'lr': self.learning_rate},
+    #         {'params': self.gate_trainable, 'lr': self.learning_rate * self.gate_multipiler}
+    #     ])
+    #     return optimizer
 
     def configure_optimizers(self):
         optimizer = torch.optim.Adam([

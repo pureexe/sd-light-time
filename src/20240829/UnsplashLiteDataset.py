@@ -49,6 +49,7 @@ class UnsplashLiteDataset(torch.utils.data.Dataset):
         self.transform_depth = torchvision.transforms.Compose([
             torchvision.transforms.Resize(512,  antialias=True),  # Resize the image to 512x512
         ])
+        self.transform_normal = self.transform_depth
 
     def get_prompt_from_file(self, filename):
         with open(os.path.join(self.root_dir, filename)) as f:
@@ -101,6 +102,16 @@ class UnsplashLiteDataset(torch.utils.data.Dataset):
             except:
                 chromeball = torch.zeros(3, 512, 512)
 
+            try:
+                control_normal = self.transform_normal(self.get_image(idx,"control_normal", 512, 512))
+            except:
+                control_normal = torch.zeros(3, 512, 512)
+
+            try:
+                control_normal_bae = self.transform_normal(self.get_image(idx,"control_normal_bae", 512, 512))
+            except:
+                control_normal_bae = torch.zeros(3, 512, 512)
+
             if self.specific_prompt is not None:
                 if type(self.specific_prompt) == list:
                     prompt_id = batch_idx // len(self.files)
@@ -114,6 +125,8 @@ class UnsplashLiteDataset(torch.utils.data.Dataset):
                     'name': name,
                     'source_image': pixel_values,
                     'control_depth': control_depth,
+                    'control_normal': control_normal,
+                    'control_normal_bae': control_normal_bae,
                     'chromeball_image': chromeball,
                     'ldr_envmap': ldr_envmap,
                     'norm_envmap': under_envmap,
