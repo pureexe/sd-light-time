@@ -152,7 +152,7 @@ class AffineControl(L.LightningModule):
         light_features = self.get_light_features(batch['ldr_envmap'],batch['norm_envmap'])
         set_light_direction(self.pipe.unet, light_features, is_apply_cfg=False) #B,C
 
-        if hasattr(self.pipe, "controlnet"): #use controlnet when computing loss
+        if hasattr(self.pipe,"controlnet"): #use controlnet when computing loss
             # forward the controlnet
             down_block_res_samples, mid_block_res_sample = self.pipe.controlnet(
                 noisy_latents,
@@ -282,12 +282,6 @@ class AffineControl(L.LightningModule):
             {'params': self.gate_trainable, 'lr': self.learning_rate * self.gate_multipiler}
         ])
         return optimizer
-
-    # def configure_optimizers(self):
-    #     optimizer = torch.optim.Adam([
-    #         {'params': self.parameters(), 'lr': self.learning_rate},
-    #     ])
-    #     return optimizer
     
     def set_guidance_scale(self, guidance_scale):
         self.use_set_guidance_scale = True

@@ -19,7 +19,7 @@ bin/py src/20240829/train.py -lr 1e-4 -gm 100
 #version 8 -lr 1e-4 -ct depth
 CUDA_VISIBLE_DEVICES=0 bin/py src/20240829/train.py -lr 1e-4 -ct both -gm 10
 
-#version 9 affine normal
+#version 9 affine normal #THIS SEEM WORK (?)
 CUDA_VISIBLE_DEVICES=0 bin/py src/20240829/train.py -lr 1e-4 -ct normal -gm 10
 
 
@@ -32,16 +32,17 @@ CUDA_VISIBLE_DEVICES=1 bin/py src/20240829/train.py -lr 5e-5 -ct both
 #version 12
 CUDA_VISIBLE_DEVICES=3 bin/py src/20240829/train.py -lr 1e-5 -ct both
 
-#version 13 
+#version 13  #THIS SEEM TO WORK
 CUDA_VISIBLE_DEVICES=3 bin/py src/20240829/train.py -lr 1e-5 -ct both --batch_size 10
 
 #version 14
 CUDA_VISIBLE_DEVICES=3 bin/py src/20240829/train.py -lr 5e-5 -ct both --batch_size 10
 
 
-#version 15
+#version 15 #THIS SEEM TO WORK
 CUDA_VISIBLE_DEVICES=0 bin/py src/20240829/train.py -lr 5e-5 -ct normal 
-#version 16
+
+#version 16 #THIS SEEM TO WORK
 CUDA_VISIBLE_DEVICES=1 bin/py src/20240829/train.py -lr 1e-5 -ct normal 
 
 
