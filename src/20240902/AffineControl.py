@@ -13,6 +13,7 @@ import torchvision
 import json
 from tqdm.auto import tqdm
 import ezexr
+from PIL import Image
 
 from constants import *
 from diffusers import StableDiffusionPipeline, ControlNetModel, StableDiffusionControlNetPipeline, UniPCMultistepScheduler
@@ -20,6 +21,8 @@ from diffusers.pipelines.controlnet.multicontrolnet import MultiControlNetModel
 
 from LightEmbedingBlock import set_light_direction, add_light_block, set_gate_shift_scale
 from UnsplashLiteDataset import log_map_to_range
+
+from ball_helper import inpaint_chromeball, pipeline2controlnetinpaint
  
 MASTER_TYPE = torch.float16
  
@@ -82,6 +85,10 @@ class AffineControl(L.LightningModule):
         if is_save_memory:
             self.pipe.enable_model_cpu_offload()
             self.pipe.enable_xformers_memory_efficient_attention()
+
+        # load pipe_chromeball for validation 
+        controlnet_depth = ControlNetModel.from_pretrained("lllyasviel/sd-controlnet-depth", torch_dtype=MASTER_TYPE)
+        self.pipe_chromeball = pipeline2controlnetinpaint(self.pipe, controlnet=controlnet_depth).to('cuda')
         
     
     def set_seed(self, seed):
@@ -218,8 +225,16 @@ class AffineControl(L.LightningModule):
             else:
                 tb_image.append(ctrl_image)
 
+        if hasattr(self, "pipe_chromeball"):
+            with torch.inference_mode():
+                # convert pt_image to pil_image
+                to_inpaint_img = torchvision.transforms.functional.to_pil_image(pt_image[0].cpu())                
+                inpainted_image = inpaint_chromeball(to_inpaint_img,self.pipe_chromeball)
+                inpainted_image = torchvision.transforms.functional.to_tensor(inpainted_image).to(pt_image.device)
+                tb_image.append(inpainted_image[None])
+
         images = torch.cat(tb_image, dim=0)
-        image = torchvision.utils.make_grid(images, nrow=2, normalize=True)
+        image = torchvision.utils.make_grid(images, nrow=int(np.ceil(np.sqrt(len(tb_image)))), normalize=True)
         
         self.logger.experiment.add_image(f'{batch["name"][0]}', image, self.global_step)
         # calcuarte psnr 

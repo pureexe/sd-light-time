@@ -2,6 +2,9 @@ import torch
 import numpy as np 
 import skimage
 import os
+from transformers import pipeline as hf_pipeline
+from diffusers import StableDiffusionControlNetInpaintPipeline, ControlNetModel
+from PIL import Image
 
 
 def create_circle_tensor(num_pixel, circle_size):
@@ -13,7 +16,7 @@ def create_circle_tensor(num_pixel, circle_size):
         circle_size (int): The diameter of the circle.
         
     Returns:
-        torch.Tensor: A tensor with a circle in the middle (1.0 inside, 0.0 outside).
+        torch.Tensor: A tensor with a circle in the middle (1.0 inside, 0.0 outside). shape [num_pixel, num_pixel]
     """
     # Create a tensor of zeros
     tensor = torch.zeros((num_pixel, num_pixel), dtype=torch.float32)
@@ -147,3 +150,159 @@ def envmap2chromeball(env_map):
         grid = (theta_phi * 2.0) - 1.0
         ball_image = torch.nn.functional.grid_sample(env_map.float(), grid.float(), mode='bilinear', padding_mode='border', align_corners=True)
     return ball_image, normal_ball
+
+def pipeline2controlnetinpaint(pipe, controlnet = None):
+    # convert any stable diffusion pipeline to control inpainting pipeline
+    new_pipe = StableDiffusionControlNetInpaintPipeline(
+        vae = pipe.vae,
+        text_encoder = pipe.text_encoder,
+        tokenizer = pipe.tokenizer,
+        unet = pipe.unet,
+        controlnet = controlnet if controlnet is not None else pipe.controlnet,
+        scheduler = pipe.scheduler,
+        safety_checker = pipe.safety_checker,
+        feature_extractor = pipe.feature_extractor,
+        requires_safety_checker = False,
+    )
+    return new_pipe 
+
+def ball_center_crop(image, ball_size = 128):
+    H, W = image.size
+    left = (W - ball_size) // 2
+    top = (H - ball_size) // 2
+    right = left + ball_size
+    bottom = top + ball_size
+    cropped_image = image.crop((left, top, right, bottom))
+    # apply mask 
+    mask = create_circle_tensor(128, 128).cpu().numpy()[...,None]
+    cropped_image = np.array(cropped_image)  / 255.0 * mask
+    cropped_image = (cropped_image * 255).clip(0, 255).astype(np.uint8)
+    cropped_image = Image.fromarray(cropped_image)
+    return cropped_image
+
+def inpaint_chromeball(image, pipe=None, inpainting_mask = None, condition_mask = None):
+    """
+    inpainting EV 0 chromeball 
+
+    Args:
+        pipe (torch.nn.Module): Inpainting model
+        image (PIL.Image): Chromeball image [B,3,512,512]
+        inpainting_mask (PIL.Image, optional): Inpainted mask [512,512]. Defaults to None.
+        condition_mask (PIL.Image, optional): Condition mask [512,512]. Defaults to None.
+    
+    Returns:
+        PIL.Image: Inpainted chromeball image [B,3,512,512]
+    """
+    if inpainting_mask is None:
+        inpainting_mask = tensor_to_pil(create_circle_tensor(512, 138))
+    
+    if condition_mask is None:
+        condition_mask = tensor_to_pil(create_circle_tensor(512, 132))
+
+    if pipe is None:
+        # load sd inpaint pipeline
+        sd_path="runwayml/stable-diffusion-v1-5"
+        controlnet_path="lllyasviel/sd-controlnet-depth"
+        MASTER_TYPE = torch.float16
+        pipe = StableDiffusionControlNetInpaintPipeline.from_pretrained(
+            sd_path,
+            controlnet=ControlNetModel.from_pretrained(controlnet_path, torch_dtype=MASTER_TYPE),
+            safety_checker=None,
+            torch_dtype=MASTER_TYPE
+        ).to('cuda')
+
+    PROMPT = "a perfect mirrored reflective chrome ball sphere"
+    NEG_PROMPT = "matte, diffuse, flat, dull"
+    output_image = pipe(
+        prompt = PROMPT,
+        image = image,
+        mask_image = inpainting_mask,
+        control_image = condition_mask,
+        strength = 1.0,
+        num_inference_steps = 50,
+        guidance_scale = 5.0,
+        negative_prompt= NEG_PROMPT
+    )['images']
+
+    if not isinstance(image, list):
+        output_image = output_image[0]
+
+    return output_image
+
+def tensor_to_pil(tensor):
+    if tensor.dim() == 2:
+        tensor = tensor.unsqueeze(0)
+    if tensor.dim() == 3:
+        tensor = tensor.unsqueeze(0)
+    assert tensor.dim() == 4
+    assert tensor.min() >= 0 and tensor.max() <= 1    
+    img = tensor.permute(0, 2, 3, 1).cpu().numpy()[0]
+    if img.shape[2] == 1:
+        img = np.concatenate([img] * 3, axis=2)
+    img = Image.fromarray((img * 255.0).clip(0, 255).astype(np.uint8))
+    return img
+
+def get_depth_estimator(model="Intel/dpt-hybrid-midas", device="cuda"):
+    return hf_pipeline("depth-estimation", model=model, device=device)
+
+def depth_prediction(image, depth_estimator = None):
+    """_summary_
+
+    Args:
+        image (PIL.Image/list(PIL.Image)): image for compute depth in PIL format
+        depth_estimator (_type_, optional): _description_. Defaults to None.
+
+    Returns:
+        PIL.Image/list(PIL.Image): depth map in PIL format 3 channels
+    """
+    if depth_estimator is None:
+        depth_estimator = get_depth_estimator()
+
+    return_list = False
+    if not isinstance(image, list):
+        image = [image]
+    else:
+        return_list = True
+
+    image_out = []
+    for img in image:
+        depth_map = depth_estimator(img)['predicted_depth']
+        W, H = img.size
+        depth_map = torch.nn.functional.interpolate(
+            depth_map.unsqueeze(1),
+            size=(H, W),
+            mode="bicubic",
+            align_corners=False,
+        )
+        depth_min = torch.amin(depth_map, dim=[1, 2, 3], keepdim=True)
+        depth_max = torch.amax(depth_map, dim=[1, 2, 3], keepdim=True)
+        depth_map = (depth_map - depth_min) / (depth_max - depth_min)
+        img = torch.cat([depth_map] * 3, dim=1)
+        img = tensor_to_pil(img)
+        image_out.append(img)
+    if return_list:
+        return image_out
+    else:
+        return image_out[0]
+
+
+def add_ball_middle(image, ball_mask):
+    """_summary_
+
+    Args:
+        image (PIL.Image): image to add ball in the middle
+        ball_mask (np.array): ball image [1,512,512]
+
+    Returns:
+        PIL.Image: image with ball in the middle
+    """
+    image = np.array(image) / 255.0
+    ball_mask = np.array(ball_mask) / 255.0
+    if ball_mask.ndim == 2:
+        ball_mask = ball_mask[:, :, None]
+
+    # if inside the mask, become white elese keep the original image
+    masked_image = (1.0 - ball_mask) * image + ball_mask
+    masked_image = (masked_image * 255).clip(0, 255).astype(np.uint8)   
+    masked_image = Image.fromarray(masked_image)
+    return masked_image
