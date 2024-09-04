@@ -16,7 +16,7 @@ parser.add_argument("-i", "--version", type=str, default="4")
 parser.add_argument("-m", "--mode", type=str, default="human_left") #unslpash-trainset or multishoe-trainset
 parser.add_argument("-g", "--guidance_scale", type=str, default="3.0")
 #parser.add_argument("-c", "--checkpoint", type=str, default=",".join([str(i) for i in range(1,2)]))
-parser.add_argument("-c", "--checkpoint", type=str, default="90, 0, 10, 20, 30, 40, 50, 60, 70, 80")
+parser.add_argument("-c", "--checkpoint", type=str, default="100, 90, 80, 70, 60, 50, 40, 30, 20, 10, 0")
 args = parser.parse_args()
 
 

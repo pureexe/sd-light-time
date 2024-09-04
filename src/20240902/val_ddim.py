@@ -6,6 +6,7 @@ from AffineCondition import AffineDepth, AffineNormal, AffineNormalBae, AffineDe
 from DDIMUnsplashLiteDataset import DDIMUnsplashLiteDataset
 from datasets.DDIMDataset import DDIMDataset
 from datasets.DDIMSingleImageDataset import DDIMSingleImageDataset
+from datasets.DDIMCrossDataset import DDIMCrossDataset
 import lightning as L
 import torch
 import argparse 
@@ -16,9 +17,10 @@ from constants import FOLDER_NAME
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-i", "--version", type=str, default="0")
-parser.add_argument("-m", "--mode", type=str, default="shoe") #unslpash-trainset or multishoe-trainset
-parser.add_argument("-g", "--guidance_scale", type=str, default="5.0")
-parser.add_argument("-c", "--checkpoint", type=str, default="0, 10, 20, 30, 40, 50, 60, 70, 80, 90")
+parser.add_argument("-m", "--mode", type=str, default="face10") #unslpash-trainset or multishoe-trainset
+parser.add_argument("-g", "--guidance_scale", type=str, default="1.0")
+#
+parser.add_argument("-c", "--checkpoint", type=str, default="100, 90, 80, 70, 60, 50, 40, 30, 20, 10")
 
 args = parser.parse_args()
 NAMES = {
@@ -36,10 +38,10 @@ LRS = {
     1: '1e-4',
     2: '1e-4',
     3: '1e-4',
-    4: '1e-4',
-    5: '1e-4',
-    6: '1e-4',
-    7: '1e-4'
+    4: '1e-5',
+    5: '1e-5',
+    6: '1e-5',
+    7: '1e-5'
 }
 CONDITIONS_CLASS = {
     0: AffineNoControl,
@@ -58,17 +60,17 @@ def get_from_mode(mode):
     elif mode == "ddim_left2right_dev":
         return "/data/pakkapon/datasets/unsplash-lite/train_under", 1, DDIMUnsplashLiteDataset,{'index_file': 'src/20240824/ddim_dev.json'}, None
     elif mode == "face10":
-        raise NotImplementedError()
+        return "datasets/face10", 1000, DDIMCrossDataset,{'index_file': None, 'envmap_file':'datasets/face10/target_envmap.json', 'envmap_dir':"/data/pakkapon/datasets/unsplash-lite/train_under" }, None
     elif mode == "shoe":
         return "/data/pakkapon/datasets/shoe_validation", 60, DDIMDataset, {'index_file': '/data/pakkapon/datasets/shoe_validation/ddim.json'}, None
     elif mode == "shoe_trainlight":
         control_paths = {
-            'control_depth': '/data/pakkapon/datasets/shoe_trainlight/shoe_trainlight/control_depth/00000.png',
-            'control_normal': '/data/pakkapon/datasets/shoe_trainlight/shoe_trainlight/control_normal/00000.png', 
-            'control_normal_bae': '/data/pakkapon/datasets/shoe_trainlight/shoe_trainlight/control_normal_bae/00000.png',
+            'control_depth': '/data/pakkapon/datasets/shoe_validation/control_depth/00000.png',
+            'control_normal': '/data/pakkapon/datasets/shoe_validation/control_normal/00000.png', 
+            'control_normal_bae': '/data/pakkapon/datasets/shoe_validation/control_normal_bae/00000.png',
         }
-        image_path = '/data/pakkapon/datasets/shoe_validationshoe_validation/images/00000.png'
-        return "/data/pakkapon/datasets/unsplash-lite/train_under", 1, DDIMSingleImageDataset, {'index_file': '', 'image_path': image_path, 'control_paths': control_paths}, None
+        image_path = '/data/pakkapon/datasets/shoe_validation/images/00000.png'
+        return "/data/pakkapon/datasets/unsplash-lite/train_under", 1, DDIMSingleImageDataset, {'index_file': 'src/20240824/ddim_left2right100.json', 'image_path': image_path, 'control_paths': control_paths}, None
     else:
         raise Exception("mode not found")
 

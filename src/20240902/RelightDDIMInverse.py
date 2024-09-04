@@ -29,6 +29,9 @@ def create_ddim_inversion(base_class):
             # create ddim inversion
             self.ddim_inversion = DDIMInversion(self.pipe)
             
+            # dsiable chromeball
+            del self.pipe_chromeball
+
         def generate_tensorboard(self, batch, batch_idx, is_save_image=False):
             # Apply the source light direction
             set_light_direction(
@@ -70,11 +73,15 @@ def create_ddim_inversion(base_class):
                 is_apply_cfg=self.guidance_scale > 1
             )
 
+
+
             pipe_args = {
-                "prompt": batch['text'],
+                "prompt_embeds": text_embbeding,
+                "negative_prompt": "",
+                "latents": zt_noise,
                 "output_type": "pt",
                 "guidance_scale": self.guidance_scale,
-                "num_inference_steps": 50,
+                "num_inference_steps": self.num_inference_steps,
                 "return_dict": False,
                 "generator": torch.Generator().manual_seed(self.seed)
             }
