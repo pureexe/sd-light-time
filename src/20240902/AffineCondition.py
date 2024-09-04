@@ -1,6 +1,8 @@
 import torch 
 from AffineControl import AffineControl
 from diffusers import StableDiffusionPipeline
+from diffusers import ControlNetModel
+from ball_helper import pipeline2controlnetinpaint
  
 MASTER_TYPE = torch.float16
  
@@ -75,3 +77,7 @@ class AffineNoControl(AffineControl):
         self.pipe.unet.requires_grad_(False)
         self.pipe.vae.requires_grad_(False)
         self.pipe.text_encoder.requires_grad_(False)
+
+        # load pipe_chromeball for validation 
+        controlnet_depth = ControlNetModel.from_pretrained("lllyasviel/sd-controlnet-depth", torch_dtype=MASTER_TYPE)
+        self.pipe_chromeball = pipeline2controlnetinpaint(self.pipe, controlnet=controlnet_depth).to('cuda')

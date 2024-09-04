@@ -9,7 +9,8 @@ from diffusers import DDIMScheduler
 from LightEmbedingBlock import set_light_direction
 from DDIMInversion import DDIMInversion
 from AffineControl import AffineControl
-
+from ball_helper import inpaint_chromeball
+import numpy as np
 
  
 
@@ -54,7 +55,7 @@ def create_ddim_inversion(base_class):
             }
             if hasattr(self.pipe, 'controlnet'):
                 ddim_args['controlnet_cond'] = self.get_control_image(batch)    
-                ddim_args['cond_scale'] = 1
+                ddim_args['cond_scale'] = self.condition_scale
 
             # DDIM inverse to get an intial noise
             zt_noise, _ = self.ddim_inversion(**ddim_args)
@@ -90,16 +91,29 @@ def create_ddim_inversion(base_class):
                 else:
                     tb_image.append(ctrl_image)
 
+            if hasattr(self, "pipe_chromeball"):
+                with torch.inference_mode():
+                    # convert pt_image to pil_image
+                    to_inpaint_img = torchvision.transforms.functional.to_pil_image(pt_image[0].cpu())                
+                    inpainted_image = inpaint_chromeball(to_inpaint_img,self.pipe_chromeball)
+                    inpainted_image = torchvision.transforms.functional.to_tensor(inpainted_image).to(pt_image.device)
+                    tb_image.append(inpainted_image[None])
 
+           
             images = torch.cat(tb_image, dim=0)
-            image = torchvision.utils.make_grid(images, nrow=2, normalize=True)
+            image = torchvision.utils.make_grid(images, nrow=int(np.ceil(np.sqrt(len(tb_image)))), normalize=True)
+            
             self.logger.experiment.add_image(f'image/{batch["name"][0]}', image, self.global_step)
             if is_save_image:
                 os.makedirs(f"{self.logger.log_dir}/with_groudtruth", exist_ok=True)
                 torchvision.utils.save_image(image, f"{self.logger.log_dir}/with_groudtruth/{batch['name'][0]}_{batch['word_name'][0]}.jpg")
                 if hasattr(self.pipe, "controlnet"):
                     os.makedirs(f"{self.logger.log_dir}/control_image", exist_ok=True)
-                    torchvision.utils.save_image(ctrl_image, f"{self.logger.log_dir}/control_image/{batch['name'][0]}_{batch['word_name'][0]}.jpg")
+                    if isinstance(ctrl_image, list):
+                        for i, c in enumerate(ctrl_image):
+                            torchvision.utils.save_image(c, f"{self.logger.log_dir}/control_image/{batch['name'][0]}_{batch['word_name'][0]}_{i}.jpg")
+                    else:
+                        torchvision.utils.save_image(ctrl_image, f"{self.logger.log_dir}/control_image/{batch['name'][0]}_{batch['word_name'][0]}.jpg")
                 os.makedirs(f"{self.logger.log_dir}/crop_image", exist_ok=True)
                 torchvision.utils.save_image(pt_image, f"{self.logger.log_dir}/crop_image/{batch['name'][0]}_{batch['word_name'][0]}.jpg")
                 # save the target_ldr_envmap
@@ -114,6 +128,9 @@ def create_ddim_inversion(base_class):
                 # save the source_norm_envmap
                 os.makedirs(f"{self.logger.log_dir}/source_norm_envmap", exist_ok=True)
                 torchvision.utils.save_image(batch['source_norm_envmap'], f"{self.logger.log_dir}/source_norm_envmap/{batch['name'][0]}_{batch['word_name'][0]}.jpg")
+                if hasattr(self, "pipe_chromeball"):
+                    os.makedirs(f"{self.logger.log_dir}/inpainted_image", exist_ok=True)
+                    torchvision.utils.save_image(inpainted_image, f"{self.logger.log_dir}/inpainted_image/{batch['name'][0]}_{batch['word_name'][0]}.jpg")
                 # save prompt
                 os.makedirs(f"{self.logger.log_dir}/prompt", exist_ok=True) 
                 with open(f"{self.logger.log_dir}/prompt/{batch['name'][0]}_{batch['word_name'][0]}.txt", 'w') as f:

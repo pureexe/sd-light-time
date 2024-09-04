@@ -1,9 +1,11 @@
 # val_grid is a validation at step 
-
+import os 
 from RelightDDIMInverse import create_ddim_inversion
 from AffineCondition import AffineDepth, AffineNormal, AffineNormalBae, AffineDepthNormal, AffineDepthNormalBae, AffineNoControl
 
 from DDIMUnsplashLiteDataset import DDIMUnsplashLiteDataset
+from datasets.DDIMDataset import DDIMDataset
+from datasets.DDIMSingleImageDataset import DDIMSingleImageDataset
 import lightning as L
 import torch
 import argparse 
@@ -13,23 +15,41 @@ from constants import FOLDER_NAME
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument("-i", "--version", type=str, default="4")
-parser.add_argument("-m", "--mode", type=str, default="ddim_left2right") #unslpash-trainset or multishoe-trainset
-parser.add_argument("-g", "--guidance_scale", type=str, default="3.0")
-parser.add_argument("-c", "--checkpoint", type=str, default="90")
+parser.add_argument("-i", "--version", type=str, default="0")
+parser.add_argument("-m", "--mode", type=str, default="shoe") #unslpash-trainset or multishoe-trainset
+parser.add_argument("-g", "--guidance_scale", type=str, default="5.0")
+parser.add_argument("-c", "--checkpoint", type=str, default="0, 10, 20, 30, 40, 50, 60, 70, 80, 90")
 
 args = parser.parse_args()
 NAMES = {
-    4: 'control_depth',
-    5: 'control_depth',
+    0: 'no_control',
+    1: 'depth',
+    2: 'normal',
+    3: 'both',
+    4: 'no_control',
+    5: 'depth',
+    6: 'normal',
+    7: 'both',
 }
 LRS = {
-    4: '1e-4_gate10',
-    5: '1e-4_gate100',
+    0: '1e-4',
+    1: '1e-4',
+    2: '1e-4',
+    3: '1e-4',
+    4: '1e-4',
+    5: '1e-4',
+    6: '1e-4',
+    7: '1e-4'
 }
 CONDITIONS_CLASS = {
-    4: AffineDepth,
+    0: AffineNoControl,
+    1: AffineDepth,
+    2: AffineNormal,
+    3: AffineDepthNormal,
+    4: AffineNoControl,
     5: AffineDepth,
+    6: AffineNormal,
+    7: AffineDepthNormal,
 }
 
 def get_from_mode(mode):
@@ -37,6 +57,18 @@ def get_from_mode(mode):
         return "/data/pakkapon/datasets/unsplash-lite/train_under", 1, DDIMUnsplashLiteDataset,{'index_file': 'src/20240824/ddim_left2right100.json'}, None
     elif mode == "ddim_left2right_dev":
         return "/data/pakkapon/datasets/unsplash-lite/train_under", 1, DDIMUnsplashLiteDataset,{'index_file': 'src/20240824/ddim_dev.json'}, None
+    elif mode == "face10":
+        raise NotImplementedError()
+    elif mode == "shoe":
+        return "/data/pakkapon/datasets/shoe_validation", 60, DDIMDataset, {'index_file': '/data/pakkapon/datasets/shoe_validation/ddim.json'}, None
+    elif mode == "shoe_trainlight":
+        control_paths = {
+            'control_depth': '/data/pakkapon/datasets/shoe_trainlight/shoe_trainlight/control_depth/00000.png',
+            'control_normal': '/data/pakkapon/datasets/shoe_trainlight/shoe_trainlight/control_normal/00000.png', 
+            'control_normal_bae': '/data/pakkapon/datasets/shoe_trainlight/shoe_trainlight/control_normal_bae/00000.png',
+        }
+        image_path = '/data/pakkapon/datasets/shoe_validationshoe_validation/images/00000.png'
+        return "/data/pakkapon/datasets/unsplash-lite/train_under", 1, DDIMSingleImageDataset, {'index_file': '', 'image_path': image_path, 'control_paths': control_paths}, None
     else:
         raise Exception("mode not found")
 
@@ -50,30 +82,38 @@ def main():
         for version in versions:
                 condition_class = CONDITIONS_CLASS[version]
                 ddim_class = create_ddim_inversion(condition_class)
-                for checkpoint in checkpoints:
-                    if checkpoint == 0:
-                        model = ddim_class(learning_rate=1e-4)
-                        CKPT_PATH = None
-                    else:
-                        CKPT_PATH = f"output/{FOLDER_NAME}/multi_mlp_fit/lightning_logs/version_{version}/checkpoints/epoch={checkpoint:06d}.ckpt"
-                        model = ddim_class.load_from_checkpoint(CKPT_PATH)
-                    model.eval() # disable randomness, dropout, etc...
-                    model.disable_plot_train_loss()
-                    for guidance_scale in guidance_scales:
-                        model.set_guidance_scale(guidance_scale)                        
-                        output_dir = f"output/{FOLDER_NAME}/val_v2_{mode}/{guidance_scale}/{NAMES[version]}/{LRS[version]}/chk{checkpoint}/"
-                        print("================================")
-                        print(output_dir)
-                        print("================================")
-                        trainer = L.Trainer(max_epochs=1000, precision=16, check_val_every_n_epoch=1, default_root_dir=output_dir)
-                        val_root, count_file, dataset_class, dataset_args, specific_prompt = get_from_mode(mode)
-                        if type(count_file) == int:
-                            split = slice(0, count_file, 1)
+                #try:
+                if True:
+                    for checkpoint in checkpoints:
+                        if checkpoint == 0:
+                            model = ddim_class(learning_rate=1e-4)
+                            CKPT_PATH = None
                         else:
-                            split = count_file
-                        val_dataset = dataset_class(split=split, root_dir=val_root, specific_prompt=specific_prompt, **dataset_args)
-                        val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=1, shuffle=False)
-                        trainer.test(model, dataloaders=val_dataloader, ckpt_path=CKPT_PATH)
+                            CKPT_PATH = f"output/{FOLDER_NAME}/multi_mlp_fit/lightning_logs/version_{version}/checkpoints/epoch={checkpoint:06d}.ckpt"
+                            if not os.path.exists(CKPT_PATH):
+                                print(f"Checkpoint not found: {CKPT_PATH}")
+                                continue
+                            model = ddim_class.load_from_checkpoint(CKPT_PATH)
+                        model.eval() # disable randomness, dropout, etc...
+                        model.disable_plot_train_loss()
+                        for guidance_scale in guidance_scales:
+                            model.set_guidance_scale(guidance_scale)                        
+                            output_dir = f"output/{FOLDER_NAME}/val_{mode}/{guidance_scale}/{NAMES[version]}/{LRS[version]}/chk{checkpoint}/"
+                            os.makedirs(output_dir, exist_ok=True)
+                            print("================================")
+                            print(output_dir)
+                            print("================================")
+                            trainer = L.Trainer(max_epochs=1000, precision=16, check_val_every_n_epoch=1, default_root_dir=output_dir)
+                            val_root, count_file, dataset_class, dataset_args, specific_prompt = get_from_mode(mode)
+                            if type(count_file) == int:
+                                split = slice(0, count_file, 1)
+                            else:
+                                split = count_file
+                            val_dataset = dataset_class(split=split, root_dir=val_root, specific_prompt=specific_prompt, **dataset_args)
+                            val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=1, shuffle=False)
+                            trainer.test(model, dataloaders=val_dataloader, ckpt_path=CKPT_PATH)
+                #except:
+                #    pass
 
                                 
 if __name__ == "__main__":

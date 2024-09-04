@@ -44,7 +44,7 @@ CUDA_VISIBLE_DEVICES=2 bin/py src/20240902/train.py -lr 1e-4 -ct both_bae --guid
 
 
 # version 14 - resume v12
-CUDA_VISIBLE_DEVICES=3 bin/py src/20240902/train.py -lr 1e-4 -ct bae --guidance_scale 3.0 --batch_size 10 -ckpt output/20240902/multi_mlp_fit/lightning_logs/version_12/checkpoints/epoch=000015.ckpt
+CUDA_VISIBLE_DEVICES=3 bin/py src/20240902/train.py -lr 1e-4 -ct bae --guidance_scale 3.0 --batch_size 4 -ckpt output/20240902/multi_mlp_fit/lightning_logs/version_12/checkpoints/epoch=000015.ckpt
 
 # version 15 - both_bae  1e-4
-CUDA_VISIBLE_DEVICES=0 bin/py src/20240902/train.py -lr 1e-4 -ct both_bae --guidance_scale 3.0  --batch_size 10 -ckpt output/20240902/multi_mlp_fit/lightning_logs/version_13/checkpoints/epoch=000014.ckpt
+CUDA_VISIBLE_DEVICES=0 bin/py src/20240902/train.py -lr 1e-4 -ct both_bae --guidance_scale 3.0  --batch_size 4 -ckpt output/20240902/multi_mlp_fit/lightning_logs/version_13/checkpoints/epoch=000014.ckpt
