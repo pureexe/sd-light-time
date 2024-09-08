@@ -34,7 +34,7 @@ parser.add_argument('-dataset', '--dataset', type=str, default=DATASET_ROOT_DIR)
 parser.add_argument(
     '-split', 
     type=str,
-    choices=['none','overfit1', 'overfit100'],  # Restrict the input to the accepted strings
+    choices=['none','overfit1', 'overfit100','train_face'],  # Restrict the input to the accepted strings
     help="select control type for the model",
     default='none'
 )
@@ -66,6 +66,8 @@ def get_split():
         return slice(0, 1, 1), slice(0, 1, 1), 20000
     elif args.split == 'overfit100':
         return slice(0, 100, 1), slice(0, 10, 1), 200
+    elif args.split == 'train_face':
+        return slice(0, 2000, 1), slice(0, 2000, 5000), 1
     else:
         return slice(0, 20000, 1), get_val_split(), 1
 

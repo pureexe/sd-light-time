@@ -30,7 +30,7 @@ def create_ddim_inversion(base_class):
             self.ddim_inversion = DDIMInversion(self.pipe)
             
             # dsiable chromeball
-            del self.pipe_chromeball
+            #del self.pipe_chromeball
 
         def generate_tensorboard(self, batch, batch_idx, is_save_image=False):
             # Apply the source light direction

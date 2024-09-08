@@ -3,6 +3,7 @@
 from RelightDDIMInverse import create_ddim_inversion
 from AffineCondition import AffineDepth, AffineNormal, AffineNormalBae, AffineDepthNormal, AffineDepthNormalBae, AffineNoControl
 from UnsplashLiteDataset import UnsplashLiteDataset
+from datasets.DDIMCompatibleDataset import DDIMCompatibleDataset
 import lightning as L
 import torch
 import argparse 
@@ -12,11 +13,10 @@ from constants import FOLDER_NAME
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument("-i", "--version", type=str, default="4")
-parser.add_argument("-m", "--mode", type=str, default="human_left") #unslpash-trainset or multishoe-trainset
+parser.add_argument("-i", "--version", type=str, default="29")
+parser.add_argument("-m", "--mode", type=str, default="face_left,face_right") #unslpash-trainset or multishoe-trainset
 parser.add_argument("-g", "--guidance_scale", type=str, default="3.0")
-#parser.add_argument("-c", "--checkpoint", type=str, default=",".join([str(i) for i in range(1,2)]))
-parser.add_argument("-c", "--checkpoint", type=str, default="100, 90, 80, 70, 60, 50, 40, 30, 20, 10, 0")
+parser.add_argument("-c", "--checkpoint", type=str, default="19")
 args = parser.parse_args()
 
 
@@ -24,14 +24,26 @@ NAMES = {
     4: 'no_controlnet',
     #4: 'control_depth',
     5: 'control_depth',
+    28: 'no_controlnet',
+    29: 'no_controlnet',
+    30: 'no_controlnet',
+    31: 'no_controlnet',
 }
 LRS = {
     4: '1e-4_gate10',
     5: '1e-4_gate100',
+    28: '5e-4',
+    29: '1e-4',
+    30: '5e-5',
+    31: '1e-5',
 }
 CONDITIONS_CLASS = {
     4: AffineNoControl,
     5: AffineDepth,
+    28: AffineNoControl,
+    29: AffineNoControl,
+    30: AffineNoControl,
+    31: AffineNoControl,
 }
 
 def get_from_mode(mode):
@@ -83,6 +95,10 @@ def get_from_mode(mode):
             content = f.readlines()
             content = [x.strip() for x in content]
         return "/data/pakkapon/datasets/unsplash-lite/train_under", content, UnsplashLiteDataset,{}, availble_face_prompts
+    elif mode == "face_left":
+        return "/data/pakkapon/datasets/face/face2000", 100, DDIMCompatibleDataset,{"index_file":"/data/pakkapon/datasets/face/face2000/split-x-minus.json"}, None
+    elif mode == "face_right":
+        return "/data/pakkapon/datasets/face/face2000", 100, DDIMCompatibleDataset,{"index_file":"/data/pakkapon/datasets/face/face2000/split-x-plus.json"}, None
     else:
         raise Exception("mode not found")
     
@@ -103,6 +119,8 @@ def main():
                         CKPT_PATH = f"output/{FOLDER_NAME}/multi_mlp_fit/lightning_logs/version_{version}/checkpoints/epoch={checkpoint:06d}.ckpt"
                         model = model_class.load_from_checkpoint(CKPT_PATH)
                     model.eval() # disable randomness, dropout, etc...
+                    if mode in ['face_left']:
+                        del model.pipe_chromeball
                     if mode in ['unsplash-trainset-under']:
                         model.enable_plot_train_loss()
                     else:

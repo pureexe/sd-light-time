@@ -17,10 +17,10 @@ from constants import FOLDER_NAME
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-i", "--version", type=str, default="0")
-parser.add_argument("-m", "--mode", type=str, default="face10") #unslpash-trainset or multishoe-trainset
-parser.add_argument("-g", "--guidance_scale", type=str, default="1.0")
-#
-parser.add_argument("-c", "--checkpoint", type=str, default="100, 90, 80, 70, 60, 50, 40, 30, 20, 10")
+parser.add_argument("-m", "--mode", type=str, default="shoe_trainlight2") #unslpash-trainset or multishoe-trainset
+parser.add_argument("-g", "--guidance_scale", type=str, default="1")
+#parser.add_argument("-c", "--checkpoint", type=str, default="100, 90, 80, 70, 60, 50, 40, 30, 20, 10")
+parser.add_argument("-c", "--checkpoint", type=str, default="80, 70, 60, 50, 40, 30, 20, 10, 0")
 
 args = parser.parse_args()
 NAMES = {
@@ -63,14 +63,16 @@ def get_from_mode(mode):
         return "datasets/face10", 1000, DDIMCrossDataset,{'index_file': None, 'envmap_file':'datasets/face10/target_envmap.json', 'envmap_dir':"/data/pakkapon/datasets/unsplash-lite/train_under" }, None
     elif mode == "shoe":
         return "/data/pakkapon/datasets/shoe_validation", 60, DDIMDataset, {'index_file': '/data/pakkapon/datasets/shoe_validation/ddim.json'}, None
-    elif mode == "shoe_trainlight":
+    elif mode == "shoe_trainlight2":
         control_paths = {
             'control_depth': '/data/pakkapon/datasets/shoe_validation/control_depth/00000.png',
             'control_normal': '/data/pakkapon/datasets/shoe_validation/control_normal/00000.png', 
             'control_normal_bae': '/data/pakkapon/datasets/shoe_validation/control_normal_bae/00000.png',
         }
+        source_env_ldr = '/data/pakkapon/datasets/shoe_validation/env_ldr/00000.png'
+        source_env_under = '/data/pakkapon/datasets/shoe_validation/env_under/00000.png'
         image_path = '/data/pakkapon/datasets/shoe_validation/images/00000.png'
-        return "/data/pakkapon/datasets/unsplash-lite/train_under", 1, DDIMSingleImageDataset, {'index_file': 'src/20240824/ddim_left2right100.json', 'image_path': image_path, 'control_paths': control_paths}, None
+        return "/data/pakkapon/datasets/unsplash-lite/train_under", 10, DDIMSingleImageDataset, {'index_file': 'src/20240902/ddim_10right1left.json', 'image_path': image_path, 'control_paths': control_paths, 'source_env_ldr': source_env_ldr, 'source_env_under': source_env_under}, None
     else:
         raise Exception("mode not found")
 
