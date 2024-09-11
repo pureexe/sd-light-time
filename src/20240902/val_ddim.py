@@ -16,11 +16,12 @@ from constants import FOLDER_NAME
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument("-i", "--version", type=str, default="0")
-parser.add_argument("-m", "--mode", type=str, default="shoe_trainlight2") #unslpash-trainset or multishoe-trainset
-parser.add_argument("-g", "--guidance_scale", type=str, default="1")
+parser.add_argument("-i", "--version", type=str, default="29")
+parser.add_argument("-m", "--mode", type=str, default="face_right_ddim_v2") #unslpash-trainset or multishoe-trainset
+parser.add_argument("-g", "--guidance_scale", type=str, default="1,3,5,7")
 #parser.add_argument("-c", "--checkpoint", type=str, default="100, 90, 80, 70, 60, 50, 40, 30, 20, 10")
-parser.add_argument("-c", "--checkpoint", type=str, default="80, 70, 60, 50, 40, 30, 20, 10, 0")
+#parser.add_argument("-c", "--checkpoint", type=str, default="190, 180, 170, 160, 150, 140, 130, 120, 110, 100, 80, 70, 60, 50, 40, 30, 20, 10, 0")
+parser.add_argument("-c", "--checkpoint", type=str, default="319, 299, 279, 259, 239, 219, 199, 179, 159, 139, 119, 99, 79, 59, 39, 19, 0")
 
 args = parser.parse_args()
 NAMES = {
@@ -32,16 +33,19 @@ NAMES = {
     5: 'depth',
     6: 'normal',
     7: 'both',
-}
-LRS = {
-    0: '1e-4',
-    1: '1e-4',
-    2: '1e-4',
-    3: '1e-4',
-    4: '1e-5',
-    5: '1e-5',
-    6: '1e-5',
-    7: '1e-5'
+    10: 'bae',
+    11: 'bae_both',
+    12: 'bae',
+    13: 'bae_both',
+    28: 'no_control',
+    #29: 'no_control',
+    #29: 'depth',
+    #29: 'normal',
+    #29: 'both',
+    #29: 'bae',
+    29: 'both_bae',
+    30: 'no_control',
+    31: 'no_control',
 }
 CONDITIONS_CLASS = {
     0: AffineNoControl,
@@ -52,7 +56,39 @@ CONDITIONS_CLASS = {
     5: AffineDepth,
     6: AffineNormal,
     7: AffineDepthNormal,
+    10: AffineNormalBae,
+    11: AffineDepthNormalBae,
+    12: AffineNormalBae,
+    13: AffineDepthNormalBae,
+    28: AffineNoControl,
+    #29: AffineNoControl,
+    #29: AffineDepth, 
+    #29: AffineNormal,
+    #29: AffineDepthNormal, 
+    #29: AffineNormalBae,
+    29: AffineDepthNormalBae, 
+    30: AffineNoControl,
+    31: AffineNoControl,
 }
+LRS = {
+    0: '1e-4',
+    1: '1e-4',
+    2: '1e-4',
+    3: '1e-4',
+    4: '1e-5',
+    5: '1e-5',
+    6: '1e-5',
+    7: '1e-5',
+    10: '1e-5',
+    11: '1e-5',
+    12: '1e-4',
+    13: '1e-4',
+    28: '5e-4',
+    29: '1e-4',
+    30: '5e-5',
+    31: '1e-5',
+}
+
 
 def get_from_mode(mode):
     if mode == "ddim_left2right":
@@ -73,6 +109,10 @@ def get_from_mode(mode):
         source_env_under = '/data/pakkapon/datasets/shoe_validation/env_under/00000.png'
         image_path = '/data/pakkapon/datasets/shoe_validation/images/00000.png'
         return "/data/pakkapon/datasets/unsplash-lite/train_under", 10, DDIMSingleImageDataset, {'index_file': 'src/20240902/ddim_10right1left.json', 'image_path': image_path, 'control_paths': control_paths, 'source_env_ldr': source_env_ldr, 'source_env_under': source_env_under}, None
+    elif mode == "face_left_ddim_v2":
+        return "/data/pakkapon/datasets/face/face2000", 100, DDIMDataset,{"index_file":"/data/pakkapon/datasets/face/face2000/split-x-minus.json"}, None
+    elif mode == "face_right_ddim_v2":
+        return "/data/pakkapon/datasets/face/face2000", 100, DDIMDataset,{"index_file":"/data/pakkapon/datasets/face/face2000/split-x-plus.json"}, None
     else:
         raise Exception("mode not found")
 
@@ -98,11 +138,18 @@ def main():
                                 print(f"Checkpoint not found: {CKPT_PATH}")
                                 continue
                             model = ddim_class.load_from_checkpoint(CKPT_PATH)
+                        # disable chromeball inpaint if exist
+                        if hasattr(model, 'pipe_chromeball'):
+                            del model.pipe_chromeball
                         model.eval() # disable randomness, dropout, etc...
                         model.disable_plot_train_loss()
                         for guidance_scale in guidance_scales:
                             model.set_guidance_scale(guidance_scale)                        
                             output_dir = f"output/{FOLDER_NAME}/val_{mode}/{guidance_scale}/{NAMES[version]}/{LRS[version]}/chk{checkpoint}/"
+                            # skip if output dir exist 
+                            if os.path.exists(output_dir):
+                                print(f"Skip {output_dir}")
+                                continue
                             os.makedirs(output_dir, exist_ok=True)
                             print("================================")
                             print(output_dir)

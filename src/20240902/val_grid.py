@@ -28,6 +28,8 @@ NAMES = {
     29: 'no_controlnet',
     30: 'no_controlnet',
     31: 'no_controlnet',
+    32: 'no_controlnet',
+    33: 'no_controlnet',
 }
 LRS = {
     4: '1e-4_gate10',
@@ -36,6 +38,8 @@ LRS = {
     29: '1e-4',
     30: '5e-5',
     31: '1e-5',
+    32: '1e-3',
+    33: '5e-3',
 }
 CONDITIONS_CLASS = {
     4: AffineNoControl,
@@ -44,6 +48,8 @@ CONDITIONS_CLASS = {
     29: AffineNoControl,
     30: AffineNoControl,
     31: AffineNoControl,
+    32: AffineNoControl,
+    33: AffineNoControl,
 }
 
 def get_from_mode(mode):
