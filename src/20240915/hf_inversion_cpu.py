@@ -9,6 +9,7 @@ from matplotlib import pyplot as plt
 from torchvision import transforms as tfms
 from diffusers import StableDiffusionPipeline, DDIMScheduler
 device = torch.device("mps" if torch.backends.mps.is_available() else "cuda" if torch.cuda.is_available() else "cpu")
+MASTER_TYPE = torch.float32
 
 
 # Useful function for later
@@ -156,7 +157,6 @@ def invert(
 
     return torch.cat(intermediate_latents), torch.cat(intermediate_timesteps)
 
-MASTER_TYPE = torch.float16
 
 with torch.inference_mode():
     pipe = StableDiffusionPipeline.from_pretrained("runwayml/stable-diffusion-v1-5", torch_dtype=MASTER_TYPE).to(device)
@@ -168,12 +168,13 @@ with torch.inference_mode():
 
     input_image_prompt = "Photograph of a puppy on the grass"
 
+    generator = torch.Generator(device=device).manual_seed(42)
     # Encode with VAE
     with torch.no_grad():
-        latent = pipe.vae.encode((tfms.functional.to_tensor(input_image).unsqueeze(0).to(device)* 2 - 1).half())
-    latent = 0.18215 * latent.latent_dist.sample()
+        latent = pipe.vae.encode((tfms.functional.to_tensor(input_image).unsqueeze(0).to(device)* 2 - 1).to(MASTER_TYPE))
+    latent = 0.18215 * latent.latent_dist.sample(generator)
     TOTAL_STEP = 1000
-    GUIDANCE_SCALE = 1.0
+    GUIDANCE_SCALE = 3.5
 
     inverted_latents, inverted_timesteps = invert(
         latent,
@@ -193,7 +194,7 @@ with torch.inference_mode():
     )
     denoised_latents_mean = denoised_latents.reshape(denoised_latents.size(0),-1).mean(dim=1)
 
-    ext = "_2080ti"
+    ext = "_cpu"
     output_image[0].save(f"rgb_g{GUIDANCE_SCALE}_step{TOTAL_STEP}{ext}.png")
     # plot mean 
     plt.plot(inverted_timesteps.cpu().numpy(), inverted_latents_mean.cpu().numpy(), label="Inverted Latents")

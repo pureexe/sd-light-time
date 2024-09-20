@@ -7,6 +7,7 @@ from DDIMUnsplashLiteDataset import DDIMUnsplashLiteDataset
 from datasets.DDIMDataset import DDIMDataset
 from datasets.DDIMSingleImageDataset import DDIMSingleImageDataset
 from datasets.DDIMCrossDataset import DDIMCrossDataset
+from datasets.DDIMSHCoeffsDataset import DDIMSHCoeffsDataset
 import lightning as L
 import torch
 import argparse 
@@ -16,13 +17,13 @@ from constants import FOLDER_NAME
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument("-i", "--version", type=str, default="29")
-parser.add_argument("-m", "--mode", type=str, default="face_roll60_v2") #unslpash-trainset or multishoe-trainset
+parser.add_argument("-i", "--version", type=str, default="0")
+parser.add_argument("-m", "--mode", type=str, default="multillum_train_v2") #unslpash-trainset or multishoe-trainset
 parser.add_argument("-g", "--guidance_scale", type=str, default="7,5,3,1")
 #parser.add_argument("-c", "--checkpoint", type=str, default="100, 90, 80, 70, 60, 50, 40, 30, 20, 10")
 #parser.add_argument("-c", "--checkpoint", type=str, default="190, 180, 170, 160, 150, 140, 130, 120, 110, 100, 80, 70, 60, 50, 40, 30, 20, 10, 0")
 #parser.add_argument("-c", "--checkpoint", type=str, default="319, 299, 279, 259, 239, 219, 199, 179, 159, 139, 119, 99, 79, 59, 39, 19, 0")
-parser.add_argument("-c", "--checkpoint", type=str, default="319")
+parser.add_argument("-c", "--checkpoint", type=str, default="64,69,59,49,39,29,19,9,0")
 
 args = parser.parse_args()
 NAMES = {
@@ -34,19 +35,10 @@ NAMES = {
     5: 'depth',
     6: 'normal',
     7: 'both',
+    8: 'bae',
+    9: 'bae_both',
     10: 'bae',
     11: 'bae_both',
-    12: 'bae',
-    13: 'bae_both',
-    28: 'no_control',
-    #29: 'no_control',
-    29: 'depth',
-    #29: 'normal',
-    #29: 'both',
-    #29: 'bae',
-    #29: 'both_bae',
-    30: 'no_control',
-    31: 'no_control',
 }
 CONDITIONS_CLASS = {
     0: AffineNoControl,
@@ -57,19 +49,10 @@ CONDITIONS_CLASS = {
     5: AffineDepth,
     6: AffineNormal,
     7: AffineDepthNormal,
+    8: AffineNormalBae,
+    9: AffineDepthNormalBae,
     10: AffineNormalBae,
     11: AffineDepthNormalBae,
-    12: AffineNormalBae,
-    13: AffineDepthNormalBae,
-    28: AffineNoControl,
-    #29: AffineNoControl,
-    29: AffineDepth, 
-    #29: AffineNormal,
-    #29: AffineDepthNormal, 
-    #29: AffineNormalBae,
-    #29: AffineDepthNormalBae, 
-    30: AffineNoControl,
-    31: AffineNoControl,
 }
 LRS = {
     0: '1e-4',
@@ -80,15 +63,11 @@ LRS = {
     5: '1e-5',
     6: '1e-5',
     7: '1e-5',
+    8: '1e-4',
+    9: '1e-4',
     10: '1e-5',
     11: '1e-5',
-    12: '1e-4',
-    13: '1e-4',
-    28: '5e-4',
-    29: '1e-4',
-    30: '5e-5',
-    31: '1e-5',
-}
+ }
 
 
 def get_from_mode(mode):
@@ -114,18 +93,19 @@ def get_from_mode(mode):
         return "/data/pakkapon/datasets/face/face2000", 100, DDIMDataset,{"index_file":"/data/pakkapon/datasets/face/face2000/split-x-minus.json"}, None
     elif mode == "face_right_ddim_v2":
         return "/data/pakkapon/datasets/face/face2000", 100, DDIMDataset,{"index_file":"/data/pakkapon/datasets/face/face2000/split-x-plus.json"}, None
-    elif mode == "face_left2right":
-        return "/data/pakkapon/datasets/face/face2000", 100, DDIMDataset,{"index_file":"/data/pakkapon/datasets/face/face2000/split-x-left2right.json"}, None
-    elif mode == "face_roll_envmap":
-        return "/data/pakkapon/datasets/face/face_roll_envmap", 100, DDIMDataset,{"index_file":"/data/pakkapon/datasets/face/face_roll_envmap/split-left2right.json"}, None
-    elif mode == "face_roll60_v2":
-        return "/data/pakkapon/datasets/face/face_roll60", 100, DDIMDataset,{"index_file":"/data/pakkapon/datasets/face/face_roll60/split-left2right.json"}, None
     elif mode == "face_identity_guidacne_hfcode":
         return "/data/pakkapon/datasets/face/face2000", 100, DDIMDataset,{"index_file":"/data/pakkapon/datasets/face/face2000/split-identity.json"}, None
+    elif mode == "face_identity_guidacne_hfcode":
+        return "/data/pakkapon/datasets/face/face2000", 100, DDIMDataset,{"index_file":"/data/pakkapon/datasets/face/face2000/split-identity.json"}, None
+    elif mode == "multillum_train_v2":
+        return "/data/pakkapon/datasets/multi_illumination/spherical/train", 100, DDIMSHCoeffsDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/split-train3scenes.json"}, None
+    elif mode == "multillum_test_v2":
+        return "/data/pakkapon/datasets/multi_illumination/spherical/test", 100, DDIMSHCoeffsDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/split-test3scenes.json"}, None
     else:
         raise Exception("mode not found")
 
 def main():
+    CONDITIONS_CLASS[0] = AffineNoControl
     versions = [int(a.strip()) for a in args.version.split(",")]
     guidance_scales = [float(a.strip()) for a in args.guidance_scale.split(",")]
     checkpoints = [int(a.strip()) for a in args.checkpoint.split(",")]

@@ -87,8 +87,8 @@ def create_ddim_inversion(base_class):
             super().__init__()
 
             # DEFAULT VARIABLE 
-            self.target_timestep = 1000
-            self.num_inference_steps = 200 # may need to use many steps to get the best result
+            self.target_timestep = 200
+            self.num_inference_steps = 50 # may need to use many steps to get the best result
 
             self.nomral_scheduler = DDIMScheduler.from_config(self.pipe.scheduler.config, subfolder='scheduler')
             self.inverse_scheduler = DDIMInverseScheduler.from_config(self.pipe.scheduler.config, subfolder='scheduler')  
@@ -98,30 +98,20 @@ def create_ddim_inversion(base_class):
             # create ddim inversion
             self.ddim_inversion = DDIMInversion(self.pipe)
             
-            # disable chromeball
-            del self.pipe_chromeball
-
-        def select_batch_keyword(self, batch, keyword):
-            if self.feature_type == "vae":
-                batch['ldr_envmap'] = batch[f'{keyword}_ldr_envmap']
-                batch['ldr_envmap'] = batch[f'{keyword}_norm_envmap']
-            elif self.feature_type == "shcoeff_order2":
-                batch['sh_coeffs'] = batch[f'{keyword}_sh_coeffs']
-            else:
-                raise ValueError(f"feature_type {self.feature_type} is not supported")
-            return batch
+            # dsiable chromeball
+            #del self.pipe_chromeball
 
         def generate_tensorboard(self, batch, batch_idx, is_save_image=False):
-            USE_LIGHT_DIRECTION_CONDITION = True
-            USE_OWN_DDIM = True 
-            USE_HFDOC_DDIM = False
+            USE_LIGHT_DIRECTION_CONDITION = False
+            USE_OWN_DDIM = False 
+            USE_HFDOC_DDIM = True
             # Apply the source light direction
-            self.select_batch_keyword(batch, 'source')
             if USE_LIGHT_DIRECTION_CONDITION:
                 set_light_direction(
                     self.pipe.unet, 
                     self.get_light_features(
-                        batch
+                        batch['source_ldr_envmap'],
+                        batch['source_norm_envmap'],
                     ), 
                     is_apply_cfg=self.guidance_scale > 1
                 )
@@ -186,11 +176,13 @@ def create_ddim_inversion(base_class):
                 self.pipe.scheduler = self.nomral_scheduler
 
             if USE_LIGHT_DIRECTION_CONDITION:
-                #Apply the target light direction
-                self.select_batch_keyword(batch, 'target')    
+                #Apply the target light direction            
                 set_light_direction(
                     self.pipe.unet,
-                    self.get_light_features(batch),
+                    self.get_light_features(
+                        batch['target_ldr_envmap'],
+                        batch['target_norm_envmap']
+                    ),
                     is_apply_cfg=self.guidance_scale > 1
                 )
             
@@ -209,12 +201,9 @@ def create_ddim_inversion(base_class):
             }
             if hasattr(self.pipe, "controlnet"):
                 pipe_args["image"] = self.get_control_image(batch)
-
-            gt_on_batch = 'target_image' if "target_image" in batch else 'source_image'
             pt_image, _ = self.pipe(**pipe_args)
-            gt_image = (batch[gt_on_batch] + 1.0) / 2.0
+            gt_image = (batch["source_image"] + 1.0) / 2.0
             tb_image = [gt_image, pt_image]
-
 
             if hasattr(self.pipe, "controlnet"):
                 ctrl_image = self.get_control_image(batch)
@@ -249,21 +238,17 @@ def create_ddim_inversion(base_class):
                 os.makedirs(f"{self.logger.log_dir}/crop_image", exist_ok=True)
                 torchvision.utils.save_image(pt_image, f"{self.logger.log_dir}/crop_image/{batch['name'][0]}_{batch['word_name'][0]}.jpg")
                 # save the target_ldr_envmap
-                if hasattr(batch, "target_ldr_envmap"):
-                    os.makedirs(f"{self.logger.log_dir}/target_ldr_envmap", exist_ok=True)
-                    torchvision.utils.save_image(batch['target_ldr_envmap'], f"{self.logger.log_dir}/target_ldr_envmap/{batch['name'][0]}_{batch['word_name'][0]}.jpg")
-                if hasattr(batch, "target_norm_envmap"):
-                    # save the target_norm_envmap
-                    os.makedirs(f"{self.logger.log_dir}/target_norm_envmap", exist_ok=True)
-                    torchvision.utils.save_image(batch['target_norm_envmap'], f"{self.logger.log_dir}/target_norm_envmap/{batch['name'][0]}_{batch['word_name'][0]}.jpg")
-                if hasattr(batch, "source_ldr_envmap"):
-                    # save the source_ldr_envmap
-                    os.makedirs(f"{self.logger.log_dir}/source_ldr_envmap", exist_ok=True)
-                    torchvision.utils.save_image(batch['source_ldr_envmap'], f"{self.logger.log_dir}/source_ldr_envmap/{batch['name'][0]}_{batch['word_name'][0]}.jpg")
-                if hasattr(batch, "source_norm_envmap"):
-                    # save the source_norm_envmap
-                    os.makedirs(f"{self.logger.log_dir}/source_norm_envmap", exist_ok=True)
-                    torchvision.utils.save_image(batch['source_norm_envmap'], f"{self.logger.log_dir}/source_norm_envmap/{batch['name'][0]}_{batch['word_name'][0]}.jpg")
+                os.makedirs(f"{self.logger.log_dir}/target_ldr_envmap", exist_ok=True)
+                torchvision.utils.save_image(batch['target_ldr_envmap'], f"{self.logger.log_dir}/target_ldr_envmap/{batch['name'][0]}_{batch['word_name'][0]}.jpg")
+                # save the target_norm_envmap
+                os.makedirs(f"{self.logger.log_dir}/target_norm_envmap", exist_ok=True)
+                torchvision.utils.save_image(batch['target_norm_envmap'], f"{self.logger.log_dir}/target_norm_envmap/{batch['name'][0]}_{batch['word_name'][0]}.jpg")
+                # save the source_ldr_envmap
+                os.makedirs(f"{self.logger.log_dir}/source_ldr_envmap", exist_ok=True)
+                torchvision.utils.save_image(batch['source_ldr_envmap'], f"{self.logger.log_dir}/source_ldr_envmap/{batch['name'][0]}_{batch['word_name'][0]}.jpg")
+                # save the source_norm_envmap
+                os.makedirs(f"{self.logger.log_dir}/source_norm_envmap", exist_ok=True)
+                torchvision.utils.save_image(batch['source_norm_envmap'], f"{self.logger.log_dir}/source_norm_envmap/{batch['name'][0]}_{batch['word_name'][0]}.jpg")
                 if hasattr(self, "pipe_chromeball"):
                     os.makedirs(f"{self.logger.log_dir}/inpainted_image", exist_ok=True)
                     torchvision.utils.save_image(inpainted_image, f"{self.logger.log_dir}/inpainted_image/{batch['name'][0]}_{batch['word_name'][0]}.jpg")
@@ -272,10 +257,8 @@ def create_ddim_inversion(base_class):
                 with open(f"{self.logger.log_dir}/prompt/{batch['name'][0]}_{batch['word_name'][0]}.txt", 'w') as f:
                     f.write(batch['text'][0])
                 # save the source_image
-                os.makedirs(f"{self.logger.log_dir}/ground_truth", exist_ok=True)
-                torchvision.utils.save_image(gt_image, f"{self.logger.log_dir}/ground_truth/{batch['name'][0]}_{batch['word_name'][0]}.jpg")
                 os.makedirs(f"{self.logger.log_dir}/source_image", exist_ok=True)
-                torchvision.utils.save_image((batch['source_image'] + 1.0) / 2.0, f"{self.logger.log_dir}/source_image/{batch['name'][0]}_{batch['word_name'][0]}.jpg")
+                torchvision.utils.save_image(gt_image, f"{self.logger.log_dir}/source_image/{batch['name'][0]}_{batch['word_name'][0]}.jpg")
             if self.global_step == 0 and batch_idx == 0:
                 self.logger.experiment.add_text('text', batch['text'][0], self.global_step)
                 self.logger.experiment.add_text('learning_rate', str(self.learning_rate), self.global_step)

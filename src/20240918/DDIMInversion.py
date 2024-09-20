@@ -1,6 +1,6 @@
 import numpy as np 
 import torch
-from diffusers import DDIMInverseScheduler
+from diffusers import DDIMInverseScheduler, DDIMScheduler
 
 class DDIMInversion():
     def __init__(self, pipe):
@@ -38,15 +38,27 @@ class DDIMInversion():
         return prev_sample
 
     def __call__(self, z, embedd, target_timestep, num_inference_steps, guidance_scale=1, negative_embedd=None, device="cuda", controlnet_cond=None, cond_scale=1):
+        # check input 
+        if guidance_scale > 1 and negative_embedd is None:
+            raise ValueError("negative_embedd must be provided when guidance_scale > 1")
+        
+        do_classifier_free_guidance = guidance_scale > 1
+        # TODO: fully support inversion with guidance scale
+        # do_classifier_free_guidance = False
+        
+        prompt_embeds = torch.cat([negative_embedd, embedd], dim=0) if do_classifier_free_guidance else embedd
+
         self.set_timesteps(target_timestep, num_inference_steps, device=device)
-        z_t = z.clone()
+        latents = z.clone()
         with torch.no_grad():
             for timestep in self.timesteps:
+
+                latent_model_input = torch.cat([latents] * 2) if do_classifier_free_guidance else latents
                 if hasattr(self.pipe, 'controlnet'):
                     down_block_res_samples, mid_block_res_sample = self.pipe.controlnet(
-                        z_t,
+                        latents,
                         timestep,
-                        encoder_hidden_states=embedd,
+                        encoder_hidden_states=prompt_embeds,
                         controlnet_cond=controlnet_cond,
                         conditioning_scale=cond_scale,
                         guess_mode=False,
@@ -56,13 +68,18 @@ class DDIMInversion():
                     down_block_res_samples = None
                     mid_block_res_sample = None
 
-                eps = self.pipe.unet(
-                    z_t,
+                noise_pred = self.pipe.unet(
+                    latent_model_input,
                     timestep,
-                    encoder_hidden_states=embedd,
+                    encoder_hidden_states=prompt_embeds,
                     down_block_additional_residuals=down_block_res_samples,
                     mid_block_additional_residual=mid_block_res_sample,
                 ).sample
-                z_t = self.step_ddim_inv(z_t, eps, timestep)
 
-        return z_t, eps
+                if do_classifier_free_guidance:
+                    noise_pred_uncond, noise_pred_text = noise_pred.chunk(2)
+                    noise_pred = noise_pred_uncond + guidance_scale * (noise_pred_text - noise_pred_uncond)
+                    
+                latents = self.step_ddim_inv(latents, noise_pred, timestep)
+
+        return latents, noise_pred
