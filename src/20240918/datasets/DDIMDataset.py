@@ -34,11 +34,14 @@ class DDIMDataset(BaseRelightDataset):
         # we will rename both 'ldr_envmap' and 'norm_envmap' to 'source_ldr_envmap' and 'source_norm_envmap'
         output['source_ldr_envmap'] = output.pop('ldr_envmap')
         output['source_norm_envmap'] = output.pop('norm_envmap')
+        output['source_sh_coeffs'] = output.pop('sh_coeffs')
+        
 
         # we will target_ldr_envmap 
         output['target_ldr_envmap'] = self.transform['envmap'](self.get_image(self.envmap_index[idx],"env_ldr", 256, 256))
         output['target_norm_envmap'] = self.transform['envmap'](self.get_image(self.envmap_index[idx],"env_under", 256, 256))
         output['target_image'] = self.transform['image'](self.get_image(self.envmap_index[idx], "images", 512, 512))
+        output['target_sh_coeffs'] = self.get_shcoeffs(self.envmap_index[idx]).flatten()
         output['word_name'] = self.envmap_index[idx]
         return output
 

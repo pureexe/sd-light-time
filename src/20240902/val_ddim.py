@@ -17,7 +17,7 @@ from constants import FOLDER_NAME
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-i", "--version", type=str, default="29")
-parser.add_argument("-m", "--mode", type=str, default="face_roll60_v2") #unslpash-trainset or multishoe-trainset
+parser.add_argument("-m", "--mode", type=str, default="face_roll60_v2_scene4") #unslpash-trainset or multishoe-trainset
 parser.add_argument("-g", "--guidance_scale", type=str, default="7,5,3,1")
 #parser.add_argument("-c", "--checkpoint", type=str, default="100, 90, 80, 70, 60, 50, 40, 30, 20, 10")
 #parser.add_argument("-c", "--checkpoint", type=str, default="190, 180, 170, 160, 150, 140, 130, 120, 110, 100, 80, 70, 60, 50, 40, 30, 20, 10, 0")
@@ -120,6 +120,14 @@ def get_from_mode(mode):
         return "/data/pakkapon/datasets/face/face_roll_envmap", 100, DDIMDataset,{"index_file":"/data/pakkapon/datasets/face/face_roll_envmap/split-left2right.json"}, None
     elif mode == "face_roll60_v2":
         return "/data/pakkapon/datasets/face/face_roll60", 100, DDIMDataset,{"index_file":"/data/pakkapon/datasets/face/face_roll60/split-left2right.json"}, None
+    elif mode == "face_roll60_v2_scene2":
+        return "/data/pakkapon/datasets/face/face_roll60_v2", 100, DDIMDataset,{"index_file":"/data/pakkapon/datasets/face/face_roll60_v2/split-left2right.json"}, None
+    elif mode == "face_roll60_v2_scene3":
+        return "/data/pakkapon/datasets/face/face_roll60_v3", 100, DDIMDataset,{"index_file":"/data/pakkapon/datasets/face/face_roll60_v3/split-left2right.json"}, None
+    elif mode == "face_roll60_v2_scene4":
+        return "/data/pakkapon/datasets/face/face_roll60_v4", 100, DDIMDataset,{"index_file":"/data/pakkapon/datasets/face/face_roll60_v4/split-left2right.json"}, None
+    elif mode == "face_roll60_v2_scene5":
+        return "/data/pakkapon/datasets/face/face_roll60_v5", 100, DDIMDataset,{"index_file":"/data/pakkapon/datasets/face/face_roll60_v5/split-left2right.json"}, None
     elif mode == "face_identity_guidacne_hfcode":
         return "/data/pakkapon/datasets/face/face2000", 100, DDIMDataset,{"index_file":"/data/pakkapon/datasets/face/face2000/split-identity.json"}, None
     else:
