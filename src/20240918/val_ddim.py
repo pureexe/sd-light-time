@@ -1,13 +1,14 @@
 # val_grid is a validation at step 
 import os 
-from RelightDDIMInverse import create_ddim_inversion
+#from RelightDDIMInverse import create_ddim_inversion
 from AffineCondition import AffineDepth, AffineNormal, AffineNormalBae, AffineDepthNormal, AffineDepthNormalBae, AffineNoControl
 
-from DDIMUnsplashLiteDataset import DDIMUnsplashLiteDataset
+#from DDIMUnsplashLiteDataset import DDIMUnsplashLiteDataset
 from datasets.DDIMDataset import DDIMDataset
 from datasets.DDIMSingleImageDataset import DDIMSingleImageDataset
 from datasets.DDIMCrossDataset import DDIMCrossDataset
 from datasets.DDIMSHCoeffsDataset import DDIMSHCoeffsDataset
+from datasets.DDIMArrayEnvDataset import DDIMArrayEnvDataset
 import lightning as L
 import torch
 import argparse 
@@ -17,13 +18,10 @@ from constants import FOLDER_NAME
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument("-i", "--version", type=str, default="0")
-parser.add_argument("-m", "--mode", type=str, default="multillum_train_v2") #unslpash-trainset or multishoe-trainset
-parser.add_argument("-g", "--guidance_scale", type=str, default="7,5,3,1")
-#parser.add_argument("-c", "--checkpoint", type=str, default="100, 90, 80, 70, 60, 50, 40, 30, 20, 10")
-#parser.add_argument("-c", "--checkpoint", type=str, default="190, 180, 170, 160, 150, 140, 130, 120, 110, 100, 80, 70, 60, 50, 40, 30, 20, 10, 0")
-#parser.add_argument("-c", "--checkpoint", type=str, default="319, 299, 279, 259, 239, 219, 199, 179, 159, 139, 119, 99, 79, 59, 39, 19, 0")
-parser.add_argument("-c", "--checkpoint", type=str, default="64,69,59,49,39,29,19,9,0")
+parser.add_argument("-i", "--version", type=str, default="25")
+parser.add_argument("-m", "--mode", type=str, default="multillum_val")
+parser.add_argument("-g", "--guidance_scale", type=str, default="7")
+parser.add_argument("-c", "--checkpoint", type=str, default="69")
 
 args = parser.parse_args()
 NAMES = {
@@ -39,6 +37,9 @@ NAMES = {
     9: 'bae_both',
     10: 'bae',
     11: 'bae_both',
+    22: 'bae',
+    23: 'bae_both',
+    25: 'depth'
 }
 CONDITIONS_CLASS = {
     0: AffineNoControl,
@@ -53,6 +54,9 @@ CONDITIONS_CLASS = {
     9: AffineDepthNormalBae,
     10: AffineNormalBae,
     11: AffineDepthNormalBae,
+    22: AffineNormalBae,
+    23: AffineDepthNormalBae,
+    25: AffineDepth
 }
 LRS = {
     0: '1e-4',
@@ -67,6 +71,9 @@ LRS = {
     9: '1e-4',
     10: '1e-5',
     11: '1e-5',
+    22: '1e-5',
+    23: '1e-5',
+    25: '1e-4'
  }
 
 
@@ -101,6 +108,10 @@ def get_from_mode(mode):
         return "/data/pakkapon/datasets/multi_illumination/spherical/train", 100, DDIMSHCoeffsDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/split-train3scenes.json"}, None
     elif mode == "multillum_test_v2":
         return "/data/pakkapon/datasets/multi_illumination/spherical/test", 100, DDIMSHCoeffsDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/split-test3scenes.json"}, None
+    elif mode == "multillum_val_array":
+        return "/data/pakkapon/datasets/multi_illumination/spherical/val", 100, DDIMArrayEnvDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/split-val-relight-array.json"}, None   
+    elif mode == "multillum_val":
+        return "/data/pakkapon/datasets/multi_illumination/spherical/val", 100, DDIMDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/split-val-relight.json"}, None   
     else:
         raise Exception("mode not found")
 
@@ -113,8 +124,9 @@ def main():
 
     for mode in modes:
         for version in versions:
-                condition_class = CONDITIONS_CLASS[version]
-                ddim_class = create_ddim_inversion(condition_class)
+                #condition_class = CONDITIONS_CLASS[version]
+                #ddim_class = create_ddim_inversion(condition_class)
+                ddim_class = CONDITIONS_CLASS[version]
                 #try:
                 if True:
                     for checkpoint in checkpoints:

@@ -81,8 +81,9 @@ CUDA_VISIBLE_DEVICES=0 bin/py src/20240918/train.py -lr 1e-4 -ct no_control --fe
 # version 25 is from version8 (depth)
 CUDA_VISIBLE_DEVICES=1 bin/py src/20240918/train.py -lr 1e-4 -ct depth --feature_type vae --guidance_scale 7.0 --batch_size 16 -ckpt output/20240918/multi_mlp_fit/lightning_logs/version_8/checkpoints/epoch=000019.ckpt
 
-# version 25 is from version10 (bothbae)
+# version 26 is from version10 (bothbae)
 CUDA_VISIBLE_DEVICES=0 bin/py src/20240918/train.py -lr 1e-4 -ct both_bae --feature_type vae --guidance_scale 7.0 --batch_size 12 -ckpt output/20240918/multi_mlp_fit/lightning_logs/version_10/checkpoints/epoch=000049.ckpt
 
-# version 26 is from version9 (normal)
+# version 27 is from version9 (normal)
 CUDA_VISIBLE_DEVICES=1 bin/py src/20240918/train.py -lr 1e-4 -ct bae --feature_type vae --guidance_scale 7.0 --batch_size 16 -ckpt output/20240918/multi_mlp_fit/lightning_logs/version_9/checkpoints/epoch=000034.ckpt
+
