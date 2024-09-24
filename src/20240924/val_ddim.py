@@ -16,12 +16,14 @@ from LineNotify import LineNotify
 import argparse
 from constants import FOLDER_NAME
 
+CHECKPOINT_FOLDER_NAME = "20240918"
+
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-i", "--version", type=str, default="13")
 parser.add_argument("-m", "--mode", type=str, default="multillum_val_rotate_test")
 parser.add_argument("-g", "--guidance_scale", type=str, default="7,5,3,1")
-parser.add_argument("-c", "--checkpoint", type=str, default="299, 279, 259, 239, 219, 199, 179, 159, 139, 119, 99, 79, 59, 39, 19, 0")
+parser.add_argument("-c", "--checkpoint", type=str, default="164")
 
 args = parser.parse_args()
 NAMES = {
@@ -167,7 +169,7 @@ def get_from_mode(mode):
     elif mode == "multillum_val_array":
         return "/data/pakkapon/datasets/multi_illumination/spherical/val", 100, DDIMArrayEnvDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/split-val-relight-array.json"}, None   
     elif mode == "multillum_val":
-        return "/data/pakkapon/datasets/multi_illumination/spherical/val", 100, DDIMArrayEnvDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/split-val-relight-array.json"}, None   
+        return "/data/pakkapon/datasets/multi_illumination/spherical/val", 100, DDIMDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/split-val-relight.json"}, None   
     elif mode == "multillum_val_rotate_test":
         return "/data/pakkapon/datasets/multi_illumination/spherical/val_rotate", 100, DDIMArrayEnvDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/val_rotate/split.json"}, None   
     else:
@@ -192,7 +194,7 @@ def main():
                             model = ddim_class(learning_rate=1e-4)
                             CKPT_PATH = None
                         else:
-                            CKPT_PATH = f"output/{FOLDER_NAME}/multi_mlp_fit/lightning_logs/version_{version}/checkpoints/epoch={checkpoint:06d}.ckpt"
+                            CKPT_PATH = f"output/{CHECKPOINT_FOLDER_NAME}/multi_mlp_fit/lightning_logs/version_{version}/checkpoints/epoch={checkpoint:06d}.ckpt"
                             if not os.path.exists(CKPT_PATH):
                                 print(f"Checkpoint not found: {CKPT_PATH}")
                                 continue
@@ -213,7 +215,7 @@ def main():
                             print("================================")
                             print(output_dir)
                             print("================================")
-                            trainer = L.Trainer(max_epochs=1000, precision=16, check_val_every_n_epoch=1, default_root_dir=output_dir)
+                            trainer = L.Trainer(max_epochs=1000, precision=16, check_val_every_n_epoch=1, default_root_dir=output_dir, inference_mode=False)
                             val_root, count_file, dataset_class, dataset_args, specific_prompt = get_from_mode(mode)
                             if type(count_file) == int:
                                 split = slice(0, count_file, 1)

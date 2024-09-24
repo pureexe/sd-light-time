@@ -13,6 +13,7 @@ import json
 from tqdm.auto import tqdm
 import ezexr
 from PIL import Image
+import bitsandbytes as bnb
 
 from constants import *
 from diffusers import StableDiffusionPipeline, ControlNetModel, StableDiffusionControlNetPipeline, DDIMScheduler, DDIMInverseScheduler
@@ -23,7 +24,7 @@ from LightEmbedingBlock import set_light_direction, add_light_block, set_gate_sh
 
 from ball_helper import inpaint_chromeball, pipeline2controlnetinpaint
  
-MASTER_TYPE = torch.float16
+MASTER_TYPE = torch.float32
  
 class AffineControl(L.LightningModule):
 
@@ -47,6 +48,7 @@ class AffineControl(L.LightningModule):
         self.feature_type = feature_type
         self.num_inversion_steps = num_inversion_steps
         self.num_inference_steps = num_inference_steps
+        self.num_null_text_steps = 10
         self.save_hyperparameters()
         
 
@@ -251,7 +253,7 @@ class AffineControl(L.LightningModule):
     
     def generate_tensorboard(self, batch, batch_idx, is_save_image=False, is_seperate_dir_with_epoch=False):
         USE_LIGHT_DIRECTION_CONDITION = True
-        USE_OWN_DDIM = True
+        USE_NULL_TEXT = True
 
         is_apply_cfg = self.guidance_scale > 1
         
@@ -279,34 +281,106 @@ class AffineControl(L.LightningModule):
                 negative_embedding = self.get_text_embeddings([''])
                 negative_embedding = negative_embedding.repeat(text_embbeding.shape[0], 1, 1)
 
-        if USE_OWN_DDIM:
-            ddim_args = {
-                'z': z0_noise,
-                'embedd': text_embbeding,
-                'negative_embedd': negative_embedding,   
-                'target_timestep': 1000,
-                'num_inference_steps': self.num_inversion_steps,
-                'guidance_scale': 1.0,
-                'device': z0_noise.device,
+        # DDIM inversion
+        ddim_timesteps = []
+        ddim_latents = []
+        def callback_ddim(pipe, step_index, timestep, callback_kwargs):
+            ddim_timesteps.append(timestep)
+            ddim_latents.append(callback_kwargs['latents'].clone())
+            return callback_kwargs
+        
+        ddim_args = {
+            "prompt_embeds": text_embbeding,
+            "negative_prompt_embeds": negative_embedding, 
+            "guidance_scale": 1.0,
+            "latents": z0_noise,
+            "output_type": 'latent',
+            "return_dict": False,
+            "num_inference_steps": self.num_inversion_steps,
+            "generator": torch.Generator().manual_seed(self.seed),
+            "callback_on_step_end": callback_ddim
+        }
+        if hasattr(self.pipe, "controlnet"):
+            ddim_args["image"] = self.get_control_image(batch)
+                                                        
+        self.pipe.scheduler = self.inverse_scheduler
+        zt_noise, _ = self.pipe(**ddim_args)
+        self.pipe.scheduler = self.normal_scheduler
+
+        # flip list of latents and timesteps
+        ddim_latents = ddim_latents[::-1]
+        ddim_timesteps = ddim_timesteps[::-1]
+        null_embeddings = []
+
+        if USE_NULL_TEXT:
+            def callback_nulltext(pipe, step_index, timestep, callback_kwargs):
+                        
+                # we can't predict next latents for the last step
+                if step_index+1 == self.num_inversion_steps:
+                    return callback_kwargs
+                
+                latents = callback_kwargs['latents'].clone().detach()
+                latent_model_input = torch.cat([latents] * 2)
+                latent_model_input = pipe.scheduler.scale_model_input(latent_model_input, timestep)
+
+                negative_prompt_embeds = callback_kwargs['prompt_embeds'][0:1]
+                negative_prompt_embeds = negative_prompt_embeds.clone().detach()
+
+                with torch.enable_grad():
+                    negative_prompt_embeds.requires_grad = True
+                    optimizer = bnb.optim.Adam8bit([negative_prompt_embeds], lr=1e-2) # learning rate mentioned in the paper
+                    for _ in range(self.num_null_text_steps):
+                        optimizer.zero_grad()
+                        # prepare for input
+                        embedd = torch.cat([negative_prompt_embeds, callback_kwargs['prompt_embeds'][1:2]], dim=0)
+                        unet_kwargs = {
+                            "sample": latent_model_input,
+                            "timestep": timestep,
+                            "encoder_hidden_states": embedd,
+                            "return_dict": False,
+                        }
+                        # support for controlnet
+                        if 'down_block_res_samples' in callback_kwargs:
+                            unet_kwargs['down_block_additional_residuals'] = callback_kwargs['down_block_res_samples']
+                            unet_kwargs['mid_block_additional_residual'] = callback_kwargs['mid_block_res_sample']
+
+                        noise_pred = pipe.unet(**unet_kwargs)[0]
+
+                        # classifier free guidance
+                        noise_pred_uncond, noise_pred_text = noise_pred.chunk(2)
+                        noise_pred = noise_pred_uncond + self.guidance_scale * (noise_pred_text - noise_pred_uncond)
+                        
+                        # predict next latents
+                        predict_latents = pipe.scheduler.step(noise_pred, timestep, latents, return_dict=False)[0]
+                        
+                        # calculate loss with next latents
+                        loss = torch.nn.functional.mse_loss(predict_latents, ddim_latents[step_index+1])
+                        loss.backward()
+                        optimizer.step()
+
+                        if loss < 1e-5: #early stopping mention in the paper
+                            break
+
+                negative_prompt_embeds = negative_prompt_embeds.detach()
+                callback_kwargs['prompt_embeds'][0:1] = negative_prompt_embeds
+                null_embeddings.append(negative_prompt_embeds)
+                callback_kwargs['latents'] = predict_latents.detach()
+                return callback_kwargs
+            # do ddim forward to image
+            null_text_args = {
+                "prompt_embeds": text_embbeding,
+                "negative_prompt_embeds": negative_embedding, 
+                "guidance_scale": self.guidance_scale,
+                "latents": zt_noise,
+                "num_inference_steps": self.num_inversion_steps,
+                "generator": torch.Generator().manual_seed(self.seed),
+                "callback_on_step_end_tensor_inputs": ["latents", "prompt_embeds"],
+                "callback_on_step_end": callback_nulltext
             }
-            if hasattr(self.pipe, 'controlnet'):
-                ddim_args['controlnet_cond'] = self.get_control_image(batch)    
-                ddim_args['cond_scale'] = self.condition_scale
-                # DDIM inverse to get an intial noise
-            zt_noise, _ = self.ddim_inversion(**ddim_args)
-        else:
-            self.pipe.scheduler = self.inverse_scheduler
-            zt_noise, _ = self.pipe(
-                prompt_embeds=text_embbeding,
-                negative_prompt_embeds=negative_embedding, 
-                guidance_scale=self.guidance_scale,
-                latents=z0_noise,
-                output_type='latent',
-                return_dict=False,
-                num_inference_steps=self.num_inference_steps,
-                generator=torch.Generator().manual_seed(self.seed)
-            )
-            self.pipe.scheduler = self.nomral_scheduler
+            if hasattr(self.pipe, "controlnet"):
+                null_text_args["image"] = self.get_control_image(batch)
+                                                        
+            null_text_output = self.pipe(**null_text_args)
 
         # if dataset is not list, convert to list
         for key in ['target_ldr_envmap', 'target_norm_envmap', 'target_image', 'target_sh_coeffs', 'word_name']:
@@ -340,8 +414,26 @@ class AffineControl(L.LightningModule):
             }
             if hasattr(self.pipe, "controlnet"):
                 pipe_args["image"] = self.get_control_image(batch)
+            
+            if USE_NULL_TEXT:
+                def callback_apply_nulltext(pipe, step_index, timestep, callback_kwargs):
+                    # skip the last step
+                    if step_index + 1 >= len(null_embeddings):
+                        return callback_kwargs
+
+                    # apply null text
+                    callback_kwargs['prompt_embeds'][0] = null_embeddings[step_index][0]
+                    return callback_kwargs
+
+                pipe_args['negative_prompt_embeds'] = null_embeddings[0]
+                pipe_args['callback_on_step_end_tensor_inputs'] = ["latents", "prompt_embeds"]
+                pipe_args['callback_on_step_end'] = callback_apply_nulltext
+                pt_image, _ = self.pipe(**pipe_args)
+            else:
+                pt_image, _ = self.pipe(**pipe_args)
+
+
             gt_on_batch = 'target_image' if "target_image" in batch else 'source_image'
-            pt_image, _ = self.pipe(**pipe_args)
             gt_image = (batch[gt_on_batch][target_idx] + 1.0) / 2.0
             tb_image = [gt_image, pt_image]
 
