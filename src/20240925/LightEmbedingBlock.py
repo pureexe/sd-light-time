@@ -44,10 +44,10 @@ class LightEmbedBlock(torch.nn.Module):
     def forward(self, x):
         # if using cfg (classifier guidance-free), only apply light condition to non cfg part
         use_cfg = self.is_apply_cfg and x.shape[0] % 2 == 0
+        x_uncond = None
         if use_cfg:
             # apply only non cfg part
-            h = x.shape[0] // 2
-            v = x[h:]
+            x_uncond, v = torch.chunk(x, 2)
         else:
             v = x #[B,C,H,W]
         
@@ -58,19 +58,13 @@ class LightEmbedBlock(torch.nn.Module):
             direction = direction.to(v.device).to(v.dtype) #[B,C]
             light_m = self.light_mul(direction) 
             light_a = self.light_add(direction)
-            
-            # compute light condition
-            
-            adagn = v * light_m[...,None,None] + light_a[...,None,None]
-
-            y = v + adagn
+            y = v * light_m[...,None,None] + light_a[...,None,None]
         else:
             y = v
 
         #  concat part that not apply light condition back
         if use_cfg:
-            y = torch.cat([x[:h], y], dim=0)
-            
+            y = torch.cat([x_uncond, y], dim=0)
 
         return y
 
