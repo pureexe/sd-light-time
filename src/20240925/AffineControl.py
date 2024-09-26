@@ -20,7 +20,7 @@ from diffusers import StableDiffusionPipeline, ControlNetModel, StableDiffusionC
 from diffusers.pipelines.controlnet.multicontrolnet import MultiControlNetModel
 
 from DDIMInversion import DDIMInversion
-from LightEmbedingBlock import set_light_direction, add_light_block, set_gate_shift_scale
+from LightEmbedingBlock import set_light_direction, add_light_block
 
 from ball_helper import inpaint_chromeball, pipeline2controlnetinpaint
  
@@ -36,6 +36,8 @@ class AffineControl(L.LightningModule):
             feature_type="vae",
             num_inversion_steps=200,
             num_inference_steps=50,
+            use_ddim_inversion=True,
+            use_null_text=False,
             *args,
             **kwargs
         ) -> None:
@@ -46,10 +48,11 @@ class AffineControl(L.LightningModule):
         self.use_set_guidance_scale = False
         self.learning_rate = learning_rate
         self.feature_type = feature_type
-        #self.num_inversion_steps = num_inversion_steps
-        self.num_inversion_steps = 999
+        self.num_inversion_steps = num_inversion_steps
         self.num_inference_steps = num_inference_steps
         self.num_null_text_steps = 10
+        self.use_ddim_inversion = use_ddim_inversion
+        self.use_null_text = use_null_text
         self.save_hyperparameters()
         
 
@@ -72,11 +75,9 @@ class AffineControl(L.LightningModule):
         self.pipe.to('cuda')
 
         # filter trainable layer
-        unet_trainable = filter(lambda p: p.requires_grad and (len(p.shape) > 1 or p.shape[0] > 1), self.pipe.unet.parameters())
-        gate_trainable = filter(lambda p: p.requires_grad and (len(p.shape) == 1 and p.shape[0] == 1), self.pipe.unet.parameters())
+        unet_trainable = filter(lambda p: p.requires_grad, self.pipe.unet.parameters())
 
         self.unet_trainable = torch.nn.ParameterList(unet_trainable)
-        self.gate_trainable = torch.nn.ParameterList(gate_trainable)
 
     def setup_sd(self, sd_path="runwayml/stable-diffusion-v1-5", controlnet_path="lllyasviel/sd-controlnet-depth"):
         # load controlnet from pretrain
@@ -102,7 +103,7 @@ class AffineControl(L.LightningModule):
         self.pipe.vae.requires_grad_(False)
         self.pipe.text_encoder.requires_grad_(False)
         self.pipe.controlnet.requires_grad_(False)
-        #self.pipe.scheduler = UniPCMultistepScheduler.from_config(self.pipe.scheduler.config)
+
         is_save_memory = False
         if is_save_memory:
             self.pipe.enable_model_cpu_offload()
@@ -121,9 +122,6 @@ class AffineControl(L.LightningModule):
     
     def set_seed(self, seed):
         self.seed = seed
-
-    def set_gate_shift_scale(self, gate_shift, gate_scale):
-        set_gate_shift_scale(self.pipe.unet, gate_shift, gate_scale)
    
     def get_vae_features(self, images, generator=None):
         assert images.shape[1] == 3, "Only support RGB image"
@@ -254,7 +252,9 @@ class AffineControl(L.LightningModule):
     
     def generate_tensorboard(self, batch, batch_idx, is_save_image=False, is_seperate_dir_with_epoch=False):
         USE_LIGHT_DIRECTION_CONDITION = True
-        USE_NULL_TEXT = True
+
+        if self.use_null_text and not self.use_ddim_inversion:
+            raise ValueError("use_null_text is only supported with use_ddim_inversion=True")
 
         is_apply_cfg = self.guidance_scale > 1
         
@@ -282,38 +282,41 @@ class AffineControl(L.LightningModule):
                 negative_embedding = self.get_text_embeddings([''])
                 negative_embedding = negative_embedding.repeat(text_embbeding.shape[0], 1, 1)
 
-        # DDIM inversion
         ddim_timesteps = []
         ddim_latents = []
-        def callback_ddim(pipe, step_index, timestep, callback_kwargs):
-            ddim_timesteps.append(timestep)
-            ddim_latents.append(callback_kwargs['latents'].clone())
-            return callback_kwargs
-        
-        ddim_args = {
-            "prompt_embeds": text_embbeding,
-            "negative_prompt_embeds": negative_embedding, 
-            "guidance_scale": 1.0,
-            "latents": z0_noise,
-            "output_type": 'latent',
-            "return_dict": False,
-            "num_inference_steps": self.num_inversion_steps,
-            "generator": torch.Generator().manual_seed(self.seed),
-            "callback_on_step_end": callback_ddim
-        }
-        if hasattr(self.pipe, "controlnet"):
-            ddim_args["image"] = self.get_control_image(batch)
-                                                        
-        self.pipe.scheduler = self.inverse_scheduler
-        zt_noise, _ = self.pipe(**ddim_args)
-        self.pipe.scheduler = self.normal_scheduler
+        if self.use_ddim_inversion or self.use_null_text:
+            # DDIM inversion
+            def callback_ddim(pipe, step_index, timestep, callback_kwargs):
+                ddim_timesteps.append(timestep)
+                ddim_latents.append(callback_kwargs['latents'].clone())
+                return callback_kwargs
+            
+            ddim_args = {
+                "prompt_embeds": text_embbeding,
+                "negative_prompt_embeds": negative_embedding, 
+                "guidance_scale": 1.0,
+                "latents": z0_noise,
+                "output_type": 'latent',
+                "return_dict": False,
+                "num_inference_steps": self.num_inversion_steps,
+                "generator": torch.Generator().manual_seed(self.seed),
+                "callback_on_step_end": callback_ddim
+            }
+            if hasattr(self.pipe, "controlnet"):
+                ddim_args["image"] = self.get_control_image(batch)
+                                                            
+            self.pipe.scheduler = self.inverse_scheduler
+            zt_noise, _ = self.pipe(**ddim_args)
+            self.pipe.scheduler = self.normal_scheduler
+        else:
+            zt_noise = None
 
         # flip list of latents and timesteps
         ddim_latents = ddim_latents[::-1]
         ddim_timesteps = ddim_timesteps[::-1]
         null_embeddings = []
 
-        if USE_NULL_TEXT:
+        if self.use_null_text:
             # during null text, we need to re-enable guidance scale
             set_light_direction(
                 self.pipe.unet, 
@@ -412,7 +415,7 @@ class AffineControl(L.LightningModule):
             pipe_args = {
                 "prompt_embeds": text_embbeding,
                 "negative_prompt_embeds": negative_embedding,
-                "latents": zt_noise.clone(),
+                "latents": zt_noise.clone() if zt_noise is not None else None,
                 "output_type": "pt",
                 "guidance_scale": self.guidance_scale,
                 "num_inference_steps": self.num_inference_steps,
@@ -422,7 +425,7 @@ class AffineControl(L.LightningModule):
             if hasattr(self.pipe, "controlnet"):
                 pipe_args["image"] = self.get_control_image(batch)
             
-            if USE_NULL_TEXT:
+            if self.use_null_text:
                 def callback_apply_nulltext(pipe, step_index, timestep, callback_kwargs):
                     # skip the last step
                     if step_index + 1 >= len(null_embeddings):
@@ -522,12 +525,6 @@ class AffineControl(L.LightningModule):
                 # save the source_image
                 os.makedirs(f"{self.logger.log_dir}/{epoch_text}source_image", exist_ok=True)
                 torchvision.utils.save_image(gt_image, f"{self.logger.log_dir}/{epoch_text}source_image/{filename}.jpg")
-            if batch_idx == 0:
-                if hasattr(self, "gate_trainable"):
-                    # plot gate_trainable
-                    for gate_id, gate in enumerate(self.gate_trainable):
-                        self.logger.experiment.add_scalar(f'gate/{gate_id:02d}', gate, self.global_step)
-                        self.logger.experiment.add_scalar(f'gate/average', gate, self.global_step)
             if self.global_step == 0:
                 self.logger.experiment.add_text(f'text/{batch["word_name"][0]}', batch['text'][0], self.global_step)
             if self.global_step == 0 and batch_idx == 0:
@@ -572,7 +569,6 @@ class AffineControl(L.LightningModule):
     def configure_optimizers(self):
         optimizer = torch.optim.Adam([
             {'params': self.unet_trainable, 'lr': self.learning_rate},
-            {'params': self.gate_trainable, 'lr': self.learning_rate * self.gate_multipiler}
         ])
         return optimizer
     

@@ -21,9 +21,9 @@ CHECKPOINT_FOLDER_NAME = "20240918"
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-i", "--version", type=str, default="13")
-parser.add_argument("-m", "--mode", type=str, default="multillum_val_rotate_test")
+parser.add_argument("-m", "--mode", type=str, default="multillum_val_array")
 parser.add_argument("-g", "--guidance_scale", type=str, default="7,5,3,1")
-parser.add_argument("-c", "--checkpoint", type=str, default="164")
+parser.add_argument("-c", "--checkpoint", type=str, default="269")
 
 args = parser.parse_args()
 NAMES = {

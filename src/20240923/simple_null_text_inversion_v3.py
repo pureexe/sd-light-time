@@ -5,18 +5,18 @@ from diffusers import StableDiffusionPipeline, DDIMInverseScheduler, DDIMSchedul
 import torch 
 from tqdm.auto import tqdm
 import bitsandbytes as bnb
+from torch.cuda.amp import autocast, GradScaler
 
 
-MASTER_TYPE = torch.float32
+MASTER_TYPE = torch.float16
 SEED = 42
-#DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
-DEVICE = "cpu"
+DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 #PROMPT = "A dog in the park"
 PROMPT = "several pots of plants sit on a counter top"
-NUM_INFERENCE_STEPS = 50
+NUM_INFERENCE_STEPS = 200
 GUIDANCE_SCALE = 7.0
 NULL_STEP = 10
-EXP_NAME = "50_2080ti"
+EXP_NAME = "v3_200"
 
 @torch.inference_mode()
 def get_text_embeddings(pipe, text):
@@ -34,18 +34,6 @@ def get_text_embeddings(pipe, text):
     ).input_ids.to(pipe.text_encoder.device)
     return pipe.text_encoder(tokens).last_hidden_state
 
-def rescale_noise_cfg(noise_cfg, noise_pred_text, guidance_rescale=0.0):
-    """
-    Rescale `noise_cfg` according to `guidance_rescale`. Based on findings of [Common Diffusion Noise Schedules and
-    Sample Steps are Flawed](https://arxiv.org/pdf/2305.08891.pdf). See Section 3.4
-    """
-    std_text = noise_pred_text.std(dim=list(range(1, noise_pred_text.ndim)), keepdim=True)
-    std_cfg = noise_cfg.std(dim=list(range(1, noise_cfg.ndim)), keepdim=True)
-    # rescale the results from guidance (fixes overexposure)
-    noise_pred_rescaled = noise_cfg * (std_text / std_cfg)
-    # mix with the original results from guidance by factor guidance_rescale to avoid "plain looking" images
-    noise_cfg = guidance_rescale * noise_pred_rescaled + (1 - guidance_rescale) * noise_cfg
-    return noise_cfg
 
 def main():
     INPUT_IMAGE = "src/20240923/copyroom10.png"
@@ -107,26 +95,38 @@ def main():
             return callback_kwargs
         
         latents = callback_kwargs['latents'].clone().detach()
-        latent_model_input = torch.cat([latents] * 2)
+        latent_model_input = latents #torch.cat([latents] * 2)
         latent_model_input = pipe.scheduler.scale_model_input(latent_model_input, timestep)
 
-        negative_prompt_embeds, text_embbeding = callback_kwargs['prompt_embeds'].chunk(2)
+        negative_prompt_embeds, prompt_embeds = callback_kwargs['prompt_embeds'].chunk(2)
         negative_prompt_embeds = negative_prompt_embeds.clone().detach()
+
+        # compute positive unet 
+        unet_kwargs = {
+            "sample": latent_model_input,
+            "timestep": timestep,
+            "encoder_hidden_states": prompt_embeds,
+            "return_dict": False,
+        }
+        # support for controlnet
+        if 'down_block_res_samples' in callback_kwargs:
+            unet_kwargs['down_block_additional_residuals'] = callback_kwargs['down_block_res_samples']
+            unet_kwargs['mid_block_additional_residual'] = callback_kwargs['mid_block_res_sample']
+
+        noise_pred_text = pipe.unet(**unet_kwargs)[0]
+
 
         with torch.enable_grad():
             if True:
-
                 negative_prompt_embeds.requires_grad = True
-                #optimizer = bnb.optim.Adam8bit([negative_prompt_embeds], lr=1e-2)
-                optimizer = torch.optim.Adam([negative_prompt_embeds], lr=1e-2)
+                optimizer = bnb.optim.Adam8bit([negative_prompt_embeds], lr=1e-2)
                 for _ in range(NULL_STEP):
                     optimizer.zero_grad()
                     # prepare for input
-                    embedd = torch.cat([negative_prompt_embeds, text_embbeding], dim=0)
                     unet_kwargs = {
                         "sample": latent_model_input,
                         "timestep": timestep,
-                        "encoder_hidden_states": embedd,
+                        "encoder_hidden_states": negative_prompt_embeds,
                         "return_dict": False,
                     }
                     # support for controlnet
@@ -134,14 +134,11 @@ def main():
                         unet_kwargs['down_block_additional_residuals'] = callback_kwargs['down_block_res_samples']
                         unet_kwargs['mid_block_additional_residual'] = callback_kwargs['mid_block_res_sample']
 
-                    noise_pred = pipe.unet(**unet_kwargs)[0]
+                    noise_pred_uncond = pipe.unet(**unet_kwargs)[0]
 
                     # classifier free guidance
-                    noise_pred_uncond, noise_pred_text = noise_pred.chunk(2)
+                    #noise_pred_uncond, noise_pred_text = noise_pred.chunk(2)
                     noise_pred = noise_pred_uncond + GUIDANCE_SCALE * (noise_pred_text - noise_pred_uncond)
-
-                    # Rescale noise cfg, Based on 3.4. in https://arxiv.org/pdf/2305.08891.pdf
-                    noise_pred = rescale_noise_cfg(noise_pred, noise_pred_text, guidance_rescale=GUIDANCE_SCALE)
                     
                     # predict next latents
                     predict_latents = pipe.scheduler.step(noise_pred, timestep, latents, return_dict=False)[0]
@@ -150,13 +147,13 @@ def main():
                     loss = torch.nn.functional.mse_loss(predict_latents, ddim_latents[step_index+1])
                     loss.backward()
                     optimizer.step()
-       
+                             
                     print(f"{loss.item():.6f}")
                     if loss < 1e-5: #early stopping mention in the paper
                         break
 
         negative_prompt_embeds = negative_prompt_embeds.detach()
-        callback_kwargs['prompt_embeds'] = torch.cat([negative_prompt_embeds, text_embbeding])
+        callback_kwargs['prompt_embeds'] = torch.cat([negative_prompt_embeds, prompt_embeds])
         null_embeddings.append(negative_prompt_embeds)
         callback_kwargs['latents'] = predict_latents.detach()
         return callback_kwargs
@@ -179,9 +176,9 @@ def main():
         # skip the last step
         if step_index + 1 >= len(null_embeddings):
             return callback_kwargs
-        _, text_embbeding = callback_kwargs['prompt_embeds'].chunk(2)
+
         # apply null text
-        callback_kwargs['prompt_embeds'] = torch.cat([null_embeddings[step_index], text_embbeding])
+        callback_kwargs['prompt_embeds'][0] = null_embeddings[step_index][0]
         return callback_kwargs
     
     pipe_args = {

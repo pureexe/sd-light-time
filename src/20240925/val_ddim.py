@@ -16,12 +16,14 @@ from LineNotify import LineNotify
 import argparse
 from constants import FOLDER_NAME
 
+CHECKPOINT_FOLDER_NAME = "20240918"
+
 
 parser = argparse.ArgumentParser()
-parser.add_argument("-i", "--version", type=str, default="28dd")
-parser.add_argument("-m", "--mode", type=str, default="multillum_val_array_v3")
+parser.add_argument("-i", "--version", type=str, default="13")
+parser.add_argument("-m", "--mode", type=str, default="face_left_ddim_v2")
 parser.add_argument("-g", "--guidance_scale", type=str, default="7,5,3,1")
-parser.add_argument("-c", "--checkpoint", type=str, default="299, 279, 259, 239, 219, 199, 179, 159, 139, 119, 99, 79, 59, 39, 19, 0")
+parser.add_argument("-c", "--checkpoint", type=str, default="0")
 
 args = parser.parse_args()
 NAMES = {
@@ -53,10 +55,6 @@ NAMES = {
     25: 'depth',
     26: 'bae_both',
     27: 'bae',
-    29: 'no_control',
-    30: 'depth',
-    31: 'bae_both',
-    32: 'bae'
 }
 METHODS = {
     12: 'shcoeffs',
@@ -74,10 +72,6 @@ METHODS = {
     25: 'vae',
     26: 'vae',
     27: 'vae',
-    29: 'vae',
-    30: 'vae',
-    31: 'vae',
-    32: 'vae'
 }
 CONDITIONS_CLASS = {
     0: AffineNoControl,
@@ -108,10 +102,6 @@ CONDITIONS_CLASS = {
     25: AffineDepth,
     26: AffineDepthNormalBae,
     27: AffineNormalBae,
-    29: AffineNoControl,
-    30: AffineDepth,
-    31: AffineDepthNormalBae,
-    32: AffineNormalBae
 }
 LRS = {
     0: '1e-4',
@@ -142,10 +132,6 @@ LRS = {
     25: '1e-4',
     26: '1e-4',
     27: '1e-4',
-    29: '1e-4',
-    30: '1e-4',
-    31: '1e-4',
-    32: '1e-4'
  }
 
 
@@ -180,11 +166,11 @@ def get_from_mode(mode):
         return "/data/pakkapon/datasets/multi_illumination/spherical/train", 100, DDIMSHCoeffsDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/split-train3scenes.json"}, None
     elif mode == "multillum_test_v2":
         return "/data/pakkapon/datasets/multi_illumination/spherical/test", 100, DDIMSHCoeffsDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/split-test3scenes.json"}, None
-    elif mode == "multillum_val_array_v3":
+    elif mode == "multillum_val_array":
         return "/data/pakkapon/datasets/multi_illumination/spherical/val", 100, DDIMArrayEnvDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/split-val-relight-array.json"}, None   
     elif mode == "multillum_val":
-        return "/data/pakkapon/datasets/multi_illumination/spherical/val", 100, DDIMArrayEnvDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/split-val-relight-array.json"}, None   
-    elif mode == "multillum_val_rotate_v2":
+        return "/data/pakkapon/datasets/multi_illumination/spherical/val", 100, DDIMDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/split-val-relight.json"}, None   
+    elif mode == "multillum_val_rotate_test":
         return "/data/pakkapon/datasets/multi_illumination/spherical/val_rotate", 100, DDIMArrayEnvDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/val_rotate/split.json"}, None   
     else:
         raise Exception("mode not found")
@@ -208,11 +194,13 @@ def main():
                             model = ddim_class(learning_rate=1e-4)
                             CKPT_PATH = None
                         else:
-                            CKPT_PATH = f"output/{FOLDER_NAME}/multi_mlp_fit/lightning_logs/version_{version}/checkpoints/epoch={checkpoint:06d}.ckpt"
+                            CKPT_PATH = f"output/{CHECKPOINT_FOLDER_NAME}/multi_mlp_fit/lightning_logs/version_{version}/checkpoints/epoch={checkpoint:06d}.ckpt"
                             if not os.path.exists(CKPT_PATH):
                                 print(f"Checkpoint not found: {CKPT_PATH}")
                                 continue
                             model = ddim_class.load_from_checkpoint(CKPT_PATH)
+                        model.use_ddim_inversion = False
+                        model.use_null_text = False
                         # disable chromeball inpaint if exist
                         if hasattr(model, 'pipe_chromeball'):
                             del model.pipe_chromeball
@@ -229,7 +217,7 @@ def main():
                             print("================================")
                             print(output_dir)
                             print("================================")
-                            trainer = L.Trainer(max_epochs=1000, precision=16, check_val_every_n_epoch=1, default_root_dir=output_dir)
+                            trainer = L.Trainer(max_epochs=1000, precision=16, check_val_every_n_epoch=1, default_root_dir=output_dir, inference_mode=False)
                             val_root, count_file, dataset_class, dataset_args, specific_prompt = get_from_mode(mode)
                             if type(count_file) == int:
                                 split = slice(0, count_file, 1)
