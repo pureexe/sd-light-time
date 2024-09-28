@@ -74,7 +74,7 @@ class LightEmbedBlock(torch.nn.Module):
             direction = direction.to(v.device).to(v.dtype) #[B,C]
             light_m = self.light_mul(direction) 
             light_a = self.light_add(direction)
-            
+
             # compute light condition
             
             adagn = v * light_m[...,None,None] + light_a[...,None,None]

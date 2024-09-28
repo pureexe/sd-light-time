@@ -18,9 +18,9 @@ from constants import FOLDER_NAME
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument("-i", "--version", type=str, default="28dd")
+parser.add_argument("-i", "--version", type=str, default="29")
 parser.add_argument("-m", "--mode", type=str, default="multillum_val_array_v3")
-parser.add_argument("-g", "--guidance_scale", type=str, default="7,5,3,1")
+parser.add_argument("-g", "--guidance_scale", type=str, default="9,7,5,3,1")
 parser.add_argument("-c", "--checkpoint", type=str, default="299, 279, 259, 239, 219, 199, 179, 159, 139, 119, 99, 79, 59, 39, 19, 0")
 
 args = parser.parse_args()
