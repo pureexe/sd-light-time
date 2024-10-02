@@ -20,9 +20,9 @@ CHECKPOINT_FOLDER_NAME = "20240918"
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument("-i", "--version", type=str, default="12")
-parser.add_argument("-m", "--mode", type=str, default="multillum_val_array")
-parser.add_argument("-g", "--guidance_scale", type=str, default="7,5,3,1")
+parser.add_argument("-i", "--version", type=str, default="33")
+parser.add_argument("-m", "--mode", type=str, default="multillum_test_30_array")
+parser.add_argument("-g", "--guidance_scale", type=str, default="3,7,5,2.5,2,1.5,1")
 parser.add_argument("-c", "--checkpoint", type=str, default="299, 279, 259, 239, 219, 199, 179, 159, 139, 119, 99, 79, 59, 39, 19, 0")
 
 args = parser.parse_args()
@@ -55,6 +55,10 @@ NAMES = {
     25: 'depth',
     26: 'bae_both',
     27: 'bae',
+    33: 'no_control',
+    35: 'both_bae',
+    36: 'bae',
+    37: 'depth'
 }
 METHODS = {
     12: 'shcoeffs',
@@ -72,6 +76,10 @@ METHODS = {
     25: 'vae',
     26: 'vae',
     27: 'vae',
+    33: 'vae',
+    35: 'vae',
+    36: 'vae',
+    37: 'vae'
 }
 CONDITIONS_CLASS = {
     0: AffineNoControl,
@@ -102,6 +110,10 @@ CONDITIONS_CLASS = {
     25: AffineDepth,
     26: AffineDepthNormalBae,
     27: AffineNormalBae,
+    33: AffineNoControl,
+    35: AffineDepthNormalBae,
+    36: AffineNormalBae,
+    37: AffineDepth
 }
 LRS = {
     0: '1e-4',
@@ -132,6 +144,10 @@ LRS = {
     25: '1e-4',
     26: '1e-4',
     27: '1e-4',
+    33: '1e-4',
+    35: '1e-4',
+    36: '1e-4',
+    37: '1e-4'
  }
 
 
@@ -172,6 +188,8 @@ def get_from_mode(mode):
         return "/data/pakkapon/datasets/multi_illumination/spherical/val", 100, DDIMDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/split-val-relight.json"}, None   
     elif mode == "multillum_val_rotate_test":
         return "/data/pakkapon/datasets/multi_illumination/spherical/val_rotate", 100, DDIMArrayEnvDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/val_rotate/split.json"}, None   
+    elif mode == "multillum_test_30_array":
+        return "/data/pakkapon/datasets/multi_illumination/spherical/test", 100, DDIMArrayEnvDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/split-test-30-array.json"}, None
     else:
         raise Exception("mode not found")
 
@@ -224,7 +242,9 @@ def main():
                             val_dataset = dataset_class(split=split, root_dir=val_root, specific_prompt=specific_prompt, **dataset_args)
                             val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=1, shuffle=False)
                             trainer.test(model, dataloaders=val_dataloader, ckpt_path=CKPT_PATH)
-                            
+
+                        print("REPLICATE !")
+                        exit()
                 # except:
                 #    pass
 

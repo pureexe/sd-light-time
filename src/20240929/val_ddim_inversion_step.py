@@ -20,10 +20,11 @@ CHECKPOINT_FOLDER_NAME = "20240918"
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument("-i", "--version", type=str, default="12")
-parser.add_argument("-m", "--mode", type=str, default="multillum_val_array")
-parser.add_argument("-g", "--guidance_scale", type=str, default="7,5,3,1")
+parser.add_argument("-i", "--version", type=str, default="12,13,14,15,24,25,26,27")
+parser.add_argument("-m", "--mode", type=str, default="multillum_test_ddim30")
+parser.add_argument("-g", "--guidance_scale", type=str, default="1")
 parser.add_argument("-c", "--checkpoint", type=str, default="299, 279, 259, 239, 219, 199, 179, 159, 139, 119, 99, 79, 59, 39, 19, 0")
+parser.add_argument("--inversion_step", type=str, default="5, 10, 15, 20, 25, 50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 999")
 
 args = parser.parse_args()
 NAMES = {
@@ -172,6 +173,8 @@ def get_from_mode(mode):
         return "/data/pakkapon/datasets/multi_illumination/spherical/val", 100, DDIMDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/split-val-relight.json"}, None   
     elif mode == "multillum_val_rotate_test":
         return "/data/pakkapon/datasets/multi_illumination/spherical/val_rotate", 100, DDIMArrayEnvDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/val_rotate/split.json"}, None   
+    elif mode == "multillum_test_ddim30":
+        return "/data/pakkapon/datasets/multi_illumination/spherical/test", 100, DDIMArrayEnvDataset, {"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/split-test-ddim30.json"}, None   
     else:
         raise Exception("mode not found")
 
@@ -180,6 +183,7 @@ def main():
     versions = [int(a.strip()) for a in args.version.split(",")]
     guidance_scales = [float(a.strip()) for a in args.guidance_scale.split(",")]
     checkpoints = [int(a.strip()) for a in args.checkpoint.split(",")]
+    inversion_steps = [int(a.strip()) for a in args.inversion_step.split(",")]
     modes = [a.strip() for a in args.mode.split(",")]
 
     for mode in modes:
@@ -205,25 +209,28 @@ def main():
                         model.eval() # disable randomness, dropout, etc...
                         model.disable_plot_train_loss()
                         for guidance_scale in guidance_scales:
-                            model.set_guidance_scale(guidance_scale)                        
-                            output_dir = f"output/{FOLDER_NAME}/val_{mode}/{METHODS[version]}/{guidance_scale}/{NAMES[version]}/{LRS[version]}/chk{checkpoint}/"
-                            # skip if output dir exist 
-                            if os.path.exists(output_dir):
-                                print(f"Skip {output_dir}")
-                                continue
-                            os.makedirs(output_dir, exist_ok=True)
-                            print("================================")
-                            print(output_dir)
-                            print("================================")
-                            trainer = L.Trainer(max_epochs=1000, precision=32, check_val_every_n_epoch=1, default_root_dir=output_dir, inference_mode=False, gradient_clip_val=0)
-                            val_root, count_file, dataset_class, dataset_args, specific_prompt = get_from_mode(mode)
-                            if type(count_file) == int:
-                                split = slice(0, count_file, 1)
-                            else:
-                                split = count_file
-                            val_dataset = dataset_class(split=split, root_dir=val_root, specific_prompt=specific_prompt, **dataset_args)
-                            val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=1, shuffle=False)
-                            trainer.test(model, dataloaders=val_dataloader, ckpt_path=CKPT_PATH)
+                            for inversion_step in inversion_steps:
+                                model.set_guidance_scale(guidance_scale)
+                                model.set_inversion_step(inversion_step)                      
+                                output_dir = f"output/{FOLDER_NAME}/val_{mode}/{METHODS[version]}/{guidance_scale}/{NAMES[version]}/{LRS[version]}/chk{checkpoint}/inversion{inversion_step}"
+                                # skip if output dir exist 
+                                if os.path.exists(output_dir):
+                                    print(f"Skip {output_dir}")
+                                    continue
+                                os.makedirs(output_dir, exist_ok=True)
+                                print("================================")
+                                print(output_dir)
+                                print("================================")
+                                trainer = L.Trainer(max_epochs=1000, precision=32, check_val_every_n_epoch=1, default_root_dir=output_dir, inference_mode=False, gradient_clip_val=0)
+                                val_root, count_file, dataset_class, dataset_args, specific_prompt = get_from_mode(mode)
+                                if type(count_file) == int:
+                                    split = slice(0, count_file, 1)
+                                else:
+                                    split = count_file
+                                val_dataset = dataset_class(split=split, root_dir=val_root, specific_prompt=specific_prompt, **dataset_args)
+                                val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=1, shuffle=False)
+                                trainer.test(model, dataloaders=val_dataloader, ckpt_path=CKPT_PATH)
+                        continue
                             
                 # except:
                 #    pass

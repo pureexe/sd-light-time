@@ -104,4 +104,19 @@ CUDA_VISIBLE_DEVICES=0 bin/py src/20240918/train.py -lr 1e-4 -ct both_bae --feat
 # version 32 is from version27 (normal)
 CUDA_VISIBLE_DEVICES=1 bin/py src/20240918/train.py -lr 1e-4 -ct bae --feature_type vae --guidance_scale 7.0 --batch_size 16 -ckpt output/20240918/multi_mlp_fit/lightning_logs/version_27/checkpoints/epoch=000104.ckpt
 
+##################################
 
+# version 33 is from version 29
+CUDA_VISIBLE_DEVICES=0 bin/py src/20240918/train.py -lr 1e-4 -ct no_control --feature_type vae --guidance_scale 7.0 --batch_size 16 -ckpt output/20240918/multi_mlp_fit/lightning_logs/version_29/checkpoints/epoch=000129.ckpt
+
+# version 34 is from version 30 (NO CHECKPOIONT HERE)
+#CUDA_VISIBLE_DEVICES=1 bin/py src/20240918/train.py -lr 1e-4 -ct depth --feature_type vae --guidance_scale 7.0 --batch_size 16 -ckpt output/20240918/multi_mlp_fit/lightning_logs/version_30/checkpoints/epoch=000189.ckpt
+
+# version 35 is from version 31
+CUDA_VISIBLE_DEVICES=2 bin/py src/20240918/train.py -lr 1e-4 -ct both_bae --feature_type vae --guidance_scale 7.0 --batch_size 12 -ckpt output/20240918/multi_mlp_fit/lightning_logs/version_31/checkpoints/epoch=000244.ckpt
+
+# version 36 is from version 32
+CUDA_VISIBLE_DEVICES=3 bin/py src/20240918/train.py -lr 1e-4 -ct bae --feature_type vae --guidance_scale 7.0 --batch_size 16 -ckpt output/20240918/multi_mlp_fit/lightning_logs/version_32/checkpoints/epoch=000189.ckpt
+
+# version 37 is from version 30
+CUDA_VISIBLE_DEVICES=1 bin/py src/20240918/train.py -lr 1e-4 -ct depth --feature_type vae --guidance_scale 7.0 --batch_size 16 -ckpt output/20240918/multi_mlp_fit/lightning_logs/version_30/checkpoints/epoch=000189.ckpt
