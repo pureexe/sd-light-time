@@ -1,4 +1,5 @@
 import torch
+import numpy as np 
 from diffusers import DDIMInverseScheduler, DDIMScheduler, StableDiffusionPipeline
 from diffusers.pipelines.stable_diffusion.pipeline_stable_diffusion import rescale_noise_cfg
 
@@ -37,9 +38,14 @@ def get_latent_from_image(vae, image, generator=None):
     Returns:
         _type_: _description_
     """
-    return vae.encode(image).latent_dist.sample(generator=generator) * vae.config.scaling_factor
+  
+    latents =  vae.encode(image.to(vae.dtype)).latent_dist.sample(generator=generator)
+    latents = latents * vae.config.scaling_factor
+    latents = latents.to(vae.dtype)
+    return latents
 
 def compute_noise(pipe, hidden_states, latents, timestep, callback_kwargs):
+      
         # unet parameters
         unet_kwargs = {
             "sample": latents,
@@ -129,6 +135,7 @@ def get_ddim_latents(pipe, image, text_embbeding, num_inference_steps, generator
 
     z0_noise = get_latent_from_image(pipe.vae, image)
 
+
     # do ddim inverse to noise 
     ddim_latents = []
     def callback_ddim(pipe, step_index, timestep, callback_kwargs):
@@ -177,7 +184,7 @@ def get_null_embeddings(pipe, ddim_latents, text_embbeding, negative_embedding, 
     null_embeddings = []
     null_latents = []
 
-    def callback_optimize_nulltext(pipe, step_index, timestep, callback_kwargs):
+    def callback_optimize_nulltext(pipe, step_index, timestep, callback_kwargs, loss_multiplier=100, use_amp=False):
 
         latents = callback_kwargs['latent_model_input'].chunk(2)[0].clone().detach() # this trick only work for scheduler that don't scale input such as DDIM
 
@@ -198,10 +205,12 @@ def get_null_embeddings(pipe, ddim_latents, text_embbeding, negative_embedding, 
                 optimizer_class = torch.optim.Adam
 
             optimizer = optimizer_class([negative_prompt_embeds], lr=1e-2)
-            scaler = GradScaler()
-            
+
+            if use_amp:
+                scaler = GradScaler()
+    
             for _ in range(num_null_optimization_steps):
-                with autocast(device_type='cuda'):
+                with autocast(device_type='cuda', enabled=use_amp):
                     optimizer.zero_grad()
                     predict_latents = denoise_step(
                         pipe=pipe, 
@@ -211,10 +220,36 @@ def get_null_embeddings(pipe, ddim_latents, text_embbeding, negative_embedding, 
                         callback_kwargs=callback_kwargs,
                     )
                     # calculate loss with next latents
-                    loss = torch.nn.functional.mse_loss(predict_latents, ddim_latents[step_index+1])
-                    scaler.scale(loss).backward()
-                    scaler.step(optimizer)
-                    scaler.update()
+                    loss = torch.nn.functional.mse_loss(predict_latents * loss_multiplier, ddim_latents[step_index+1] * loss_multiplier)
+                    if use_amp:
+                        scaler.scale(loss).backward()
+                        scaler.step(optimizer)
+                        scaler.update()
+                    else:
+                        loss.backward()
+                        optimizer.step()
+                    if loss < 1e-5 * np.abs(loss_multiplier) : #early stopping mention in the paper
+                        break
+            for _ in range(num_null_optimization_steps):
+                if True:
+                    optimizer.zero_grad()
+                    predict_latents = denoise_step(
+                        pipe=pipe, 
+                        hidden_states=torch.cat([negative_prompt_embeds, text_embbeding], dim=0),
+                        latents=latents,
+                        timestep=timestep,
+                        callback_kwargs=callback_kwargs,
+                    )
+                    # calculate loss with next latents
+                    loss = torch.nn.functional.mse_loss(predict_latents*100, ddim_latents[step_index+1]*100)
+                    loss.backward()
+
+                    # print gradient
+                    #print(negative_prompt_embeds.grad)
+                    #print("grad: ", negative_prompt_embeds.grad.mean())
+
+                    optimizer.step()
+                    #print(f"Loss: {loss.item():.6f}")
                     if loss < 1e-5: #early stopping mention in the paper
                         break
         

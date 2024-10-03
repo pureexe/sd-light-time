@@ -20,11 +20,11 @@ CHECKPOINT_FOLDER_NAME = "20240918"
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument("-i", "--version", type=str, default="12,13,14,15,24,25,26,27")
-parser.add_argument("-m", "--mode", type=str, default="multillum_test_ddim30")
-parser.add_argument("-g", "--guidance_scale", type=str, default="1")
-parser.add_argument("-c", "--checkpoint", type=str, default="299, 279, 259, 239, 219, 199, 179, 159, 139, 119, 99, 79, 59, 39, 19, 0")
-parser.add_argument("--inversion_step", type=str, default="5, 10, 15, 20, 25, 50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 999")
+parser.add_argument("-i", "--version", type=str, default="12")
+parser.add_argument("-m", "--mode", type=str, default="multillum_val_array_v2")
+parser.add_argument("-g", "--guidance_scale", type=str, default="7")
+parser.add_argument("-c", "--checkpoint", type=str, default="189")
+parser.add_argument("--inversion_step", type=str, default="500")
 
 args = parser.parse_args()
 NAMES = {
@@ -167,7 +167,7 @@ def get_from_mode(mode):
         return "/data/pakkapon/datasets/multi_illumination/spherical/train", 100, DDIMSHCoeffsDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/split-train3scenes.json"}, None
     elif mode == "multillum_test_v2":
         return "/data/pakkapon/datasets/multi_illumination/spherical/test", 100, DDIMSHCoeffsDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/split-test3scenes.json"}, None
-    elif mode == "multillum_val_array":
+    elif mode == "multillum_val_array_v2":
         return "/data/pakkapon/datasets/multi_illumination/spherical/val", 100, DDIMArrayEnvDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/split-val-relight-array.json"}, None   
     elif mode == "multillum_val":
         return "/data/pakkapon/datasets/multi_illumination/spherical/val", 100, DDIMDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/split-val-relight.json"}, None   
@@ -221,7 +221,7 @@ def main():
                                 print("================================")
                                 print(output_dir)
                                 print("================================")
-                                trainer = L.Trainer(max_epochs=1000, precision=32, check_val_every_n_epoch=1, default_root_dir=output_dir, inference_mode=False, gradient_clip_val=0)
+                                trainer = L.Trainer(max_epochs=1000, precision=16, check_val_every_n_epoch=1, default_root_dir=output_dir, inference_mode=False, gradient_clip_val=0)
                                 val_root, count_file, dataset_class, dataset_args, specific_prompt = get_from_mode(mode)
                                 if type(count_file) == int:
                                     split = slice(0, count_file, 1)

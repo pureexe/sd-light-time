@@ -16,6 +16,7 @@ from LineNotify import LineNotify
 import argparse
 from constants import FOLDER_NAME
 
+MASTER_TYPE = 16
 CHECKPOINT_FOLDER_NAME = "20240918"
 
 
@@ -182,7 +183,7 @@ def get_from_mode(mode):
         return "/data/pakkapon/datasets/multi_illumination/spherical/train", 100, DDIMSHCoeffsDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/split-train3scenes.json"}, None
     elif mode == "multillum_test_v2":
         return "/data/pakkapon/datasets/multi_illumination/spherical/test", 100, DDIMSHCoeffsDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/split-test3scenes.json"}, None
-    elif mode == "multillum_val_array":
+    elif mode == "multillum_val_array_v3":
         return "/data/pakkapon/datasets/multi_illumination/spherical/val", 100, DDIMArrayEnvDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/split-val-relight-array.json"}, None   
     elif mode == "multillum_val":
         return "/data/pakkapon/datasets/multi_illumination/spherical/val", 100, DDIMDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/split-val-relight.json"}, None   
@@ -233,7 +234,7 @@ def main():
                             print("================================")
                             print(output_dir)
                             print("================================")
-                            trainer = L.Trainer(max_epochs=1000, precision=32, check_val_every_n_epoch=1, default_root_dir=output_dir, inference_mode=False, gradient_clip_val=0)
+                            trainer = L.Trainer(max_epochs=1000, precision=MASTER_TYPE, check_val_every_n_epoch=1, default_root_dir=output_dir, inference_mode=False, gradient_clip_val=0)
                             val_root, count_file, dataset_class, dataset_args, specific_prompt = get_from_mode(mode)
                             if type(count_file) == int:
                                 split = slice(0, count_file, 1)

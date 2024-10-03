@@ -4,7 +4,7 @@ from diffusers import StableDiffusionPipeline
 from diffusers import ControlNetModel
 from ball_helper import pipeline2controlnetinpaint
  
-MASTER_TYPE = torch.float32
+MASTER_TYPE = torch.float16
  
 class AffineDepth(AffineControl):
    

@@ -26,7 +26,7 @@ from ball_helper import inpaint_chromeball, pipeline2controlnetinpaint
 
 from InversionHelper import get_ddim_latents, get_text_embeddings, get_null_embeddings, apply_null_embedding
  
-MASTER_TYPE = torch.float32
+MASTER_TYPE = torch.float16
  
 class AffineControl(L.LightningModule):
 
@@ -79,8 +79,8 @@ class AffineControl(L.LightningModule):
         unet_trainable = filter(lambda p: p.requires_grad and (len(p.shape) > 1 or p.shape[0] > 1), self.pipe.unet.parameters())
         gate_trainable = filter(lambda p: p.requires_grad and (len(p.shape) == 1 and p.shape[0] == 1), self.pipe.unet.parameters())
 
-        self.unet_trainable = torch.nn.ParameterList(unet_trainable)
-        self.gate_trainable = torch.nn.ParameterList(gate_trainable)
+        self.unet_trainable = torch.nn.ParameterList(unet_trainable).to(self.pipe.dtype)
+        self.gate_trainable = torch.nn.ParameterList(gate_trainable).to(self.pipe.dtype)
 
     def setup_sd(self, sd_path="runwayml/stable-diffusion-v1-5", controlnet_path="lllyasviel/sd-controlnet-depth"):
         # load controlnet from pretrain
@@ -262,7 +262,7 @@ class AffineControl(L.LightningModule):
         return batch
     
     def generate_tensorboard(self, batch, batch_idx, is_save_image=False, is_seperate_dir_with_epoch=False):
-        
+
         try:
             log_dir = self.logger.log_dir
         except:
@@ -274,6 +274,7 @@ class AffineControl(L.LightningModule):
         # precompute-variable
         is_apply_cfg = self.guidance_scale > 1
         epoch_text = f"epoch_{self.current_epoch:04d}/" if is_seperate_dir_with_epoch else ""
+        source_name = f"{batch['name'][0].replace('/','-')}"
         
         # Apply the source light direction
         self.select_batch_keyword(batch, 'source')
@@ -292,12 +293,12 @@ class AffineControl(L.LightningModule):
             )
 
         # compute text embedding
-        text_embbeding = get_text_embeddings(self.pipe, batch['text'])
-        negative_embedding = get_text_embeddings(self.pipe, '')
+        text_embbeding = get_text_embeddings(self.pipe, batch['text']).to(self.pipe.unet.dtype)
+        negative_embedding = get_text_embeddings(self.pipe, '').to(self.pipe.unet.dtype)
         
-        if os.path.exists(f"{log_dir}/ddim_latents.pt"):
+        if os.path.exists(f"{log_dir}/ddim_latents/{source_name}.pt"):
             # skip the ddim_latents if it already exists
-            ddim_latents = torch.load(f"{log_dir}/ddim_latents.pt")
+            ddim_latents = torch.load(f"{log_dir}/ddim_latents/{source_name}.pt")
         else:
             # get DDIM inversion
             ddim_latents = get_ddim_latents(
@@ -309,7 +310,8 @@ class AffineControl(L.LightningModule):
             )
             if is_save_image:
                 # save ddim_latents to file
-                torch.save(ddim_latents, f"{log_dir}/{epoch_text}ddim_latents.pt")
+                os.makedirs(f"{log_dir}/ddim_latents", exist_ok=True)
+                torch.save(ddim_latents, f"{log_dir}/ddim_latents/{source_name}.pt.pt")
 
         if USE_NULL_TEXT and self.guidance_scale > 1:
             if USE_LIGHT_DIRECTION_CONDITION:
@@ -318,10 +320,10 @@ class AffineControl(L.LightningModule):
                     source_light_features,
                     is_apply_cfg=True # we re-apply the cfg for null text
                 )
-            if os.path.exists(f"{log_dir}/null_embeddings.pt"):
+            if os.path.exists(f"{log_dir}/null_embeddings/{source_name}.pt"):
                 # skip the null embeddings if it already exists
-                null_embeddings = torch.load(f"{log_dir}/{epoch_text}null_embeddings.pt")
-                null_latents = torch.load(f"{log_dir}/{epoch_text}null_latents.pt")
+                null_embeddings = torch.load(f"{log_dir}/{epoch_text}null_embeddings/{source_name}.pt")
+                null_latents = torch.load(f"{log_dir}/{epoch_text}null_latents/{source_name}.pt")
             else:
                 null_embeddings, null_latents = get_null_embeddings(
                     self.pipe,
@@ -346,10 +348,12 @@ class AffineControl(L.LightningModule):
                 torchvision.utils.save_image(image, f"{log_dir}/{epoch_text}null_latents/{filename}.jpg")
 
                 # save null_latents to file
-                torch.save(null_latents, f"{log_dir}/{epoch_text}null_latents.pt")
+                os.makedirs(f"{log_dir}/{epoch_text}null_latents", exist_ok=True)
+                torch.save(null_latents, f"{log_dir}/{epoch_text}null_latents/{source_name}.pt")
 
                 # save null_embedigns to file
-                torch.save(null_embeddings, f"{log_dir}/{epoch_text}null_embeddings.pt")
+                os.makedirs(f"{log_dir}/{epoch_text}null_embeddings", exist_ok=True)
+                torch.save(null_embeddings, f"{log_dir}/{epoch_text}null_embeddings/{source_name}.pt")
 
         # if dataset is not list, convert to list
         for key in ['target_ldr_envmap', 'target_norm_envmap', 'target_image', 'target_sh_coeffs', 'word_name']:
