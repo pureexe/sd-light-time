@@ -45,7 +45,6 @@ def get_latent_from_image(vae, image, generator=None):
     return latents
 
 def compute_noise(pipe, hidden_states, latents, timestep, callback_kwargs):
-      
         # unet parameters
         unet_kwargs = {
             "sample": latents,
@@ -64,22 +63,28 @@ def compute_noise(pipe, hidden_states, latents, timestep, callback_kwargs):
         noise_pred = pipe.unet(**unet_kwargs)[0]
         return noise_pred
 
-def controlnet_step(pipe, hidden_states, latents, timestep, callback_kwargs):
+def controlnet_step(pipe, hidden_states, latents, timestep, callback_kwargs, is_apply_cfg=False):
     guess_mode = callback_kwargs['guess_mode']
     if guess_mode:
         control_model_input = latents
         controlnet_prompt_embeds = hidden_states.chunk(2)[1]
+        condition_image = callback_kwargs['image'].chunk(2)[1]
     else:
-        control_model_input = torch.cat([latents] * 2)
+        if is_apply_cfg:
+            control_model_input = torch.cat([latents] * 2)
+            condition_image = callback_kwargs['image']
+        else:
+            control_model_input = latents       
+            condition_image = callback_kwargs['image'].chunk(2)[1]  
         controlnet_prompt_embeds = hidden_states
 
-    control_model_input = pipe.scheduler.scale_model_input(control_model_input, timestep)
 
+    control_model_input = pipe.scheduler.scale_model_input(control_model_input, timestep)
     down_block_res_samples, mid_block_res_sample = pipe.controlnet(
         control_model_input,
         timestep,
         encoder_hidden_states=controlnet_prompt_embeds,
-        controlnet_cond=callback_kwargs['image'],
+        controlnet_cond=condition_image,
         conditioning_scale=callback_kwargs['cond_scale'],
         guess_mode=guess_mode,
         return_dict=False,
@@ -91,43 +96,38 @@ def controlnet_step(pipe, hidden_states, latents, timestep, callback_kwargs):
 
 
 
-def denoise_step(pipe, hidden_states, latents, timestep, callback_kwargs, noise_pred_text=None, use_guidance=True):
+def denoise_step(pipe, hidden_states, latents, timestep, callback_kwargs, noise_pred_text=None):
 
         # expand the latents if we are doing classifier free guidance
-        latent_model_input = torch.cat([latents] * 2) if noise_pred_text is None and use_guidance  else latents
+        latent_model_input = torch.cat([latents] * 2) if noise_pred_text is None else latents
         latent_model_input = pipe.scheduler.scale_model_input(latent_model_input, timestep)
 
         # support for controlnet
         if 'image' in callback_kwargs:
-            down_block_res_samples, mid_block_res_sample = controlnet_step(pipe, hidden_states, latents, timestep, callback_kwargs, is_apply_cfg=noise_pred_text is  None and use_guidance)
+            down_block_res_samples, mid_block_res_sample = controlnet_step(pipe, hidden_states, latents, timestep, callback_kwargs, is_apply_cfg=noise_pred_text is None)
             callback_kwargs['down_block_res_samples'] = down_block_res_samples
             callback_kwargs['mid_block_res_sample'] = mid_block_res_sample
 
         # feed  prompt to unet
         noise_pred = compute_noise(pipe, hidden_states, latent_model_input, timestep, callback_kwargs)
 
-        if use_guidance:
-            # classifier free guidance
-            if noise_pred_text is None:
-                noise_pred_uncond, noise_pred_text = noise_pred.chunk(2)
-            else:
-                noise_pred_uncond = noise_pred
-
-            # classifier free guidance
-            noise_pred = noise_pred_uncond + pipe.guidance_scale * (noise_pred_text - noise_pred_uncond)
-
-            if hasattr(pipe,'guidance_rescale') and pipe.guidance_rescale > 0.0:
-                # Rescale noise cfg, Based on 3.4. in https://arxiv.org/pdf/2305.08891.pdf
-                noise_pred = rescale_noise_cfg(noise_pred, noise_pred_text, guidance_rescale=pipe.guidance_scale)
-
+        # classifier free guidance
+        if noise_pred_text is None:
+            noise_pred_uncond, noise_pred_text = noise_pred.chunk(2)
         else:
-            noise_pred_uncond = None
-            noise_pred_text = noise_pred     
+            noise_pred_uncond = noise_pred
+
+        # classifier free guidance
+        noise_pred = noise_pred_uncond + pipe.guidance_scale * (noise_pred_text - noise_pred_uncond)
+
+        if hasattr(pipe,'guidance_rescale') and pipe.guidance_rescale > 0.0:
+            # Rescale noise cfg, Based on 3.4. in https://arxiv.org/pdf/2305.08891.pdf
+            noise_pred = rescale_noise_cfg(noise_pred, noise_pred_text, guidance_rescale=pipe.guidance_scale)     
                 
         # predict next latents
         predict_latents = pipe.scheduler.step(noise_pred, timestep, latents,  **callback_kwargs['extra_step_kwargs'], return_dict=False)[0]
  
-        return predict_latents, noise_pred_text, noise_pred_uncond
+        return predict_latents
 
 
 def get_ddim_latents(pipe, image, text_embbeding, num_inference_steps, generator = None, controlnet_image=None, guidance_scale=1.0):
@@ -215,7 +215,7 @@ def get_null_embeddings(pipe, ddim_latents, text_embbeding, negative_embedding, 
             for _ in range(num_null_optimization_steps):
                 with autocast(device_type='cuda', enabled=use_amp):
                     optimizer.zero_grad()
-                    predict_latents, _, _ = denoise_step(
+                    predict_latents = denoise_step(
                         pipe=pipe, 
                         hidden_states=torch.cat([negative_prompt_embeds, text_embbeding], dim=0),
                         latents=latents,
@@ -236,7 +236,7 @@ def get_null_embeddings(pipe, ddim_latents, text_embbeding, negative_embedding, 
             for _ in range(num_null_optimization_steps):
                 if True:
                     optimizer.zero_grad()
-                    predict_latents, _, _ = denoise_step(
+                    predict_latents = denoise_step(
                         pipe=pipe, 
                         hidden_states=torch.cat([negative_prompt_embeds, text_embbeding], dim=0),
                         latents=latents,
@@ -257,7 +257,7 @@ def get_null_embeddings(pipe, ddim_latents, text_embbeding, negative_embedding, 
                         break
         
         # compute noise uncond for final time after all updateded
-        predict_latents,_, _ = denoise_step(
+        predict_latents = denoise_step(
             pipe=pipe, 
             hidden_states=torch.cat([negative_prompt_embeds, text_embbeding], dim=0),
             latents=latents,
@@ -292,6 +292,7 @@ def get_null_embeddings(pipe, ddim_latents, text_embbeding, negative_embedding, 
     # run stable diffusion
     _ = pipe(**sd_args)
     return null_embeddings, null_latents
+
     
 def apply_null_embedding(pipe, latents, null_embeddings, text_embbeding, guidance_scale, num_inference_steps, controlnet_image=None, generator=None, null_latents=None):
     """

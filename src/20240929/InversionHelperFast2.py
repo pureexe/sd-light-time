@@ -45,7 +45,6 @@ def get_latent_from_image(vae, image, generator=None):
     return latents
 
 def compute_noise(pipe, hidden_states, latents, timestep, callback_kwargs):
-      
         # unet parameters
         unet_kwargs = {
             "sample": latents,
@@ -64,22 +63,28 @@ def compute_noise(pipe, hidden_states, latents, timestep, callback_kwargs):
         noise_pred = pipe.unet(**unet_kwargs)[0]
         return noise_pred
 
-def controlnet_step(pipe, hidden_states, latents, timestep, callback_kwargs):
+def controlnet_step(pipe, hidden_states, latents, timestep, callback_kwargs, is_apply_cfg=False):
     guess_mode = callback_kwargs['guess_mode']
     if guess_mode:
         control_model_input = latents
         controlnet_prompt_embeds = hidden_states.chunk(2)[1]
+        condition_image = callback_kwargs['image'].chunk(2)[1]
     else:
-        control_model_input = torch.cat([latents] * 2)
+        if is_apply_cfg:
+            control_model_input = torch.cat([latents] * 2)
+            condition_image = callback_kwargs['image']
+        else:
+            control_model_input = latents       
+            condition_image = callback_kwargs['image'].chunk(2)[1]  
         controlnet_prompt_embeds = hidden_states
 
-    control_model_input = pipe.scheduler.scale_model_input(control_model_input, timestep)
 
+    control_model_input = pipe.scheduler.scale_model_input(control_model_input, timestep)
     down_block_res_samples, mid_block_res_sample = pipe.controlnet(
         control_model_input,
         timestep,
         encoder_hidden_states=controlnet_prompt_embeds,
-        controlnet_cond=callback_kwargs['image'],
+        controlnet_cond=condition_image,
         conditioning_scale=callback_kwargs['cond_scale'],
         guess_mode=guess_mode,
         return_dict=False,
@@ -162,7 +167,7 @@ def get_ddim_latents(pipe, image, text_embbeding, num_inference_steps, generator
     pipe.scheduler = nomral_scheduler
     return ddim_latents
 
-def get_null_embeddings(pipe, ddim_latents, text_embbeding, negative_embedding, guidance_scale,  num_inference_steps, controlnet_image=None, num_null_optimization_steps=10, generator=None):
+def get_null_embeddings_BAK(pipe, ddim_latents, text_embbeding, negative_embedding, guidance_scale,  num_inference_steps, before_positive_pass_callback=None, before_negative_pass_callback=None,  before_final_denoise_callback=None, before_final_denoise_callback2=None, after_final_denoise_callback=None, controlnet_image=None, num_null_optimization_steps=10, generator=None):
     """
     compute null text embeding for each denoisng step
 
@@ -193,11 +198,20 @@ def get_null_embeddings(pipe, ddim_latents, text_embbeding, negative_embedding, 
 
         negative_prompt_embeds, text_embbeding = callback_kwargs['prompt_embeds'].chunk(2)
         negative_prompt_embeds = negative_prompt_embeds.clone().detach()
+        before_text_embbeding = text_embbeding.clone().detach()
 
         # we can't predict next latents for the last step
         if step_index+1 == num_inference_steps:
             callback_kwargs['latents'] = latents
             return callback_kwargs
+
+        if before_positive_pass_callback is not None:
+            before_positive_pass_callback()
+
+        _, noise_pred_text, _ = denoise_step(pipe, text_embbeding, latents, timestep, callback_kwargs, noise_pred_text=None, use_guidance=False) #USE_CFG=FALSE
+
+        if before_negative_pass_callback is not None:
+            before_negative_pass_callback()
 
         # backprop to get negative_prompt_embeds
         with torch.enable_grad():                
@@ -217,11 +231,15 @@ def get_null_embeddings(pipe, ddim_latents, text_embbeding, negative_embedding, 
                     optimizer.zero_grad()
                     predict_latents, _, _ = denoise_step(
                         pipe=pipe, 
-                        hidden_states=torch.cat([negative_prompt_embeds, text_embbeding], dim=0),
+                        hidden_states=negative_prompt_embeds, #[1,77,768]
+                        #hidden_states=torch.cat([negative_prompt_embeds, text_embbeding], dim=0),
                         latents=latents,
                         timestep=timestep,
                         callback_kwargs=callback_kwargs,
-                    )
+                        noise_pred_text=noise_pred_text,
+                        use_guidance=True
+                    ) #USE_CFG=FALSE, NOGATE
+
                     # calculate loss with next latents
                     loss = torch.nn.functional.mse_loss(predict_latents * loss_multiplier, ddim_latents[step_index+1] * loss_multiplier)
                     if use_amp:
@@ -231,39 +249,45 @@ def get_null_embeddings(pipe, ddim_latents, text_embbeding, negative_embedding, 
                     else:
                         loss.backward()
                         optimizer.step()
+
                     if loss < 1e-5 * np.abs(loss_multiplier) : #early stopping mention in the paper
                         break
-            for _ in range(num_null_optimization_steps):
-                if True:
-                    optimizer.zero_grad()
-                    predict_latents, _, _ = denoise_step(
-                        pipe=pipe, 
-                        hidden_states=torch.cat([negative_prompt_embeds, text_embbeding], dim=0),
-                        latents=latents,
-                        timestep=timestep,
-                        callback_kwargs=callback_kwargs,
-                    )
-                    # calculate loss with next latents
-                    loss = torch.nn.functional.mse_loss(predict_latents*100, ddim_latents[step_index+1]*100)
-                    loss.backward()
-
-                    # print gradient
-                    #print(negative_prompt_embeds.grad)
-                    #print("grad: ", negative_prompt_embeds.grad.mean())
-
-                    optimizer.step()
-                    #print(f"Loss: {loss.item():.6f}")
-                    if loss < 1e-5: #early stopping mention in the paper
-                        break
-        
+        if before_final_denoise_callback is not None:
+            before_final_denoise_callback()
+        # text embeding stay the same.
         # compute noise uncond for final time after all updateded
-        predict_latents,_, _ = denoise_step(
+        predict_latents, noiseText1, noiseUncond1 = denoise_step(
             pipe=pipe, 
+            hidden_states=negative_prompt_embeds,
+            #hidden_states=torch.cat([negative_prompt_embeds, text_embbeding], dim=0),
+            latents=latents,
+            noise_pred_text=noise_pred_text, # we reuse the positive noise 
+            callback_kwargs=callback_kwargs,
+            timestep=timestep,
+            use_guidance=True
+        ) #USE_CFG=FALSE, NOGATE
+
+        if before_final_denoise_callback2 is not None:
+            before_final_denoise_callback2()
+        predict_latents2, noiseText2, noiseUncond2 = denoise_step(
+            pipe=pipe, 
+            #hidden_states=negative_prompt_embeds,
             hidden_states=torch.cat([negative_prompt_embeds, text_embbeding], dim=0),
             latents=latents,
-            timestep=timestep,
+            #noise_pred_text=noise_pred_text, # we reuse the positive noise 
             callback_kwargs=callback_kwargs,
-        )
+            timestep=timestep,
+            use_guidance=True
+        ) #USE_CFG=Tue, True
+        # check if this close 
+        loss = torch.nn.functional.mse_loss(predict_latents, predict_latents2)
+        predict_latents2 = predict_latents
+        print(f"close check: {loss.item():.8f}")
+        print(f"noiseText close check: {torch.nn.functional.mse_loss(noiseText1, noiseText2).item():.8f}")
+        print(f"noiseUncond close check: {torch.nn.functional.mse_loss(noiseUncond1, noiseUncond2).item():.8f}")
+        print("=================")
+        if after_final_denoise_callback is not None:
+            after_final_denoise_callback()  # callback to re-enable light condition
 
         negative_prompt_embeds = negative_prompt_embeds.detach()
         # print negative_prompt_embeds meean
@@ -292,6 +316,7 @@ def get_null_embeddings(pipe, ddim_latents, text_embbeding, negative_embedding, 
     # run stable diffusion
     _ = pipe(**sd_args)
     return null_embeddings, null_latents
+
     
 def apply_null_embedding(pipe, latents, null_embeddings, text_embbeding, guidance_scale, num_inference_steps, controlnet_image=None, generator=None, null_latents=None):
     """
@@ -320,7 +345,7 @@ def apply_null_embedding(pipe, latents, null_embeddings, text_embbeding, guidanc
         
         if null_latents is not None:
             loss = torch.nn.functional.mse_loss(callback_kwargs['latents'], null_latents[step_index])
-            print(f"Loss: {loss.item():.6f}")
+            print(f"Loss: {loss.item():.8f}")
 
         _, text_embbeding = callback_kwargs['prompt_embeds'].chunk(2)
         callback_kwargs['prompt_embeds'] = torch.cat([negative_embedding, text_embbeding], dim=0)

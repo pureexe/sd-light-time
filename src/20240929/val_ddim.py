@@ -21,10 +21,13 @@ CHECKPOINT_FOLDER_NAME = "20240918"
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument("-i", "--version", type=str, default="33")
-parser.add_argument("-m", "--mode", type=str, default="multillum_test_30_array")
-parser.add_argument("-g", "--guidance_scale", type=str, default="3,7,5,2.5,2,1.5,1")
-parser.add_argument("-c", "--checkpoint", type=str, default="299, 279, 259, 239, 219, 199, 179, 159, 139, 119, 99, 79, 59, 39, 19, 0")
+#parser.add_argument("-i", "--version", type=str, default="33")
+parser.add_argument("-i", "--version", type=str, default="37")
+parser.add_argument("-m", "--mode", type=str, default="multillum_test_30_array_v2")
+#parser.add_argument("-g", "--guidance_scale", type=str, default="3,7,5,2.5,2,1.5,1")
+#parser.add_argument("-c", "--checkpoint", type=str, default="299, 279, 259, 239, 219, 199, 179, 159, 139, 119, 99, 79, 59, 39, 19, 0")
+parser.add_argument("-c", "--checkpoint", type=str, default="299")
+parser.add_argument("-g", "--guidance_scale", type=str, default="7")
 
 args = parser.parse_args()
 NAMES = {
@@ -189,7 +192,7 @@ def get_from_mode(mode):
         return "/data/pakkapon/datasets/multi_illumination/spherical/val", 100, DDIMDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/split-val-relight.json"}, None   
     elif mode == "multillum_val_rotate_test":
         return "/data/pakkapon/datasets/multi_illumination/spherical/val_rotate", 100, DDIMArrayEnvDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/val_rotate/split.json"}, None   
-    elif mode == "multillum_test_30_array":
+    elif mode == "multillum_test_30_array_v2":
         return "/data/pakkapon/datasets/multi_illumination/spherical/test", 100, DDIMArrayEnvDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/split-test-30-array.json"}, None
     else:
         raise Exception("mode not found")
@@ -227,9 +230,9 @@ def main():
                             model.set_guidance_scale(guidance_scale)                        
                             output_dir = f"output/{FOLDER_NAME}/val_{mode}/{METHODS[version]}/{guidance_scale}/{NAMES[version]}/{LRS[version]}/chk{checkpoint}/"
                             # skip if output dir exist 
-                            if os.path.exists(output_dir):
-                                print(f"Skip {output_dir}")
-                                continue
+                            # if os.path.exists(output_dir):
+                            #     print(f"Skip {output_dir}")
+                            #     continue
                             os.makedirs(output_dir, exist_ok=True)
                             print("================================")
                             print(output_dir)

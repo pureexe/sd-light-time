@@ -50,6 +50,8 @@ class AffineControl(L.LightningModule):
         self.feature_type = feature_type
         #self.num_inversion_steps = num_inversion_steps
         # null-text inversion paper Section 4 ablation study Page 6 left side suggest to use 500 iteration with N=10
+        self.use_null_text = True
+        self.ddim_guidance_scale = 1.0
         self.num_inversion_steps = 500
         self.num_null_text_steps = 10
         self.num_inference_steps = num_inference_steps
@@ -107,7 +109,7 @@ class AffineControl(L.LightningModule):
         self.pipe.text_encoder.requires_grad_(False)
         self.pipe.controlnet.requires_grad_(False)
         #self.pipe.scheduler = UniPCMultistepScheduler.from_config(self.pipe.scheduler.config)
-        is_save_memory = True
+        is_save_memory = False
         if is_save_memory:
             self.pipe.enable_model_cpu_offload()
             self.pipe.enable_xformers_memory_efficient_attention()
@@ -269,7 +271,6 @@ class AffineControl(L.LightningModule):
             log_dir = self.log_dir
 
         USE_LIGHT_DIRECTION_CONDITION = True
-        USE_NULL_TEXT = True
 
         # precompute-variable
         is_apply_cfg = self.guidance_scale > 1
@@ -286,6 +287,7 @@ class AffineControl(L.LightningModule):
                 is_apply_cfg=False #during DDIM inversion, we don't want to apply the cfg
             )
         else:
+            source_light_features = None
             set_light_direction(
             self.pipe.unet, 
                 None, 
@@ -302,29 +304,66 @@ class AffineControl(L.LightningModule):
         else:
             # get DDIM inversion
             ddim_latents = get_ddim_latents(
-                self.pipe, batch['source_image'],
-                text_embbeding,
-                self.num_inversion_steps,
-                torch.Generator().manual_seed(self.seed),
-                controlnet_image=self.get_control_image(batch) if hasattr(self.pipe, "controlnet") else None
+                pipe=self.pipe,
+                image=batch['source_image'],
+                text_embbeding=text_embbeding,
+                num_inference_steps=self.num_inversion_steps,
+                generator=torch.Generator().manual_seed(self.seed),
+                controlnet_image=self.get_control_image(batch) if hasattr(self.pipe, "controlnet") else None,
+                guidance_scale=self.ddim_guidance_scale
             )
             if is_save_image:
                 # save ddim_latents to file
                 os.makedirs(f"{log_dir}/ddim_latents", exist_ok=True)
                 torch.save(ddim_latents, f"{log_dir}/ddim_latents/{source_name}.pt.pt")
 
-        if USE_NULL_TEXT and self.guidance_scale > 1:
-            if USE_LIGHT_DIRECTION_CONDITION:
-                set_light_direction(
-                    self.pipe.unet,
-                    source_light_features,
-                    is_apply_cfg=True # we re-apply the cfg for null text
-                )
+        if self.use_null_text and self.guidance_scale > 1:                
             if os.path.exists(f"{log_dir}/null_embeddings/{source_name}.pt"):
                 # skip the null embeddings if it already exists
                 null_embeddings = torch.load(f"{log_dir}/{epoch_text}null_embeddings/{source_name}.pt")
                 null_latents = torch.load(f"{log_dir}/{epoch_text}null_latents/{source_name}.pt")
             else:
+                set_light_direction(
+                    self.pipe.unet,
+                    source_light_features,
+                    is_apply_cfg=True # Disable cfg for fast inversion
+                )
+                # def before_positive_pass_callback(): 
+                #     set_light_direction(
+                #         self.pipe.unet,
+                #         source_light_features,
+                #         is_apply_cfg=False # Disable cfg for fast inversion
+                #     )
+
+                # def before_negative_pass_callback():
+                #     set_light_direction(
+                #         self.pipe.unet,
+                #         None,
+                #         is_apply_cfg=False # Disable cfg for fast inversion
+                #     )
+
+                # def before_final_denoise_callback():
+                #     pass
+                #     # set_light_direction(
+                #     #     self.pipe.unet,
+                #     #     None,
+                #     #     is_apply_cfg=False # Disable cfg for fast inversion
+                #     # ) 
+                    
+                # def before_final_denoise_callback2():
+                #     set_light_direction(
+                #         self.pipe.unet,
+                #         source_light_features,
+                #         is_apply_cfg=True # Disable cfg for fast inversion
+                #     ) 
+                
+                # def after_final_denoise_callback():
+                #     set_light_direction(
+                #         self.pipe.unet,
+                #         source_light_features,
+                #         is_apply_cfg=True # Disable cfg for fast inversion
+                #     )
+
                 null_embeddings, null_latents = get_null_embeddings(
                     self.pipe,
                     ddim_latents=ddim_latents,
@@ -334,7 +373,12 @@ class AffineControl(L.LightningModule):
                     num_inference_steps=self.num_inversion_steps,
                     controlnet_image=self.get_control_image(batch) if hasattr(self.pipe, "controlnet") else None,
                     num_null_optimization_steps=self.num_null_text_steps,
-                    generator=torch.Generator().manual_seed(self.seed)
+                    generator=torch.Generator().manual_seed(self.seed),
+                    # before_positive_pass_callback = before_positive_pass_callback,
+                    # before_negative_pass_callback = before_negative_pass_callback,
+                    # before_final_denoise_callback = before_final_denoise_callback,
+                    # after_final_denoise_callback = after_final_denoise_callback,
+                    # before_final_denoise_callback2=before_final_denoise_callback2
                 )
             if is_save_image:
                 # save image from null_latents 
@@ -377,7 +421,7 @@ class AffineControl(L.LightningModule):
                     is_apply_cfg=is_apply_cfg
                 )
             
-            if USE_NULL_TEXT and self.guidance_scale > 1:
+            if self.use_null_text and self.guidance_scale > 1:
                 pt_image = apply_null_embedding(
                     self.pipe,
                     ddim_latents[-1],
@@ -397,7 +441,7 @@ class AffineControl(L.LightningModule):
                     "latents": zt_noise.clone(),
                     "output_type": "pt",
                     "guidance_scale": self.guidance_scale,
-                    "num_inference_steps": self.num_inference_steps,
+                    "num_inference_steps": self.num_inversion_steps,
                     "return_dict": False,
                     "generator": torch.Generator().manual_seed(self.seed)
                 }
@@ -450,7 +494,7 @@ class AffineControl(L.LightningModule):
 
                 # save image file
                 os.makedirs(f"{log_dir}/{epoch_text}crop_image", exist_ok=True)
-                torchvision.utils.save_image(pt_image, f"{log_dir}/{epoch_text}crop_image/{filename}.jpg")
+                torchvision.utils.save_image(pt_image, f"{log_dir}/{epoch_text}crop_image/{filename}.png")
                 # save psnr to file
                 os.makedirs(f"{log_dir}/{epoch_text}psnr", exist_ok=True)
                 with open(f"{log_dir}/{epoch_text}psnr/{filename}.txt", "w") as f:
@@ -488,7 +532,7 @@ class AffineControl(L.LightningModule):
                     f.write(batch['text'][0])
                 # save the source_image
                 os.makedirs(f"{log_dir}/{epoch_text}source_image", exist_ok=True)
-                torchvision.utils.save_image(gt_image, f"{log_dir}/{epoch_text}source_image/{filename}.jpg")
+                torchvision.utils.save_image(gt_image, f"{log_dir}/{epoch_text}source_image/{filename}.png")
             if True:
                 if batch_idx == 0:
                     if hasattr(self, "gate_trainable"):
@@ -547,6 +591,12 @@ class AffineControl(L.LightningModule):
     def set_guidance_scale(self, guidance_scale):
         self.use_set_guidance_scale = True
         self.guidance_scale = guidance_scale
+    
+    def set_ddim_guidance(self, guidance_scale):
+        self.ddim_guidance_scale = guidance_scale
 
     def set_inversion_step(self, num_inversion_steps):
         self.num_inversion_steps = num_inversion_steps
+    
+    def disable_null_text(self):
+        self.use_null_text = False
