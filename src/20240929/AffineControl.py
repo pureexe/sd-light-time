@@ -263,8 +263,7 @@ class AffineControl(L.LightningModule):
             raise ValueError(f"feature_type {self.feature_type} is not supported")
         return batch
     
-    def generate_tensorboard(self, batch, batch_idx, is_save_image=False, is_seperate_dir_with_epoch=False):
-
+    def generate_tensorboard(self, batch, batch_idx, is_save_image=False, is_seperate_dir_with_epoch=False):        
         try:
             log_dir = self.logger.log_dir
         except:
@@ -328,41 +327,34 @@ class AffineControl(L.LightningModule):
                     source_light_features,
                     is_apply_cfg=True # Disable cfg for fast inversion
                 )
-                # def before_positive_pass_callback(): 
-                #     set_light_direction(
-                #         self.pipe.unet,
-                #         source_light_features,
-                #         is_apply_cfg=False # Disable cfg for fast inversion
-                #     )
-
-                # def before_negative_pass_callback():
-                #     set_light_direction(
-                #         self.pipe.unet,
-                #         None,
-                #         is_apply_cfg=False # Disable cfg for fast inversion
-                #     )
-
-                # def before_final_denoise_callback():
-                #     pass
-                #     # set_light_direction(
-                #     #     self.pipe.unet,
-                #     #     None,
-                #     #     is_apply_cfg=False # Disable cfg for fast inversion
-                #     # ) 
-                    
-                # def before_final_denoise_callback2():
-                #     set_light_direction(
-                #         self.pipe.unet,
-                #         source_light_features,
-                #         is_apply_cfg=True # Disable cfg for fast inversion
-                #     ) 
                 
-                # def after_final_denoise_callback():
-                #     set_light_direction(
-                #         self.pipe.unet,
-                #         source_light_features,
-                #         is_apply_cfg=True # Disable cfg for fast inversion
-                #     )
+                def before_positive_pass_callback(): 
+                    set_light_direction(
+                        self.pipe.unet,
+                        source_light_features,
+                        is_apply_cfg=False # Disable cfg for fast inversion
+                    )
+
+                def before_negative_pass_callback():
+                    set_light_direction(
+                        self.pipe.unet,
+                        None,
+                        is_apply_cfg=False # Disable cfg for fast inversion
+                    )
+
+                def before_final_denoise_callback():
+                    set_light_direction(
+                        self.pipe.unet,
+                        source_light_features,
+                        is_apply_cfg=True # Disable cfg for fast inversion
+                    ) 
+                
+                def after_final_denoise_callback():
+                    set_light_direction(
+                        self.pipe.unet,
+                        source_light_features,
+                        is_apply_cfg=True # Disable cfg for fast inversion
+                    )
 
                 null_embeddings, null_latents = get_null_embeddings(
                     self.pipe,
@@ -374,11 +366,10 @@ class AffineControl(L.LightningModule):
                     controlnet_image=self.get_control_image(batch) if hasattr(self.pipe, "controlnet") else None,
                     num_null_optimization_steps=self.num_null_text_steps,
                     generator=torch.Generator().manual_seed(self.seed),
-                    # before_positive_pass_callback = before_positive_pass_callback,
-                    # before_negative_pass_callback = before_negative_pass_callback,
-                    # before_final_denoise_callback = before_final_denoise_callback,
-                    # after_final_denoise_callback = after_final_denoise_callback,
-                    # before_final_denoise_callback2=before_final_denoise_callback2
+                    before_positive_pass_callback = before_positive_pass_callback,
+                    before_negative_pass_callback = before_negative_pass_callback,
+                    before_final_denoise_callback = before_final_denoise_callback,
+                    after_final_denoise_callback = after_final_denoise_callback,
                 )
             if is_save_image:
                 # save image from null_latents 

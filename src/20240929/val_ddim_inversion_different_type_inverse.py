@@ -196,6 +196,8 @@ def get_from_mode(mode):
         return "/data/pakkapon/datasets/multi_illumination/spherical/val", 100, DDIMArrayEnvDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/split-val-relight-array.json"}, None   
     elif mode == "multillum_ddim_bothway_guidance_val_array_v2":
         return "/data/pakkapon/datasets/multi_illumination/spherical/test", 100, DDIMArrayEnvDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/split-test-30-array.json"}, None
+    elif mode == "multillum_train2_relight":
+        return "/data/pakkapon/datasets/multi_illumination/spherical/train", 100, DDIMArrayEnvDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/split-train2-relight-array.json"}, None
     else:
         raise Exception("mode not found")
 
@@ -257,7 +259,7 @@ def main():
                                 # skip if output dir exist 
                                 if os.path.exists(output_dir):
                                     print(f"Skip {output_dir}")
-                                    continue
+                                    #continue
                                 os.makedirs(output_dir, exist_ok=True)
                                 print("================================")
                                 print(output_dir)

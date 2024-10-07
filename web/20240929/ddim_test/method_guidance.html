@@ -1,0 +1,220 @@
+<!-- show different between guidance and method-->
+<!DOCTYPE html class="has-navbar-fixed-top has-navbar-fixed-bottom">
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Dataset viewer </title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/1.0.2/css/bulma.min.css">
+    <style>
+      .image.is-128x256 {
+          height: 128px;
+          width: 256px;
+      }
+      .is-flip-image {
+          transform: scaleX(-1);
+      }
+      body{
+        width: 100vw;
+      }
+    </style>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@cityssm/bulma-sticky-table@3.0.0/bulma-with-sticky-table.min.css" />
+  </head>
+  <body>
+    <div id="app" style="max-width: 100vw;">
+      <nav class="navbar is-fixed-top is-flex-mobile">
+        <div class="navbar-item is-flex-mobile" style="flex-grow: 1; align-content: center;  justify-content: center;">
+          <div class="columns">
+            <div class="column is-flex-mobile" >
+              <button class="button " :class="{'is-primary': show_white_mask }"  @click="show_white_mask=!show_white_mask">Mask</button>
+            </div>
+            <div class="column">
+              <div class="columns is-flex-mobile" >
+                <div class="column is-flex-mobile" v-for="idx in Array(show_guidances.length).fill().map((e,i) => i)">
+                  <button class="button " :class="{'is-primary': show_guidances[idx] }"  @click="show_guidances[idx]=!show_guidances[idx]">{{guidance_scales[idx]}}</button>
+                </div>
+              </div>    
+            </div>
+            <div class="column">
+              <div class="columns is-flex-mobile">
+                <div class="column is-flex-mobile" v-for="idx in Array(show_methods.length).fill().map((e,i) => i)">
+                  <button class="button " :class="{'is-primary': show_methods[idx] }"  @click="show_methods[idx]=!show_methods[idx]">{{method_names[methods[idx]]}}</button>
+                </div>
+              </div>
+            </div>
+          </div>          
+        </div>        
+      </nav>
+      <nav class="navbar is-fixed-bottom is-flex-mobile is-flex-tablet" style="align-content: center;  justify-content: center;">
+        <div class="navbar-item is-flex-mobile is-flex-tablet">
+          <div class="select is-link">
+            <select v-model="current_denoising_step">
+              <option v-for="option in denoising_steps" :value="option">
+                Denosing step: {{ option }}
+              </option>
+            </select>
+          </div>
+        </div>
+        <div class="navbar-item is-flex-mobile is-flex-tablet">
+          <div class="select is-link">
+            <select v-model="current_scene">
+              <option v-for="option in image_index.map(x => x.split('/')[0])" :value="option">
+                Scene: {{ option }}
+              </option>
+            </select>
+          </div>
+        </div>
+        <div class="navbar-item is-flex-mobile is-flex-tablet">
+          <div class="select is-link">
+            <select v-model="current_light">
+              <option v-for="option in light_directions" :value="option">
+                Light: {{ option }} {{(option == 0) ? "(source)" : [4,5,6,7,11,12,16,17].indexOf(option) >= 0? "*" : "" }}
+              </option>
+            </select>
+          </div>
+        </div>
+      </nav>
+      
+      <div v-for="scene, scene_index in [current_scene]" style="margin-top: 4rem;"> <!-- v-for="scene, scene_index in image_index.map(x => x.split('/')[0])" -->
+        <!-- Each table show single image, row is method, columm is guidance scale -->
+        <table class="table is-bordered is-striped mx-auto"  v-for="light_direction in [current_light]" > <!--  v-for="light_direction in light_directions" -->
+            <thead>     
+              <tr>
+                <th colspan="5">{{scene}} / dir_{{light_direction}} </th>
+              </tr>          
+              <tr>
+                <th>Method / Guidance</th>
+                    <th v-for="guidance_scale in guidance_scales.filter((e,i)=>show_guidances[i])">
+                      {{guidance_scale}}
+                    </th>    
+                </tr>
+            </thead>
+            <tbody>
+              <tr v-for="method, method_index in methods.filter((e,i)=>show_methods[i])">
+                <td>
+                  {{method_names[method]}}
+                </td>
+                <td v-for="guidance in guidance_scales.filter((e,i)=>show_guidances[i])">
+                  <figure class="image is-128x128">
+                    <img :src="'/pakkapon/sd-light-time/output/20240929/val_multillum_ddim_bothway_guidance_val_array_v2/vae/'+guidance+'/'+method+'/1e-4/chk'+checkpoints[method]+'/inversion'+current_denoising_step+'/lightning_logs/version_0/'+(show_white_mask ? 'diff_mask':'crop_image')+'/'+scene+'-dir_0_mip2_'+scene+'-dir_'+light_direction+'_mip2.png'" loading="lazy"/>
+                  </figure>
+                </td>                
+              </tr>
+              <tr>
+                <td colspan="5">
+                  <div class="columns">
+                    <div class="column">
+                      <figure class="image is-128x128" style="display: block;margin-left:auto; margin-right:auto;">
+                        <img :src="'/pakkapon/sd-light-time/output/20240929/val_multillum_ddim_bothway_guidance_val_array_v2/vae/1.0/no_control/1e-4/chk'+checkpoints['no_control']+'/inversion'+current_denoising_step+'/lightning_logs/version_0/source_image/'+scene+'-dir_0_mip2_'+scene+'-dir_'+light_direction+'_mip2.png'" loading="lazy"/>
+                      </figure>
+                      <p style="text-align: center;">
+                        <span  class="has-text-black-bis has-background-primary" style="font-weight:800;padding:5px;">
+                          Ground Truth
+                        </span>
+                      </p>  
+                    </div>
+                    <div class="column">
+                      <figure class="image is-128x128" style="display: block;margin-left:auto; margin-right:auto;">
+                        <img :src="'/pakkapon/sd-light-time/output/20240929/val_multillum_ddim_bothway_guidance_val_array_v2/vae/1.0/no_control/1e-4/chk'+checkpoints['no_control']+'/inversion'+current_denoising_step+'/lightning_logs/version_0/source_image/'+scene+'-dir_0_mip2_'+scene+'-dir_0_mip2.png'" loading="lazy"/>
+                      </figure>
+                      <p style="text-align: center;">
+                        <span  class="has-text-black-bis has-background-warning" style="font-weight:800;padding:5px;">
+                          Source Image
+                        </span>
+                      </p>  
+                    </div>  
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+        </table>
+      </div>
+    </div>
+        
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script>
+    async function getImageIndex(){
+      const response = await fetch('/pakkapon/datasets/multi_illumination/spherical/split-test-30-array.json');
+      const data = await response.json();
+      return data;
+    }
+    const { createApp, ref } = Vue
+      createApp({
+        setup() {
+          const image_index = ref([]);
+          const envmap_index = ref([]);        
+          const denoising_steps = ref([5, 10, 25, 50, 100, 200, 250, 500, 999]);
+          const current_denoising_step = ref(500)
+          const guidance_scales = ref(['1.0', '3.0', '5.0', '7.0']);
+          const show_guidances = ref([true, true, true, true]);
+          const methods = ref(['no_control', 'depth', 'bae', 'both_bae']);
+          const show_methods = ref([true, true, true, true]);
+          const current_scene = ref('')
+          const current_light = ref(0)
+          const light_directions = ref([0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24])
+          const show_white_mask = ref(false)
+          const checkpoints = ref({
+            'no_control': 254,
+            'depth': 299,
+            'bae': 304,
+            'both_bae': 349
+          })
+          const method_names = ref({
+            'no_control': 'No Control',
+            'depth': 'Depth',
+            'bae': 'Normal (BAE)',
+            'both_bae': 'Depth + Normal (BAE)'
+          })
+
+          return {
+            image_index,
+            envmap_index,
+            denoising_steps,
+            current_denoising_step,
+            current_light,
+            light_directions,
+            guidance_scales,
+            methods,
+            method_names,
+            checkpoints,
+            current_scene,
+            show_guidances,
+            show_methods,
+            show_white_mask
+          }
+        },
+        methods: {
+          set_page(page_id){
+            this.pagination_id = page_id
+            this.go_top()
+          },
+          go_top(){
+            window.scrollTo(0,0);
+          },
+          prevPage() {
+            var current_index = this.available_checkpoint.indexOf(this.current_checkpoint)
+            if(current_index > 0){
+                this.current_checkpoint = this.available_checkpoint[current_index - 1]
+            }
+          },
+          nextPage() {
+            var current_index = this.available_checkpoint.indexOf(this.current_checkpoint)
+            if(current_index < this.available_checkpoint.length - 1){
+                this.current_checkpoint = this.available_checkpoint[current_index + 1]
+            }
+          }
+      
+        },
+        mounted() {
+          var self = this;
+          getImageIndex().then(ids =>{
+            self.image_index = ids.image_index;
+            self.envmap_index = ids.envmap_index;
+            self.current_scene = ids.image_index[0].split('/')[0];
+            self.current_light = 0;     
+          });
+        }
+      }).mount('#app')
+            </script>
+  </body>
+</html>

@@ -254,6 +254,7 @@ def get_null_embeddings_BAK(pipe, ddim_latents, text_embbeding, negative_embeddi
                         break
         if before_final_denoise_callback is not None:
             before_final_denoise_callback()
+
         # text embeding stay the same.
         # compute noise uncond for final time after all updateded
         predict_latents, noiseText1, noiseUncond1 = denoise_step(
@@ -269,6 +270,7 @@ def get_null_embeddings_BAK(pipe, ddim_latents, text_embbeding, negative_embeddi
 
         if before_final_denoise_callback2 is not None:
             before_final_denoise_callback2()
+
         predict_latents2, noiseText2, noiseUncond2 = denoise_step(
             pipe=pipe, 
             #hidden_states=negative_prompt_embeds,
@@ -282,7 +284,7 @@ def get_null_embeddings_BAK(pipe, ddim_latents, text_embbeding, negative_embeddi
         # check if this close 
         loss = torch.nn.functional.mse_loss(predict_latents, predict_latents2)
         predict_latents2 = predict_latents
-        print(f"close check: {loss.item():.8f}")
+        print(f"latents check: {loss.item():.8f}")
         print(f"noiseText close check: {torch.nn.functional.mse_loss(noiseText1, noiseText2).item():.8f}")
         print(f"noiseUncond close check: {torch.nn.functional.mse_loss(noiseUncond1, noiseUncond2).item():.8f}")
         print("=================")

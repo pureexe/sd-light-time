@@ -23,6 +23,7 @@ CHECKPOINT_FOLDER_NAME = "20240918"
 parser = argparse.ArgumentParser()
 #parser.add_argument("-i", "--version", type=str, default="33")
 parser.add_argument("-i", "--version", type=str, default="37")
+#parser.add_argument("-m", "--mode", type=str, default="multillum_train2_nulltext")
 parser.add_argument("-m", "--mode", type=str, default="multillum_test_30_array_v2")
 #parser.add_argument("-g", "--guidance_scale", type=str, default="3,7,5,2.5,2,1.5,1")
 #parser.add_argument("-c", "--checkpoint", type=str, default="299, 279, 259, 239, 219, 199, 179, 159, 139, 119, 99, 79, 59, 39, 19, 0")
@@ -194,6 +195,10 @@ def get_from_mode(mode):
         return "/data/pakkapon/datasets/multi_illumination/spherical/val_rotate", 100, DDIMArrayEnvDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/val_rotate/split.json"}, None   
     elif mode == "multillum_test_30_array_v2":
         return "/data/pakkapon/datasets/multi_illumination/spherical/test", 100, DDIMArrayEnvDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/split-test-30-array.json"}, None
+    elif mode == "multillum_train2_nulltext":
+        return "/data/pakkapon/datasets/multi_illumination/spherical/train", 100, DDIMArrayEnvDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/split-train2-relight-array.json"}, None
+    # elif mode == "multillum_train2_nulltext":
+    #     return "/data/pakkapon/datasets/multi_illumination/spherical/train", 100, DDIMArrayEnvDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/split-test-30-bothbae2-array.json"}, None
     else:
         raise Exception("mode not found")
 
@@ -209,8 +214,8 @@ def main():
                 #condition_class = CONDITIONS_CLASS[version]
                 #ddim_class = create_ddim_inversion(condition_class)
                 ddim_class = CONDITIONS_CLASS[version]
-                #try:
-                if True:
+                try:
+                #if True:
                     for checkpoint in checkpoints:
                         if checkpoint == 0:
                             model = ddim_class(learning_rate=1e-4)
@@ -247,10 +252,9 @@ def main():
                             val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=1, shuffle=False)
                             trainer.test(model, dataloaders=val_dataloader, ckpt_path=CKPT_PATH)
 
-                        print("REPLICATE !")
-                        exit()
-                # except:
-                #    pass
+
+                except:
+                    pass
 
                                 
 if __name__ == "__main__":
