@@ -26,7 +26,7 @@
         <div class="navbar-item is-flex-mobile" style="flex-grow: 1; align-content: center;  justify-content: center;">
           <div class="columns">
             <div class="column is-flex-mobile" >
-              <button class="button " :class="{'is-primary': show_white_mask }"  @click="show_white_mask=!show_white_mask">Mask</button>
+              <button class="button " :class="{'is-primary': show_white_mask }"  @click="show_white_mask=!show_white_mask">Pixel Different</button>
             </div>
             <div class="column">
               <div class="columns is-flex-mobile" >
@@ -75,7 +75,7 @@
         </div>
       </nav>
       
-      <div v-for="scene, scene_index in [current_scene]" style="margin-top: 4rem;"> <!-- v-for="scene, scene_index in image_index.map(x => x.split('/')[0])" -->
+      <div v-for="scene, scene_index in [current_scene]" style="margin-top: 5rem; margin-bottom: 5rem;"> <!-- v-for="scene, scene_index in image_index.map(x => x.split('/')[0])" -->
         <!-- Each table show single image, row is method, columm is guidance scale -->
         <table class="table is-bordered is-striped mx-auto"  v-for="light_direction in [current_light]" > <!--  v-for="light_direction in light_directions" -->
             <thead>     

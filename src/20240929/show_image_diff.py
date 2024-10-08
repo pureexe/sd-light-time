@@ -111,6 +111,8 @@ def train2():
         print(f"Generating difference mask for: {scene_dir}")
         generate_difference_mask(source_dir, target_dir, output_dir, THRESHOLD)
 
+
+
 def train2():
     THRESHOLD = 10
     scene_dirs = []
@@ -134,6 +136,33 @@ def train2():
         os.makedirs(output_dir, exist_ok=True)
         print(f"Generating difference mask for: {scene_dir}")
         generate_difference_mask(source_dir, target_dir, output_dir, THRESHOLD)
+
+def train2_nulltext():
+    THRESHOLD = 10
+    scene_dirs = []
+    checkpoints = {
+        'no_control': '254',
+        'depth': '299',
+        'bae': '304',
+        'both_bae': '349'
+    }
+    #output/20240929/val_multillum_train2_nulltext
+    for guidance_scale in [2.0, 2.5, 3.0, 7.0]:
+        for method in ['bae', 'both_bae', 'depth', 'no_control']:
+            checkpoint = checkpoints[method]
+            for inversion_step in [5,10,25,50,100,200,250,500,999]:
+                scene = f"output/20240929/val_multillum_train2_nulltext/vae/{guidance_scale}/{method}/1e-4/chk{checkpoint}/lightning_logs/version_0"
+                if os.path.exists(scene):
+                    scene_dirs.append(scene)
+    for scene_dir in scene_dirs:
+        source_dir = os.path.join(scene_dir, 'crop_image')
+        target_dir = os.path.join(scene_dir, 'source_image')
+        output_dir = os.path.join(scene_dir, 'diff_mask')
+        os.makedirs(output_dir, exist_ok=True)
+        print(f"Generating difference mask for: {scene_dir}")
+        generate_difference_mask(source_dir, target_dir, output_dir, THRESHOLD)
+
+
 
 def val_multilumn():
     THRESHOLD = 10
@@ -162,8 +191,8 @@ def val_multilumn():
 def main():
     #bothway()
     #train2()
-    val_multilumn()
-
+    #val_multilumn()
+    train2_nulltext()
 
     
 

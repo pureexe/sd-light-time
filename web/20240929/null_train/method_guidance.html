@@ -28,6 +28,9 @@
             <div class="column is-flex-mobile" >
               <button class="button " :class="{'is-primary': show_white_mask }"  @click="show_white_mask=!show_white_mask">Pixel Different</button>
             </div>
+            <div class="column is-flex-mobile" >
+              <button class="button " :class="{'is-primary': show_guidance_scale_1 }"  @click="show_guidance_scale_1=!show_guidance_scale_1">1.0</button>
+            </div>
             <div class="column">
               <div class="columns is-flex-mobile" >
                 <div class="column is-flex-mobile" v-for="idx in Array(show_guidances.length).fill().map((e,i) => i)">
@@ -46,6 +49,7 @@
         </div>        
       </nav>
       <nav class="navbar is-fixed-bottom is-flex-mobile is-flex-tablet" style="align-content: center;  justify-content: center;">
+        <!--
         <div class="navbar-item is-flex-mobile is-flex-tablet">
           <div class="select is-link">
             <select v-model="current_denoising_step">
@@ -55,6 +59,7 @@
             </select>
           </div>
         </div>
+        -->
         <div class="navbar-item is-flex-mobile is-flex-tablet">
           <div class="select is-link">
             <select v-model="current_scene">
@@ -80,10 +85,13 @@
         <table class="table is-bordered is-striped mx-auto"  v-for="light_direction in [current_light]" > <!--  v-for="light_direction in light_directions" -->
             <thead>     
               <tr>
-                <th colspan="5">{{scene}} / dir_{{light_direction}} </th>
+                <th colspan="6">{{scene}} / dir_{{light_direction}} </th>
               </tr>          
               <tr>
                 <th>Method / Guidance</th>
+                    <th v-if="show_guidance_scale_1">
+                      1.0
+                    </th>    
                     <th v-for="guidance_scale in guidance_scales.filter((e,i)=>show_guidances[i])">
                       {{guidance_scale}}
                     </th>    
@@ -94,18 +102,23 @@
                 <td>
                   {{method_names[method]}}
                 </td>
+                <td v-if="show_guidance_scale_1">
+                  <figure class="image is-128x128">
+                    <img :src="'/pakkapon/sd-light-time/output/20240929/val_multillum_train2_relight/vae/1.0/'+method+'/1e-4/chk'+checkpoints[method]+'/inversion500/lightning_logs/version_0/'+(show_white_mask ? 'diff_mask':'crop_image')+'/'+scene+'-dir_0_mip2_'+scene+'-dir_'+light_direction+'_mip2.png'" loading="lazy"/>
+                  </figure>
+                </td>
                 <td v-for="guidance in guidance_scales.filter((e,i)=>show_guidances[i])">
                   <figure class="image is-128x128">
-                    <img :src="'/pakkapon/sd-light-time/output/20240929/val_multillum_train2_relight/vae/'+guidance+'/'+method+'/1e-4/chk'+checkpoints[method]+'/inversion'+current_denoising_step+'/lightning_logs/version_0/'+(show_white_mask ? 'diff_mask':'crop_image')+'/'+scene+'-dir_0_mip2_'+scene+'-dir_'+light_direction+'_mip2.png'" loading="lazy"/>
+                    <img :src="'/pakkapon/sd-light-time/output/20240929/val_multillum_train2_nulltext/vae/'+guidance+'/'+method+'/1e-4/chk'+checkpoints[method]+'//lightning_logs/version_0/'+(show_white_mask ? 'diff_mask':'crop_image')+'/'+scene+'-dir_0_mip2_'+scene+'-dir_'+light_direction+'_mip2.png'" loading="lazy"/>
                   </figure>
                 </td>                
               </tr>
               <tr>
-                <td colspan="5">
+                <td colspan="6">
                   <div class="columns">
                     <div class="column">
                       <figure class="image is-128x128" style="display: block;margin-left:auto; margin-right:auto;">
-                        <img :src="'/pakkapon/sd-light-time/output/20240929/val_multillum_train2_relight/vae/1.0/no_control/1e-4/chk'+checkpoints['no_control']+'/inversion'+current_denoising_step+'/lightning_logs/version_0/source_image/'+scene+'-dir_0_mip2_'+scene+'-dir_'+light_direction+'_mip2.png'" loading="lazy"/>
+                        <img :src="'/pakkapon/sd-light-time/output/20240929/val_multillum_train2_nulltext/vae/7.0/no_control/1e-4/chk'+checkpoints['no_control']+'/lightning_logs/version_0/source_image/'+scene+'-dir_0_mip2_'+scene+'-dir_'+light_direction+'_mip2.png'" loading="lazy"/>
                       </figure>
                       <p style="text-align: center;">
                         <span  class="has-text-black-bis has-background-primary" style="font-weight:800;padding:5px;">
@@ -115,7 +128,7 @@
                     </div>
                     <div class="column">
                       <figure class="image is-128x128" style="display: block;margin-left:auto; margin-right:auto;">
-                        <img :src="'/pakkapon/sd-light-time/output/20240929/val_multillum_train2_relight/vae/1.0/no_control/1e-4/chk'+checkpoints['no_control']+'/inversion'+current_denoising_step+'/lightning_logs/version_0/source_image/'+scene+'-dir_0_mip2_'+scene+'-dir_0_mip2.png'" loading="lazy"/>
+                        <img :src="'/pakkapon/sd-light-time/output/20240929/val_multillum_train2_nulltext/vae/7.0/no_control/1e-4/chk'+checkpoints['no_control']+'/lightning_logs/version_0/source_image/'+scene+'-dir_0_mip2_'+scene+'-dir_0_mip2.png'" loading="lazy"/>
                       </figure>
                       <p style="text-align: center;">
                         <span  class="has-text-black-bis has-background-warning" style="font-weight:800;padding:5px;">
@@ -145,7 +158,7 @@
           const envmap_index = ref([]);        
           const denoising_steps = ref([5, 10, 25, 50, 100, 200, 250, 500, 999]);
           const current_denoising_step = ref(500)
-          const guidance_scales = ref(['1.0', '3.0', '5.0', '7.0']);
+          const guidance_scales = ref(['2.0', '2.5', '3.0', '7.0']);
           const show_guidances = ref([true, true, true, true]);
           const methods = ref(['no_control', 'depth', 'bae', 'both_bae']);
           const show_methods = ref([true, true, true, true]);
@@ -153,6 +166,7 @@
           const current_light = ref(0)
           const light_directions = ref([0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24])
           const show_white_mask = ref(false)
+          const show_guidance_scale_1 = ref(true)
           const checkpoints = ref({
             'no_control': 254,
             'depth': 299,
@@ -180,7 +194,8 @@
             current_scene,
             show_guidances,
             show_methods,
-            show_white_mask
+            show_white_mask,
+            show_guidance_scale_1
           }
         },
         methods: {
