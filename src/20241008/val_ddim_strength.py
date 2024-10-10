@@ -15,20 +15,17 @@ import argparse
 from LineNotify import LineNotify
 import argparse
 from constants import FOLDER_NAME
+import numpy as np
 
 CHECKPOINT_FOLDER_NAME = "20240918"
 
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-i", "--version", type=str, default="33")
-parser.add_argument("-m", "--mode", type=str, default="multillum_val_array_checkpoint_steps")
-parser.add_argument("-g", "--guidance_scale", type=str, default="1,2,3,5")
-parser.add_argument("-c", "--checkpoint", type=str, default="499,479,459,439,419,399,379,359,339,319,299,279,259,239,219,199,179,159,139,119,99,79,59,39,19,0")
-parser.add_argument("--inversion_step", type=str, default="500")
-
-#parser.add_argument("-g", "--guidance_scale", type=str, default="1,3,5,7")
-#parser.add_argument("-c", "--checkpoint", type=str, default="lastest")
-#parser.add_argument("--inversion_step", type=str, default="500,250,999,5,10,25,50,100,200")
+parser.add_argument("-m", "--mode", type=str, default="multillum_test30_strength")
+parser.add_argument("-g", "--guidance_scale", type=str, default="1,1.5,2,2.5,3,3.5,5,7")
+parser.add_argument("-c", "--checkpoint", type=str, default="299")
+parser.add_argument("--strength", type=str, default="0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0")
 
 args = parser.parse_args()
 NAMES = {
@@ -196,9 +193,11 @@ def get_from_mode(mode):
         return "/data/pakkapon/datasets/multi_illumination/spherical/val_rotate", 100, DDIMArrayEnvDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/val_rotate/split.json"}, None   
     elif mode == "multillum_test_ddim30":
         return "/data/pakkapon/datasets/multi_illumination/spherical/test", 100, DDIMArrayEnvDataset, {"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/split-test-ddim30.json"}, None   
-    elif mode == "multillum_val_array_checkpoint_steps":
+    elif mode == "multillum_val_array_v4":
         return "/data/pakkapon/datasets/multi_illumination/spherical/val", 100, DDIMArrayEnvDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/split-val-relight-array.json"}, None   
-    elif mode == "multillum_ddim_bothway_guidance_val_array_v2":
+    elif mode == "multillum_test30_strength":
+        return "/data/pakkapon/datasets/multi_illumination/spherical/test", 100, DDIMArrayEnvDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/split-test-30-array.json"}, None
+    elif mode == "multillum_val_strength":
         return "/data/pakkapon/datasets/multi_illumination/spherical/test", 100, DDIMArrayEnvDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/split-test-30-array.json"}, None
     elif mode == "multillum_train2_relight":
         return "/data/pakkapon/datasets/multi_illumination/spherical/train", 100, DDIMArrayEnvDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/split-train2-relight-array.json"}, None
@@ -211,7 +210,7 @@ def main():
     guidance_scales = [float(a.strip()) for a in args.guidance_scale.split(",")]
 
 
-    inversion_steps = [int(a.strip()) for a in args.inversion_step.split(",")]
+    strengthes = [float(a.strip()) for a in args.strength.split(",")]
     modes = [a.strip() for a in args.mode.split(",")]
 
     for mode in modes:
@@ -235,8 +234,8 @@ def main():
                 #condition_class = CONDITIONS_CLASS[version]
                 #ddim_class = create_ddim_inversion(condition_class)
                 ddim_class = CONDITIONS_CLASS[version]
-                try:
-                #if True:
+                #try:
+                if True:
                     for checkpoint in checkpoints:
                         if checkpoint == 0:
                             model = ddim_class(learning_rate=1e-4)
@@ -254,12 +253,19 @@ def main():
                         model.disable_plot_train_loss()
                         # set guidance bothway 
                         for guidance_scale in guidance_scales:
-                            for inversion_step in inversion_steps:
+                            for strength in strengthes:
+                                # compute inversion step
+                                if strength > 1.0 or strength <= 0.0:
+                                    print(f"Skip strength {strength} since it is not in range (0, 1]")
+                                    continue
+                                #inversion_step = np.clip(0,999, 1000 * strength)
+                                inversion_step = 999
                                 model.set_guidance_scale(guidance_scale)
                                 model.set_ddim_guidance(guidance_scale)
-                                model.set_inversion_step(inversion_step)      
+                                model.set_inversion_step(inversion_step)    
+                                model.set_ddim_strength(strength)
                                 model.disable_null_text()                
-                                output_dir = f"output/{FOLDER_NAME}/val_{mode}/{METHODS[version]}/{guidance_scale}/{NAMES[version]}/{LRS[version]}/chk{checkpoint}/inversion{inversion_step}"
+                                output_dir = f"output/{FOLDER_NAME}/val_{mode}/{METHODS[version]}/{guidance_scale}/{NAMES[version]}/{LRS[version]}/chk{checkpoint}/strength{strength}"
                                 # skip if output dir exist 
                                 if os.path.exists(output_dir):
                                     print(f"Skip {output_dir}")
@@ -279,8 +285,8 @@ def main():
                                 trainer.test(model, dataloaders=val_dataloader, ckpt_path=CKPT_PATH)
                         continue
                             
-                except:
-                   pass
+                # except:
+                #    pass
 
                                 
 if __name__ == "__main__":

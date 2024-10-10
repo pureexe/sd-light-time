@@ -20,15 +20,11 @@ CHECKPOINT_FOLDER_NAME = "20240918"
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument("-i", "--version", type=str, default="33")
-parser.add_argument("-m", "--mode", type=str, default="multillum_val_array_checkpoint_steps")
-parser.add_argument("-g", "--guidance_scale", type=str, default="1,2,3,5")
-parser.add_argument("-c", "--checkpoint", type=str, default="499,479,459,439,419,399,379,359,339,319,299,279,259,239,219,199,179,159,139,119,99,79,59,39,19,0")
-parser.add_argument("--inversion_step", type=str, default="500")
-
-#parser.add_argument("-g", "--guidance_scale", type=str, default="1,3,5,7")
-#parser.add_argument("-c", "--checkpoint", type=str, default="lastest")
-#parser.add_argument("--inversion_step", type=str, default="500,250,999,5,10,25,50,100,200")
+parser.add_argument("-i", "--version", type=str, default="12")
+parser.add_argument("-m", "--mode", type=str, default="multillum_val_array_v4")
+parser.add_argument("-g", "--guidance_scale", type=str, default="1")
+parser.add_argument("-c", "--checkpoint", type=str, default="189")
+parser.add_argument("--inversion_step", type=str, default="5,10,25,50,100,200,250,300, 250,500,999")
 
 args = parser.parse_args()
 NAMES = {
@@ -60,10 +56,6 @@ NAMES = {
     25: 'depth',
     26: 'bae_both',
     27: 'bae',
-    33: 'no_control',
-    35: 'both_bae',
-    36: 'bae',
-    37: 'depth'
 }
 METHODS = {
     12: 'shcoeffs',
@@ -81,10 +73,6 @@ METHODS = {
     25: 'vae',
     26: 'vae',
     27: 'vae',
-    33: 'vae',
-    35: 'vae',
-    36: 'vae',
-    37: 'vae'
 }
 CONDITIONS_CLASS = {
     0: AffineNoControl,
@@ -115,10 +103,6 @@ CONDITIONS_CLASS = {
     25: AffineDepth,
     26: AffineDepthNormalBae,
     27: AffineNormalBae,
-    33: AffineNoControl,
-    35: AffineDepthNormalBae,
-    36: AffineNormalBae,
-    37: AffineDepth
 }
 LRS = {
     0: '1e-4',
@@ -149,12 +133,7 @@ LRS = {
     25: '1e-4',
     26: '1e-4',
     27: '1e-4',
-    33: '1e-4',
-    35: '1e-4',
-    36: '1e-4',
-    37: '1e-4'
  }
-
 
 
 def get_from_mode(mode):
@@ -196,12 +175,8 @@ def get_from_mode(mode):
         return "/data/pakkapon/datasets/multi_illumination/spherical/val_rotate", 100, DDIMArrayEnvDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/val_rotate/split.json"}, None   
     elif mode == "multillum_test_ddim30":
         return "/data/pakkapon/datasets/multi_illumination/spherical/test", 100, DDIMArrayEnvDataset, {"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/split-test-ddim30.json"}, None   
-    elif mode == "multillum_val_array_checkpoint_steps":
+    elif mode == "multillum_val_array_v4":
         return "/data/pakkapon/datasets/multi_illumination/spherical/val", 100, DDIMArrayEnvDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/split-val-relight-array.json"}, None   
-    elif mode == "multillum_ddim_bothway_guidance_val_array_v2":
-        return "/data/pakkapon/datasets/multi_illumination/spherical/test", 100, DDIMArrayEnvDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/split-test-30-array.json"}, None
-    elif mode == "multillum_train2_relight":
-        return "/data/pakkapon/datasets/multi_illumination/spherical/train", 100, DDIMArrayEnvDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/split-train2-relight-array.json"}, None
     else:
         raise Exception("mode not found")
 
@@ -209,34 +184,17 @@ def main():
     CONDITIONS_CLASS[0] = AffineNoControl
     versions = [int(a.strip()) for a in args.version.split(",")]
     guidance_scales = [float(a.strip()) for a in args.guidance_scale.split(",")]
-
-
+    checkpoints = [int(a.strip()) for a in args.checkpoint.split(",")]
     inversion_steps = [int(a.strip()) for a in args.inversion_step.split(",")]
     modes = [a.strip() for a in args.mode.split(",")]
 
     for mode in modes:
         for version in versions:
-            # parse checkpoint
-            checkpoints = []
-            for checkpoint_name in args.checkpoint.split(","):
-                checkpoint_name = checkpoint_name.strip()
-                if checkpoint_name == "lastest":
-                    # find lastest checkpoint in given directory
-                    checkpoint_dir = f"output/{CHECKPOINT_FOLDER_NAME}/multi_mlp_fit/lightning_logs/version_{version}/checkpoints"
-                    if not os.path.exists(checkpoint_dir):
-                        print(f"Checkpoint dir not found: {checkpoint_dir}")
-                        continue
-                    checkpoint_lists = [int(a.split("=")[1].split(".")[0]) for a in os.listdir(checkpoint_dir) if a.startswith("epoch=")]
-                    checkpoint_lists.sort()
-                    lastest_checkpoint = checkpoint_lists[-1]
-                    checkpoints.append(lastest_checkpoint)
-                else:
-                    checkpoints.append(int(checkpoint_name))    
                 #condition_class = CONDITIONS_CLASS[version]
                 #ddim_class = create_ddim_inversion(condition_class)
                 ddim_class = CONDITIONS_CLASS[version]
-                try:
-                #if True:
+                #try:
+                if True:
                     for checkpoint in checkpoints:
                         if checkpoint == 0:
                             model = ddim_class(learning_rate=1e-4)
@@ -252,18 +210,15 @@ def main():
                             del model.pipe_chromeball
                         model.eval() # disable randomness, dropout, etc...
                         model.disable_plot_train_loss()
-                        # set guidance bothway 
                         for guidance_scale in guidance_scales:
                             for inversion_step in inversion_steps:
                                 model.set_guidance_scale(guidance_scale)
-                                model.set_ddim_guidance(guidance_scale)
-                                model.set_inversion_step(inversion_step)      
-                                model.disable_null_text()                
+                                model.set_inversion_step(inversion_step)                      
                                 output_dir = f"output/{FOLDER_NAME}/val_{mode}/{METHODS[version]}/{guidance_scale}/{NAMES[version]}/{LRS[version]}/chk{checkpoint}/inversion{inversion_step}"
                                 # skip if output dir exist 
                                 if os.path.exists(output_dir):
                                     print(f"Skip {output_dir}")
-                                    #continue
+                                    continue
                                 os.makedirs(output_dir, exist_ok=True)
                                 print("================================")
                                 print(output_dir)
@@ -279,8 +234,8 @@ def main():
                                 trainer.test(model, dataloaders=val_dataloader, ckpt_path=CKPT_PATH)
                         continue
                             
-                except:
-                   pass
+                # except:
+                #    pass
 
                                 
 if __name__ == "__main__":
