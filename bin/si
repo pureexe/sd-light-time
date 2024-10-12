@@ -1,5 +1,2 @@
 #!/bin/bash
-export PYTHONPATH=$(pwd):$(pwd)/src
-#/home/vll/venv_pytorch2.4.1/bin/python $@
-#/home/vll/venv_pytorch2.0/bin/python $@
-python $@
+singularity exec --bind /data:/data --nv --env PYTHONPATH=$(pwd):$(pwd)/src --env CUDA_VISIBLE_DEVICES=$CUDA_VISIBLE_DEVICES /pure/c2/singularity/relight/system.sif python $@
