@@ -20,4 +20,4 @@ datasets==3.0.1
 diffusers==0.30.3
 transformers==4.45.2
 xformers==0.0.28.post1
-
+bitsandbytes==0.44.0
