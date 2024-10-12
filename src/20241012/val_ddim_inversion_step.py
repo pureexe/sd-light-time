@@ -20,11 +20,11 @@ CHECKPOINT_FOLDER_NAME = "20240918"
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument("-i", "--version", type=str, default="33")
-parser.add_argument("-m", "--mode", type=str, default="multillum_val_array_verify_pixel_perfect")
+parser.add_argument("-i", "--version", type=str, default="12")
+parser.add_argument("-m", "--mode", type=str, default="multillum_val_array_v4")
 parser.add_argument("-g", "--guidance_scale", type=str, default="1")
-parser.add_argument("-c", "--checkpoint", type=str, default="299")
-parser.add_argument("--inversion_step", type=str, default="500,250,999,5,10,25,50,100,200,300")
+parser.add_argument("-c", "--checkpoint", type=str, default="189")
+parser.add_argument("--inversion_step", type=str, default="5,10,25,50,100,200,250,300, 250,500,999")
 
 args = parser.parse_args()
 NAMES = {
@@ -56,10 +56,6 @@ NAMES = {
     25: 'depth',
     26: 'bae_both',
     27: 'bae',
-    33: 'no_control',
-    35: 'both_bae',
-    36: 'bae',
-    37: 'depth'
 }
 METHODS = {
     12: 'shcoeffs',
@@ -77,10 +73,6 @@ METHODS = {
     25: 'vae',
     26: 'vae',
     27: 'vae',
-    33: 'vae',
-    35: 'vae',
-    36: 'vae',
-    37: 'vae'
 }
 CONDITIONS_CLASS = {
     0: AffineNoControl,
@@ -111,10 +103,6 @@ CONDITIONS_CLASS = {
     25: AffineDepth,
     26: AffineDepthNormalBae,
     27: AffineNormalBae,
-    33: AffineNoControl,
-    35: AffineDepthNormalBae,
-    36: AffineNormalBae,
-    37: AffineDepth
 }
 LRS = {
     0: '1e-4',
@@ -145,10 +133,6 @@ LRS = {
     25: '1e-4',
     26: '1e-4',
     27: '1e-4',
-    33: '1e-4',
-    35: '1e-4',
-    36: '1e-4',
-    37: '1e-4'
  }
 
 
@@ -191,7 +175,7 @@ def get_from_mode(mode):
         return "/data/pakkapon/datasets/multi_illumination/spherical/val_rotate", 100, DDIMArrayEnvDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/val_rotate/split.json"}, None   
     elif mode == "multillum_test_ddim30":
         return "/data/pakkapon/datasets/multi_illumination/spherical/test", 100, DDIMArrayEnvDataset, {"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/split-test-ddim30.json"}, None   
-    elif mode == "multillum_val_array_verify_pixel_perfect":
+    elif mode == "multillum_val_array_v4":
         return "/data/pakkapon/datasets/multi_illumination/spherical/val", 100, DDIMArrayEnvDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/split-val-relight-array.json"}, None   
     else:
         raise Exception("mode not found")

@@ -16,15 +16,19 @@ from LineNotify import LineNotify
 import argparse
 from constants import FOLDER_NAME
 
+MASTER_TYPE = 16
 CHECKPOINT_FOLDER_NAME = "20240918"
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument("-i", "--version", type=str, default="33")
-parser.add_argument("-m", "--mode", type=str, default="multillum_val_array_verify_pixel_perfect")
-parser.add_argument("-g", "--guidance_scale", type=str, default="1")
+#parser.add_argument("-i", "--version", type=str, default="33")
+parser.add_argument("-i", "--version", type=str, default="37")
+#parser.add_argument("-m", "--mode", type=str, default="multillum_train2_nulltext")
+parser.add_argument("-m", "--mode", type=str, default="multillum_test_30_array_v2")
+#parser.add_argument("-g", "--guidance_scale", type=str, default="3,7,5,2.5,2,1.5,1")
+#parser.add_argument("-c", "--checkpoint", type=str, default="299, 279, 259, 239, 219, 199, 179, 159, 139, 119, 99, 79, 59, 39, 19, 0")
 parser.add_argument("-c", "--checkpoint", type=str, default="299")
-parser.add_argument("--inversion_step", type=str, default="500,250,999,5,10,25,50,100,200,300")
+parser.add_argument("-g", "--guidance_scale", type=str, default="7")
 
 args = parser.parse_args()
 NAMES = {
@@ -183,16 +187,18 @@ def get_from_mode(mode):
         return "/data/pakkapon/datasets/multi_illumination/spherical/train", 100, DDIMSHCoeffsDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/split-train3scenes.json"}, None
     elif mode == "multillum_test_v2":
         return "/data/pakkapon/datasets/multi_illumination/spherical/test", 100, DDIMSHCoeffsDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/split-test3scenes.json"}, None
-    elif mode == "multillum_val_array_v2":
+    elif mode == "multillum_val_array_v3":
         return "/data/pakkapon/datasets/multi_illumination/spherical/val", 100, DDIMArrayEnvDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/split-val-relight-array.json"}, None   
     elif mode == "multillum_val":
         return "/data/pakkapon/datasets/multi_illumination/spherical/val", 100, DDIMDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/split-val-relight.json"}, None   
     elif mode == "multillum_val_rotate_test":
         return "/data/pakkapon/datasets/multi_illumination/spherical/val_rotate", 100, DDIMArrayEnvDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/val_rotate/split.json"}, None   
-    elif mode == "multillum_test_ddim30":
-        return "/data/pakkapon/datasets/multi_illumination/spherical/test", 100, DDIMArrayEnvDataset, {"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/split-test-ddim30.json"}, None   
-    elif mode == "multillum_val_array_verify_pixel_perfect":
-        return "/data/pakkapon/datasets/multi_illumination/spherical/val", 100, DDIMArrayEnvDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/split-val-relight-array.json"}, None   
+    elif mode == "multillum_test_30_array_v2":
+        return "/data/pakkapon/datasets/multi_illumination/spherical/test", 100, DDIMArrayEnvDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/split-test-30-array.json"}, None
+    elif mode == "multillum_train2_nulltext":
+        return "/data/pakkapon/datasets/multi_illumination/spherical/train", 100, DDIMArrayEnvDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/split-train2-relight-array.json"}, None
+    # elif mode == "multillum_train2_nulltext":
+    #     return "/data/pakkapon/datasets/multi_illumination/spherical/train", 100, DDIMArrayEnvDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/split-test-30-bothbae2-array.json"}, None
     else:
         raise Exception("mode not found")
 
@@ -201,7 +207,6 @@ def main():
     versions = [int(a.strip()) for a in args.version.split(",")]
     guidance_scales = [float(a.strip()) for a in args.guidance_scale.split(",")]
     checkpoints = [int(a.strip()) for a in args.checkpoint.split(",")]
-    inversion_steps = [int(a.strip()) for a in args.inversion_step.split(",")]
     modes = [a.strip() for a in args.mode.split(",")]
 
     for mode in modes:
@@ -209,8 +214,8 @@ def main():
                 #condition_class = CONDITIONS_CLASS[version]
                 #ddim_class = create_ddim_inversion(condition_class)
                 ddim_class = CONDITIONS_CLASS[version]
-                #try:
-                if True:
+                try:
+                #if True:
                     for checkpoint in checkpoints:
                         if checkpoint == 0:
                             model = ddim_class(learning_rate=1e-4)
@@ -227,31 +232,29 @@ def main():
                         model.eval() # disable randomness, dropout, etc...
                         model.disable_plot_train_loss()
                         for guidance_scale in guidance_scales:
-                            for inversion_step in inversion_steps:
-                                model.set_guidance_scale(guidance_scale)
-                                model.set_inversion_step(inversion_step)                      
-                                output_dir = f"output/{FOLDER_NAME}/val_{mode}/{METHODS[version]}/{guidance_scale}/{NAMES[version]}/{LRS[version]}/chk{checkpoint}/inversion{inversion_step}"
-                                # skip if output dir exist 
-                                if os.path.exists(output_dir):
-                                    print(f"Skip {output_dir}")
-                                    continue
-                                os.makedirs(output_dir, exist_ok=True)
-                                print("================================")
-                                print(output_dir)
-                                print("================================")
-                                trainer = L.Trainer(max_epochs=1000, precision=16, check_val_every_n_epoch=1, default_root_dir=output_dir, inference_mode=False, gradient_clip_val=0)
-                                val_root, count_file, dataset_class, dataset_args, specific_prompt = get_from_mode(mode)
-                                if type(count_file) == int:
-                                    split = slice(0, count_file, 1)
-                                else:
-                                    split = count_file
-                                val_dataset = dataset_class(split=split, root_dir=val_root, specific_prompt=specific_prompt, **dataset_args)
-                                val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=1, shuffle=False)
-                                trainer.test(model, dataloaders=val_dataloader, ckpt_path=CKPT_PATH)
-                        continue
-                            
-                # except:
-                #    pass
+                            model.set_guidance_scale(guidance_scale)                        
+                            output_dir = f"output/{FOLDER_NAME}/val_{mode}/{METHODS[version]}/{guidance_scale}/{NAMES[version]}/{LRS[version]}/chk{checkpoint}/"
+                            # skip if output dir exist 
+                            # if os.path.exists(output_dir):
+                            #     print(f"Skip {output_dir}")
+                            #     continue
+                            os.makedirs(output_dir, exist_ok=True)
+                            print("================================")
+                            print(output_dir)
+                            print("================================")
+                            trainer = L.Trainer(max_epochs=1000, precision=MASTER_TYPE, check_val_every_n_epoch=1, default_root_dir=output_dir, inference_mode=False, gradient_clip_val=0)
+                            val_root, count_file, dataset_class, dataset_args, specific_prompt = get_from_mode(mode)
+                            if type(count_file) == int:
+                                split = slice(0, count_file, 1)
+                            else:
+                                split = count_file
+                            val_dataset = dataset_class(split=split, root_dir=val_root, specific_prompt=specific_prompt, **dataset_args)
+                            val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=1, shuffle=False)
+                            trainer.test(model, dataloaders=val_dataloader, ckpt_path=CKPT_PATH)
+
+
+                except:
+                    pass
 
                                 
 if __name__ == "__main__":

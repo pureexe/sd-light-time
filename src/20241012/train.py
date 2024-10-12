@@ -3,7 +3,9 @@ import torch
 from AffineCondition import AffineDepth, AffineNormal, AffineNormalBae, AffineDepthNormal, AffineDepthNormalBae, AffineNoControl
 
 from datasets.RelightDataset import RelightDataset
-from datasets.DDIMDataset import DDIMDataset
+#from datasets.DDIMDataset import DDIMDataset
+from datasets.DDIMArrayEnvDataset import DDIMArrayEnvDataset
+
 import lightning as L
 
 import argparse 
@@ -17,7 +19,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('-lr', '--learning_rate', type=float, default=1e-4)
 parser.add_argument('-ckpt', '--checkpoint', type=str, default=None)
 parser.add_argument('--batch_size', type=int, default=1)
-parser.add_argument('-c', '--every_n_epochs', type=int, default=5) 
+parser.add_argument('-c', '--every_n_epochs', type=int, default=10) 
 parser.add_argument('--feature_type', type=str, default='vae')
 parser.add_argument('-gm', '--gate_multipiler', type=float, default=1)
 parser.add_argument('--val_check_interval', type=float, default=1.0)
@@ -68,9 +70,10 @@ def main():
     )
     train_dir = args.dataset
     val_dir = args.dataset_val 
-    train_dataset = RelightDataset(root_dir=train_dir, dataset_multiplier=1,specific_prompt=args.split)
-    val_dataset = DDIMDataset(root_dir=val_dir, index_file=args.dataset_val_split,specific_prompt=args.split)
-    train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, num_workers=4)
+    specific_prompt = args.specific_prompt if args.specific_prompt != "" else None
+    train_dataset = RelightDataset(root_dir=train_dir, dataset_multiplier=1,specific_prompt=specific_prompt)
+    val_dataset = DDIMArrayEnvDataset(root_dir=val_dir, index_file=args.dataset_val_split,specific_prompt=specific_prompt)
+    train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, num_workers=8)
     val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=1, shuffle=False)
 
     checkpoint_callback = L.pytorch.callbacks.ModelCheckpoint(
