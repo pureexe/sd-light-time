@@ -35,7 +35,7 @@ parser.add_argument('-guidance', '--guidance_scale', type=float, default=1.0)
 parser.add_argument('-dataset', '--dataset', type=str, default=DATASET_ROOT_DIR) 
 parser.add_argument('-dataset_val', '--dataset_val', type=str, default=DATASET_VAL_DIR) 
 parser.add_argument('-dataset_val_split', '--dataset_val_split', type=str, default=DATASET_VAL_SPLIT) 
-parser.add_argument('-specific_prompt', type=str, default="a photo realistic image") 
+parser.add_argument('-specific_prompt', type=str, default="") 
 parser.add_argument(
     '-split', 
     type=str,

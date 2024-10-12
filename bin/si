@@ -1,0 +1,5 @@
+#!/bin/bash
+export PYTHONPATH=$(pwd):$(pwd)/src
+#/home/vll/venv_pytorch2.4.1/bin/python $@
+#/home/vll/venv_pytorch2.0/bin/python $@
+python $@

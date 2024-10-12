@@ -111,6 +111,12 @@ class AffineControl(L.LightningModule):
             mlp_in_channel = 27
         elif self.feature_type == "vae":
             mlp_in_channel = 32*32*4*2
+        elif self.feature_type == "vae128":
+            mlp_in_channel = 16*16*4*2
+        elif self.feature_type == "vae64":
+            mlp_in_channel = 8*8*4*2
+        elif self.feature_type == "vae32":
+            mlp_in_channel = 4*4*4*2
         else:
             raise ValueError(f"feature_type {self.feature_type} is not supported")
         #  add light block to unet, 1024 is the shape of output of both LDR and HDR_Normalized clip combine
@@ -172,7 +178,7 @@ class AffineControl(L.LightningModule):
    
     def get_vae_features(self, images, generator=None):
         assert images.shape[1] == 3, "Only support RGB image"
-        assert images.shape[2] == 256 and images.shape[3] == 256, "Only support 256x256 image"
+        #assert images.shape[2] == 256 and images.shape[3] == 256, "Only support 256x256 image"
         with torch.inference_mode():
             # VAE need input in range of [-1,1]
             images = images * 2.0 - 1.0
@@ -182,9 +188,14 @@ class AffineControl(L.LightningModule):
         
         
     def get_light_features(self, batch, array_index=None, generator=None):
-        if self.feature_type == "vae":
+        if self.feature_type in ["vae", "vae128", "vae64", "vae32"]:
             ldr_envmap = batch['ldr_envmap']
             norm_envmap = batch['norm_envmap']
+            if len(self.feature_type) > 3 and self.feature_type[3:].isdigit():
+                image_size = int(self.feature_type[3:])
+                # resize image to size 
+                ldr_envmap = torch.nn.functional.interpolate(ldr_envmap, size=(image_size, image_size), mode="bilinear", align_corners=False)
+                norm_envmap = torch.nn.functional.interpolate(norm_envmap, size=(image_size, image_size), mode="bilinear", align_corners=False)
             if array_index is not None:
                 ldr_envmap = ldr_envmap[array_index]
                 norm_envmap = norm_envmap[array_index]
