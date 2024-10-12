@@ -348,6 +348,7 @@ class AffineControl(L.LightningModule):
             ddim_latents = torch.load(f"{log_dir}/ddim_latents/{source_name}.pt")
         else:
             interrupt_index = int(self.num_inversion_steps * self.ddim_strength) if self.ddim_strength > 0 else None
+            interrupt_index = np.clip(interrupt_index, 0, 999)
             # get DDIM inversion
             ddim_latents, ddim_timesteps = get_ddim_latents(
                 pipe=self.pipe,

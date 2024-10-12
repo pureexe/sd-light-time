@@ -13,7 +13,6 @@ CUDA_VISIBLE_DEVICES=3 bin/py src/20241008/val_ddim_strength.py -m multillum_tes
 #v3
 CUDA_VISIBLE_DEVICES=0 bin/py src/20241008/val_ddim_strength.py -m multillum_test1_4light_strength -g 1,1.25,1.5,1.75,2,2.25,2.5,2.75,3,4,5,6,7 -s  0.25,0.3,0.35,0.4 -i 33
 CUDA_VISIBLE_DEVICES=1 bin/py src/20241008/val_ddim_strength.py -m multillum_test1_4light_strength -g 1,1.25,1.5,1.75,2,2.25,2.5,2.75,3,4,5,6,7 -s  0.25,0.3,0.35,0.4 -i 35
-# v17
 CUDA_VISIBLE_DEVICES=2 bin/py src/20241008/val_ddim_strength.py -m multillum_test1_4light_strength -g 1,1.25,1.5,1.75,2,2.25,2.5,2.75,3,4,5,6,7 -s  0.25,0.3,0.35,0.4 -i 36
 CUDA_VISIBLE_DEVICES=3 bin/py src/20241008/val_ddim_strength.py -m multillum_test1_4light_strength -g 1,1.25,1.5,1.75,2,2.25,2.5,2.75,3,4,5,6,7 -s  0.25,0.3,0.35,0.4 -i 37
 
