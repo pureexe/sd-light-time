@@ -1,2 +1,7 @@
+singularity build --fakeroot system.sif /pure/c2/project/sd-light-time/relight.def 
+
 ssh v14
 cd /pure/c2/project/sd-light-time
+
+
+
