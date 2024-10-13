@@ -1,0 +1,27 @@
+#!/bin/bash
+
+#CUDA_VISIBLE_DEVICES
+COMMAND="/home/pakkapon/.local/bin/singularity exec --bind /scratch/pakkapon/datasets:/data/pakkapon/datasets --nv --env PYTHONPATH=$(pwd):$(pwd)/src --env CUDA_VISIBLE_DEVICES=$GPU /pure/c2/singularity/relight/system.sif python $@"
+
+SESS="UL"
+PANENAME="${NODE}g${GPU}${NAME}"
+
+
+# Check if the session exists
+tmux has-session -t $SESS 2>/dev/null
+
+if [ $? != 0 ]; then
+  echo "Session $SESS does not exist. Creating new session..."
+  # Create new session with window named $NAME
+  tmux new-session -d -s $SESS -n $PANENAME
+else
+  echo "Session $SESS exists. Creating new pane in session..."
+  # Create a new window in the existing session
+  tmux new-window -t $SESS -n $PANENAME
+fi
+
+# Send SSH command to the new window
+tmux send-keys -t $SESS:$PANENAME "ssh pakkaponp@10.204.100.61 \";cd $(pwd);$COMMAND\"" C-m
+
+# Attach to the session (optional)
+tmux attach-session -t $SESS
