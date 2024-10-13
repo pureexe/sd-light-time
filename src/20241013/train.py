@@ -37,7 +37,7 @@ parser.add_argument('-dataset_val', '--dataset_val', type=str, default=DATASET_V
 parser.add_argument('-dataset_val_split', '--dataset_val_split', type=str, default=DATASET_VAL_SPLIT) 
 parser.add_argument('-specific_prompt', type=str, default="") 
 parser.add_argument(
-    '-split', 
+    '-split',  
     type=str,
     choices=['none','overfit1', 'overfit100','train_face'],  # Restrict the input to the accepted strings
     help="select control type for the model",
