@@ -144,12 +144,12 @@
             'both_bae': 'Depth + Normal (BAE)'
           })
 
-          const available_query = ['scene','light', 'guidance', 'denosing_step', 'method', 'denoising_ratio	']
+          const available_query = ['scene','light', 'guidance', 'method', 'denoising_ratio	'] // 'denosing_step'
           const experiment_details = {
             'scene': [],
             'light': [0,2,3,21,24],
             'guidance': ['1.0', '1.25', '1.5', '1.75', '2.0', '2.25', '2.5', '2.75', '3.0', '4.0', '5.0', '6.0', '7.0'],
-            'denosing_step': [5, 10, 25, 50, 100, 200, 250, 500, 999],
+            //'denosing_step': [5, 10, 25, 50, 100, 200, 250, 500, 999],
             'denoising_ratio': ['0.05', '0.1','0.15','0.2','0.25','0.3','0.35','0.4', '0.45', '0.5', '0.55', '0.6', '0.65','0.7', '0.75', '0.8', '0.85', '0.9', '0.95', '1.0'],
             'method': ['no_control', 'depth', 'bae', 'both_bae'],
             'checkpoint': [499]
@@ -160,7 +160,7 @@
             'scene':  url.searchParams.get('scene'),
             'light':  url.searchParams.get('light'),
             'guidance':  url.searchParams.get('guidance'),
-            'denosing_step':  url.searchParams.get('denosing_step'),
+            //'denosing_step':  url.searchParams.get('denosing_step'),
             'denoising_ratio':  url.searchParams.get('denoising_ratio'),
             'method':  url.searchParams.get('method'),
             'checkpoint': url.searchParams.get('checkpoint')
@@ -205,7 +205,7 @@
               'scene': (this.current_query['scene']) ? this.current_query['scene'] : 'everett_dining1',
               'light': (this.current_query['light']) ? this.current_query['light'] : 24,
               'guidance': (this.current_query['guidance']) ? this.current_query['guidance'] : '3.0',
-              'denosing_step': (this.current_query['denosing_step']) ? this.current_query['denosing_step'] : 500,
+              //'denosing_step': (this.current_query['denosing_step']) ? this.current_query['denosing_step'] : 500,
               'denoising_ratio': (this.current_query['denoising_ratio']) ? this.current_query['denoising_ratio'] : '1.0',
               'method': (this.current_query['method']) ? this.current_query['method'] : 'depth',
               'checkpoint': (this.current_query['checkpoint']) ? this.current_query['checkpoint'] : this.experiment_details['checkpoint'][0] 
