@@ -342,6 +342,8 @@ class AffineControl(L.LightningModule):
             ddim_latents = torch.load(f"{log_dir}/ddim_latents/{source_name}.pt")
         else:
             interrupt_index = int(self.num_inversion_steps * self.ddim_strength) if self.ddim_strength > 0 else None
+            print(f"interrupt_index: {interrupt_index}")
+            interrupt_index = np.clip(interrupt_index, 0, self.num_inversion_steps - 1)
             # get DDIM inversion
             ddim_latents, ddim_timesteps = get_ddim_latents(
                 pipe=self.pipe,
@@ -454,7 +456,6 @@ class AffineControl(L.LightningModule):
                     target_light_features,
                     is_apply_cfg=is_apply_cfg
                 )
-            
             if self.use_null_text and self.guidance_scale > 1:
                 pt_image = apply_null_embedding(
                     self.pipe,
@@ -484,7 +485,6 @@ class AffineControl(L.LightningModule):
                     pipe_args["image"] = ddim_latents[interrupt_index]
                     if hasattr(self.pipe, "controlnet"):
                         pipe_args["control_image"] = self.get_control_image(batch)  
-                    
                 else:
                     pipe_args["latents"] = ddim_latents[-1]
                     ddim_pipe = self.pipe

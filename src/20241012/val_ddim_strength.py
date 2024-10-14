@@ -237,8 +237,8 @@ def main():
                 #condition_class = CONDITIONS_CLASS[version]
                 #ddim_class = create_ddim_inversion(condition_class)
                 ddim_class = CONDITIONS_CLASS[version]
-                try:
-                #if True:
+                #try:
+                if True:
                     for checkpoint in checkpoints:
                         if checkpoint == 0:
                             model = ddim_class(learning_rate=1e-4)
@@ -288,8 +288,8 @@ def main():
                                 trainer.test(model, dataloaders=val_dataloader, ckpt_path=CKPT_PATH)
                         continue
                             
-                except:
-                   pass
+                #except:
+                #   pass
 
                                 
 if __name__ == "__main__":
