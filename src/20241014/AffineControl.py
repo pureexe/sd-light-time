@@ -16,11 +16,11 @@ from PIL import Image
 import bitsandbytes as bnb
 
 from constants import *
-from diffusers import StableDiffusionPipeline, ControlNetModel, StableDiffusionControlNetPipeline, StableDiffusionImg2ImgPipeline, StableDiffusionControlNetImg2ImgPipeline, DDIMScheduler, DDIMInverseScheduler
+from diffusers import StableDiffusionPipeline, ControlNetModel, StableDiffusionControlNetPipeline, StableDiffusionImg2ImgPipeline, StableDiffusionControlNetImg2ImgPipeline, DDIMScheduler, DDIMInverseScheduler, IFPipeline, IFImg2ImgPipeline
+from diffusers.utils import pt_to_pil
 from diffusers.pipelines.controlnet.multicontrolnet import MultiControlNetModel
 
-from DDIMInversion import DDIMInversion
-from LightEmbedingBlock import set_light_direction, add_light_block, set_gate_shift_scale
+from LightEmbedingBlock import set_light_direction, add_light_block
 
 from ball_helper import inpaint_chromeball, pipeline2controlnetinpaint
 
@@ -58,10 +58,10 @@ class AffineControl(L.LightningModule):
         self.feature_type = feature_type
         #self.num_inversion_steps = num_inversion_steps
         # null-text inversion paper Section 4 ablation study Page 6 left side suggest to use 500 iteration with N=10
-        self.use_null_text = True
+        self.use_null_text = False
         self.ddim_guidance_scale = 1.0
         self.ddim_strength = 0.0
-        self.num_inversion_steps = 500
+        self.num_inversion_steps = 200
         self.num_null_text_steps = 10
         self.num_inference_steps = num_inference_steps
         self.save_hyperparameters()
@@ -111,6 +111,12 @@ class AffineControl(L.LightningModule):
             mlp_in_channel = 27
         elif self.feature_type == "vae":
             mlp_in_channel = 32*32*4*2
+        elif self.feature_type == "vae128":
+            mlp_in_channel = 16*16*4*2
+        elif self.feature_type == "vae64":
+            mlp_in_channel = 8*8*4*2
+        elif self.feature_type == "vae32":
+            mlp_in_channel = 4*4*4*2
         else:
             raise ValueError(f"feature_type {self.feature_type} is not supported")
         #  add light block to unet, 1024 is the shape of output of both LDR and HDR_Normalized clip combine
@@ -118,11 +124,9 @@ class AffineControl(L.LightningModule):
         self.pipe.to('cuda')
 
         # filter trainable layer
-        unet_trainable = filter(lambda p: p.requires_grad and (len(p.shape) > 1 or p.shape[0] > 1), self.pipe.unet.parameters())
-        gate_trainable = filter(lambda p: p.requires_grad and (len(p.shape) == 1 and p.shape[0] == 1), self.pipe.unet.parameters())
+        unet_trainable = filter(lambda p: p.requires_grad, self.pipe.unet.parameters())
 
-        self.unet_trainable = torch.nn.ParameterList(unet_trainable).to(self.pipe.dtype)
-        self.gate_trainable = torch.nn.ParameterList(gate_trainable).to(self.pipe.dtype)
+        self.unet_trainable = torch.nn.ParameterList(unet_trainable)
 
     def setup_sd(self, sd_path="runwayml/stable-diffusion-v1-5", controlnet_path="lllyasviel/sd-controlnet-depth"):
         # load controlnet from pretrain
@@ -166,33 +170,36 @@ class AffineControl(L.LightningModule):
         self.normal_scheduler = DDIMScheduler.from_config(self.pipe.scheduler.config, subfolder='scheduler')
         self.inverse_scheduler = DDIMInverseScheduler.from_config(self.pipe.scheduler.config, subfolder='scheduler')
         self.pipe.scheduler = self.normal_scheduler
-        self.ddim_inversion = DDIMInversion(self.pipe)
         
     
     def set_seed(self, seed):
         self.seed = seed
-
-    def set_gate_shift_scale(self, gate_shift, gate_scale):
-        set_gate_shift_scale(self.pipe.unet, gate_shift, gate_scale)
    
     def get_vae_features(self, images, generator=None):
         assert images.shape[1] == 3, "Only support RGB image"
-        assert images.shape[2] == 256 and images.shape[3] == 256, "Only support 256x256 image"
+        #assert images.shape[2] == 256 and images.shape[3] == 256, "Only support 256x256 image"
         with torch.inference_mode():
             # VAE need input in range of [-1,1]
             images = images * 2.0 - 1.0
-            emb = self.pipe.vae.encode(images).latent_dist.sample(generator=generator) * self.pipe.vae.config.scaling_factor 
+            vae = self.pipe.vae if hasattr(self.pipe, "vae") else self.vae
+            emb = vae.encode(images).latent_dist.sample(generator=generator) * vae.config.scaling_factor 
             flattened_emb = emb.view(emb.size(0), -1)
             return flattened_emb
         
         
     def get_light_features(self, batch, array_index=None, generator=None):
-        if self.feature_type == "vae":
+        if self.feature_type in ["vae", "vae128", "vae64", "vae32"]:
             ldr_envmap = batch['ldr_envmap']
             norm_envmap = batch['norm_envmap']
             if array_index is not None:
                 ldr_envmap = ldr_envmap[array_index]
                 norm_envmap = norm_envmap[array_index]
+
+            if len(self.feature_type) > 3 and self.feature_type[3:].isdigit():
+                image_size = int(self.feature_type[3:])
+                # resize image to size 
+                ldr_envmap = torch.nn.functional.interpolate(ldr_envmap, size=(image_size, image_size), mode="bilinear", align_corners=False)
+                norm_envmap = torch.nn.functional.interpolate(norm_envmap, size=(image_size, image_size), mode="bilinear", align_corners=False)
             ldr_features = self.get_vae_features(ldr_envmap, generator)
             hdr_features = self.get_vae_features(norm_envmap, generator)
             # concat ldr and hdr features
@@ -216,10 +223,12 @@ class AffineControl(L.LightningModule):
         )
         text_input_ids = text_inputs.input_ids
 
-
-        latents = self.pipe.vae.encode(batch['source_image']).latent_dist.sample().detach()
-
-        latents = latents * self.pipe.vae.config.scaling_factor
+        if hasattr(self.pipe, "vae"):
+            latents = self.pipe.vae.encode(batch['source_image']).latent_dist.sample().detach()
+            latents = latents * self.pipe.vae.config.scaling_factor
+        else:
+            # resize source image to 64x64
+            latents = torch.nn.functional.interpolate(batch['source_image'], size=(64, 64), mode="bilinear", align_corners=False)
 
         # Sample noise that we'll add to the latents
         if seed is not None:
@@ -279,6 +288,9 @@ class AffineControl(L.LightningModule):
                 return_dict=False,
             )[0]
 
+            if isinstance(self.pipe, IFPipeline) or isinstance(self.pipe, IFImg2ImgPipeline):
+                # THIS TRAINING won't support original schudler, please use DDIM from now on.
+                model_pred, _ = model_pred.split(noisy_latents.shape[1], dim=1)
 
         loss = torch.nn.functional.mse_loss(model_pred, target, reduction="mean")
 
@@ -294,7 +306,7 @@ class AffineControl(L.LightningModule):
     
     def select_batch_keyword(self, batch, keyword):
                     
-        if self.feature_type == "vae":
+        if self.feature_type.startswith("vae") :
             batch['ldr_envmap'] = batch[f'{keyword}_ldr_envmap']
             batch['norm_envmap'] = batch[f'{keyword}_norm_envmap']
         elif self.feature_type == "shcoeff_order2":
@@ -342,9 +354,8 @@ class AffineControl(L.LightningModule):
             ddim_latents = torch.load(f"{log_dir}/ddim_latents/{source_name}.pt")
         else:
             interrupt_index = int(self.num_inversion_steps * self.ddim_strength) if self.ddim_strength > 0 else None
-            #print(f"interrupt_index: {interrupt_index}")
             if interrupt_index is not None:
-                interrupt_index = np.clip(interrupt_index, 0, self.num_inversion_steps - 1)
+                interrupt_index = np.clip(interrupt_index, 0, 999)
             # get DDIM inversion
             ddim_latents, ddim_timesteps = get_ddim_latents(
                 pipe=self.pipe,
@@ -420,7 +431,10 @@ class AffineControl(L.LightningModule):
             if is_save_image:
                 # save image from null_latents 
                 null_latent = null_latents[-1]
-                image = self.pipe.vae.decode(null_latent / self.pipe.vae.config.scaling_factor, return_dict=False)[0]
+                if hasattr(self.pipe, "vae"):
+                    image = self.pipe.vae.decode(null_latent / self.pipe.vae.config.scaling_factor, return_dict=False)[0]
+                else:
+                    image = self.pipe.unet(null_latent, return_dict=False)[0]
                 # rescale image to [0,1]
                 image = (image / 2 + 0.5).clamp(0, 1)
                 # save image to tensorboard
@@ -457,6 +471,7 @@ class AffineControl(L.LightningModule):
                     target_light_features,
                     is_apply_cfg=is_apply_cfg
                 )
+            
             if self.use_null_text and self.guidance_scale > 1:
                 pt_image = apply_null_embedding(
                     self.pipe,
@@ -479,24 +494,67 @@ class AffineControl(L.LightningModule):
                     "num_inference_steps": self.num_inversion_steps,
                     "generator": torch.Generator().manual_seed(self.seed)
                 }
-                if self.ddim_strength > 0:
-                    pipe_args["strength"] = self.ddim_strength
-                    
-                    ddim_pipe = self.pipe_img2img
-                    pipe_args["image"] = ddim_latents[interrupt_index]
-                    if hasattr(self.pipe, "controlnet"):
-                        pipe_args["control_image"] = self.get_control_image(batch)  
-                else:
-                    pipe_args["latents"] = ddim_latents[-1]
+                if isinstance(self.pipe, IFImg2ImgPipeline):
+                    pipe_args["image"] = ddim_latents[-1]
+                    pipe_args["strength"] = 1.0
                     ddim_pipe = self.pipe
-                    if hasattr(self.pipe, "controlnet"):
-                        pipe_args["image"] = self.get_control_image(batch)    
+                    self.pipe.scheduler.config.variance_type = "place_holder"
+                    pt_image, _, _ = ddim_pipe(**pipe_args)
+                else:
+                    if self.ddim_strength > 0:
+                        pipe_args["strength"] = self.ddim_strength
+                        
+                        ddim_pipe = self.pipe_img2img
+                        pipe_args["image"] = ddim_latents[interrupt_index]
+                        if hasattr(self.pipe, "controlnet"):
+                            pipe_args["control_image"] = self.get_control_image(batch)  
+                        
+                    else:
+                        pipe_args["latents"] = ddim_latents[-1]
+                        ddim_pipe = self.pipe
+                        if hasattr(self.pipe, "controlnet"):
+                            pipe_args["image"] = self.get_control_image(batch)    
 
-                pt_image, _ = ddim_pipe(**pipe_args)
-
+                    pt_image, _ = ddim_pipe(**pipe_args)
 
             gt_on_batch = 'target_image' if "target_image" in batch else 'source_image'
             gt_image = (batch[gt_on_batch][target_idx] + 1.0) / 2.0
+
+            # if hasattr(self, "pipe_upscale"):
+            #     # save thing for upscale 
+            #     if is_save_image:
+            #         os.makedirs(f"{log_dir}/{epoch_text}upscale", exist_ok=True)
+            #         # save pt_image, text_embedding and negative_embedding as torch
+            #         filename = f"{batch['name'][0].replace('/','-')}_{batch['word_name'][target_idx][0].replace('/','-')}"
+            #         torch.save(pt_image, f"{log_dir}/{epoch_text}upscale/{filename}_pt_image.pt")
+            #         torch.save(text_embbeding, f"{log_dir}/{epoch_text}upscale/{filename}_text_embbeding.pt")
+            #         torch.save(negative_embedding, f"{log_dir}/{epoch_text}upscale/{filename}_negative_embedding.pt")
+                    
+            #     if False:
+            #         pt_image = self.pipe_upscale(
+            #             image=pt_image,
+            #             prompt_embeds=text_embbeding,
+            #             negative_prompt_embeds=negative_embedding,
+            #             output_type="pt"
+            #         ).images
+            #         pt_image = torch.nn.functional.interpolate(pt_image, size=gt_image.shape[-2:], mode="bilinear", align_corners=False) 
+            #     else:
+            #         pt_image = (pt_image + 1.0) / 2.0
+            #         pt_image = torch.clamp(pt_image, 0, 1)
+            #         gt_image = torch.nn.functional.interpolate(gt_image, size=pt_image.shape[-2:], mode="bilinear", align_corners=False)
+            if isinstance(self.pipe, IFPipeline) or isinstance(self.pipe, IFImg2ImgPipeline):
+                if is_save_image:
+                    os.makedirs(f"{log_dir}/{epoch_text}upscale", exist_ok=True)
+                    # save pt_image, text_embedding and negative_embedding as torch
+                    filename = f"{batch['name'][0].replace('/','-')}_{batch['word_name'][target_idx][0].replace('/','-')}"
+                    torch.save(pt_image, f"{log_dir}/{epoch_text}upscale/{filename}_pt_image.pt")
+                    torch.save(text_embbeding, f"{log_dir}/{epoch_text}upscale/{filename}_text_embbeding.pt")
+                    torch.save(negative_embedding, f"{log_dir}/{epoch_text}upscale/{filename}_negative_embedding.pt")               
+                pt_image = (pt_image + 1.0) / 2.0
+                pt_image = torch.clamp(pt_image, 0, 1)
+                gt_image = torch.nn.functional.interpolate(gt_image, size=pt_image.shape[-2:], mode="bilinear", align_corners=False)
+              
+
             gt_image = gt_image.to(pt_image.device)
             tb_image = [gt_image, pt_image]
 
@@ -629,7 +687,6 @@ class AffineControl(L.LightningModule):
     def configure_optimizers(self):
         optimizer = torch.optim.Adam([
             {'params': self.unet_trainable, 'lr': self.learning_rate},
-            {'params': self.gate_trainable, 'lr': self.learning_rate * self.gate_multipiler}
         ])
         return optimizer
     
