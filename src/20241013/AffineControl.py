@@ -61,7 +61,7 @@ class AffineControl(L.LightningModule):
         self.use_null_text = False
         self.ddim_guidance_scale = 1.0
         self.ddim_strength = 0.0
-        self.num_inversion_steps = 200
+        self.num_inversion_steps = 500
         self.num_null_text_steps = 10
         self.num_inference_steps = num_inference_steps
         self.save_hyperparameters()

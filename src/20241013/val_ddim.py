@@ -17,142 +17,40 @@ import argparse
 from constants import FOLDER_NAME
 
 MASTER_TYPE = 16
-CHECKPOINT_FOLDER_NAME = "20240918"
+CHECKPOINT_FOLDER_NAME = "20241013"
 
 
 parser = argparse.ArgumentParser()
-#parser.add_argument("-i", "--version", type=str, default="33")
-parser.add_argument("-i", "--version", type=str, default="37")
-#parser.add_argument("-m", "--mode", type=str, default="multillum_train2_nulltext")
+parser.add_argument("-i", "--version", type=str, default="2")
 parser.add_argument("-m", "--mode", type=str, default="multillum_test_30_array_v2")
-#parser.add_argument("-g", "--guidance_scale", type=str, default="3,7,5,2.5,2,1.5,1")
-#parser.add_argument("-c", "--checkpoint", type=str, default="299, 279, 259, 239, 219, 199, 179, 159, 139, 119, 99, 79, 59, 39, 19, 0")
-parser.add_argument("-c", "--checkpoint", type=str, default="299")
-parser.add_argument("-g", "--guidance_scale", type=str, default="7")
+parser.add_argument("-g", "--guidance_scale", type=str, default="1,1.25,1.5,1.75,2,2.25,2.5,2.75,3,4,5,7")
+parser.add_argument("-c", "--checkpoint", type=str, default="39")
+
 
 args = parser.parse_args()
 NAMES = {
-    0: 'no_control',
+    0: 'depth',
     1: 'depth',
-    2: 'normal',
-    3: 'both',
-    4: 'no_control',
-    5: 'depth',
-    6: 'normal',
-    7: 'both',
-    8: 'bae',
-    9: 'bae_both',
-    10: 'bae',
-    11: 'bae_both',
-    12: 'no_control',
-    13: 'depth',
-    14: 'normal',
-    15: 'both',
-    16: 'no_control',
-    17: 'depth',
-    18: 'normal',
-    19: 'both',
-    20: 'bae',
-    21: 'bae_both',
-    22: 'bae',
-    23: 'bae_both',
-    24: 'no_control',
-    25: 'depth',
-    26: 'bae_both',
-    27: 'bae',
-    33: 'no_control',
-    35: 'both_bae',
-    36: 'bae',
-    37: 'depth'
+    2: 'depth',
+    3: 'depth',
 }
 METHODS = {
-    12: 'shcoeffs',
-    13: 'shcoeffs',
-    14: 'shcoeffs',
-    15: 'shcoeffs',
-    16: 'shcoeffs',
-    17: 'shcoeffs',
-    18: 'shcoeffs',
-    19: 'shcoeffs',
-    20: 'shcoeffs',
-    21: 'shcoeffs',
-    22: 'shcoeffs',
-    24: 'vae',
-    25: 'vae',
-    26: 'vae',
-    27: 'vae',
-    33: 'vae',
-    35: 'vae',
-    36: 'vae',
-    37: 'vae'
+    0: 'vae256',
+    1: 'vae128',
+    2: 'vae64',
+    3: 'vae32',
 }
 CONDITIONS_CLASS = {
-    0: AffineNoControl,
+    0: AffineDepth,
     1: AffineDepth,
-    2: AffineNormal,
-    3: AffineDepthNormal,
-    4: AffineNoControl,
-    5: AffineDepth,
-    6: AffineNormal,
-    7: AffineDepthNormal,
-    8: AffineNormalBae,
-    9: AffineDepthNormalBae,
-    10: AffineNormalBae,
-    11: AffineDepthNormalBae,
-    12: AffineNoControl,
-    13: AffineDepth,
-    14: AffineNormal,
-    15: AffineDepthNormal,
-    16: AffineNoControl,
-    17: AffineDepth,
-    18: AffineNormal,
-    19: AffineDepthNormal,
-    20: AffineNormalBae,
-    21: AffineDepthNormalBae,
-    22: AffineNormalBae,
-    23: AffineDepthNormalBae,
-    24: AffineNoControl,
-    25: AffineDepth,
-    26: AffineDepthNormalBae,
-    27: AffineNormalBae,
-    33: AffineNoControl,
-    35: AffineDepthNormalBae,
-    36: AffineNormalBae,
-    37: AffineDepth
+    2: AffineDepth,
+    3: AffineDepth,
 }
 LRS = {
     0: '1e-4',
     1: '1e-4',
     2: '1e-4',
     3: '1e-4',
-    4: '1e-5',
-    5: '1e-5',
-    6: '1e-5',
-    7: '1e-5',
-    8: '1e-4',
-    9: '1e-4',
-    10: '1e-5',
-    11: '1e-5',
-    12: '1e-4',
-    13: '1e-4',
-    14: '1e-4',
-    15: '1e-4',
-    16: '1e-4',
-    17: '1e-4',
-    18: '1e-4',
-    19: '1e-5',
-    20: '1e-4',
-    21: '1e-4',
-    22: '1e-5',
-    23: '1e-5',
-    24: '1e-4',
-    25: '1e-4',
-    26: '1e-4',
-    27: '1e-4',
-    33: '1e-4',
-    35: '1e-4',
-    36: '1e-4',
-    37: '1e-4'
  }
 
 
@@ -197,8 +95,10 @@ def get_from_mode(mode):
         return "/data/pakkapon/datasets/multi_illumination/spherical/test", 100, DDIMArrayEnvDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/split-test-30-array.json"}, None
     elif mode == "multillum_train2_nulltext":
         return "/data/pakkapon/datasets/multi_illumination/spherical/train", 100, DDIMArrayEnvDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/split-train2-relight-array.json"}, None
-    # elif mode == "multillum_train2_nulltext":
-    #     return "/data/pakkapon/datasets/multi_illumination/spherical/train", 100, DDIMArrayEnvDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/split-test-30-bothbae2-array.json"}, None
+    elif mode == "multillum_train2":
+        return "/data/pakkapon/datasets/multi_illumination/spherical/train", 100, DDIMArrayEnvDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/split-train2-relight-array.json"}, "a photo realistic image"
+    elif mode == "multillum_test3":
+        return "/data/pakkapon/datasets/multi_illumination/spherical/test", 100, DDIMArrayEnvDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/split-test3-relight-array.json"}, "a photo realistic image"
     else:
         raise Exception("mode not found")
 
@@ -214,8 +114,8 @@ def main():
                 #condition_class = CONDITIONS_CLASS[version]
                 #ddim_class = create_ddim_inversion(condition_class)
                 ddim_class = CONDITIONS_CLASS[version]
-                try:
-                #if True:
+                # try:
+                if True:
                     for checkpoint in checkpoints:
                         if checkpoint == 0:
                             model = ddim_class(learning_rate=1e-4)
@@ -253,8 +153,8 @@ def main():
                             trainer.test(model, dataloaders=val_dataloader, ckpt_path=CKPT_PATH)
 
 
-                except:
-                    pass
+                # except:
+                #     pass
 
                                 
 if __name__ == "__main__":
