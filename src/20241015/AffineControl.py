@@ -42,7 +42,7 @@ class AffineControl(L.LightningModule):
             guidance_scale=3.0,
             gate_multipiler=1,
             feature_type="vae",
-            num_inversion_steps=500,
+            num_inversion_steps=200,
             num_inference_steps=50,
             *args,
             **kwargs
@@ -59,7 +59,7 @@ class AffineControl(L.LightningModule):
         self.use_null_text = False
         self.ddim_guidance_scale = 1.0
         self.ddim_strength = 0.0
-        self.num_inversion_steps = 500
+        self.num_inversion_steps = num_inversion_steps
         self.num_null_text_steps = 10
         self.num_inference_steps = num_inference_steps
         self.save_hyperparameters()
