@@ -323,22 +323,6 @@ class AffineControl(L.LightningModule):
         is_apply_cfg = self.guidance_scale > 1
         epoch_text = f"epoch_{self.current_epoch:04d}/" if is_seperate_dir_with_epoch else ""
         source_name = f"{batch['name'][0].replace('/','-')}"
-        
-        # we explore problem that feature differnet here 
-        print("CHECK IF LDR CLOSE TOGETHER?: ", torch.isclose(batch['source_ldr_envmap'], batch['target_ldr_envmap'][0]).all())
-        print("CHECK IF NORM_HDR CLOSE TOGETHER?: ", torch.isclose(batch['source_norm_envmap'], batch['target_norm_envmap'][0]).all())
-        print("CHECK IF LDR CLOSE TOGETHER?: ", torch.isclose(batch['source_ldr_envmap'], batch['target_ldr_envmap'][0]).all())
-        # save image to see why it differnet
-        print("SOURCE_ENVMAP: ", torch.max(batch['source_norm_envmap']), torch.min(batch['source_norm_envmap']))
-        print("TARGET_ENVMAP: ", torch.max(batch['target_norm_envmap'][0]), torch.min(batch['target_norm_envmap'][0])) 
-        torchvision.utils.save_image(batch['source_norm_envmap'], f"{log_dir}/source_norm_envmap.jpg")
-        torchvision.utils.save_image(batch['target_norm_envmap'][0], f"{log_dir}/target_norm_envmap.jpg")
-        self.select_batch_keyword(batch, 'source')
-        source_light_features = self.get_light_features(batch, generator=torch.Generator().manual_seed(self.seed))
-        self.select_batch_keyword(batch, 'target')
-        target_light_features = self.get_light_features(batch, array_index=0, generator=torch.Generator().manual_seed(self.seed))
-        print("CHECK IF FEATURE CLOSE TOGETHER?: ", torch.isclose(target_light_features, source_light_features).all())
-        exit()
 
         # Apply the source light direction
         self.select_batch_keyword(batch, 'source')
