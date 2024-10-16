@@ -108,7 +108,7 @@ class BaseRelightDataset(torch.utils.data.Dataset):
     
     def get_envmap(self, name, directory, height = 256, width = 256):
         try:
-           envmap = self.get_image(name, directory, height, width)
+           envmap = self.get_image(name,"env_ldr", height, width)
            envmap = self.transform['envmap'](envmap)
            return envmap 
         except:

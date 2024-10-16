@@ -33,5 +33,5 @@ def remove_checkpoints(root_dir):
                     os.remove(file_path)
 
 # Example usage
-root_directory = "output/20240918/multi_mlp_fit/lightning_logs"
+root_directory = "output/20241012/multi_mlp_fit/lightning_logs"
 remove_checkpoints(root_directory)
