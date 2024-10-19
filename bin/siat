@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #CUDA_VISIBLE_DEVICES
-COMMAND="singularity exec --bind /pure/c2/datasets:/data/pakkapon/datasets --nv --env PYTHONPATH=$(pwd):$(pwd)/src --env CUDA_VISIBLE_DEVICES=$GPU /pure/c2/singularity/relight/system.sif python $@"
+COMMAND="singularity exec --bind /pure/c2/datasets:/data/pakkapon/datasets --bind /pure/c2/huggingface:/home/$USER/.cache/huggingface --nv --env PYTHONPATH=$(pwd):$(pwd)/src --env CUDA_VISIBLE_DEVICES=$GPU /pure/c2/singularity/relight/system.sif python $@"
 
 SESS="UL"
 PANENAME="${NODE}g${GPU}${NAME}"
