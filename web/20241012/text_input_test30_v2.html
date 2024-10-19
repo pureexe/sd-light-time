@@ -67,7 +67,7 @@
           </tbody>
         </table>
       </div>  
-      <div>
+      <div v-for="scene in experiment_details['scene']">
         <table class="table is-bordered is-striped mx-auto">
           <thead>
             <tr>
@@ -84,12 +84,12 @@
               <td>{{row_query}}</td>
               <td class="has-background-danger">
                 <figure class="image is-128x128">
-                  <img :src="getImage(0, 0,'source_image',0)" loading="lazy"/>
+                  <img :src="getImage(0, 0,'source_image',0,scene)" loading="lazy"/>
                 </figure>
               </td>
               <td v-for="col,col_index in experiment_details[col_query]" class="has-background-link">
                 <figure class="image is-128x128">
-                  <img :src="getImage(0, col_index,'source_image')" loading="lazy"/>
+                  <img :src="getImage(0, col_index,'source_image',underfined,scene)" loading="lazy"/>
                 </figure>
               </td>
             </tr>
@@ -97,12 +97,12 @@
               <td>{{row}}</td>
               <td class="has-background-link">
                 <figure class="image is-128x128">
-                  <img :src="getImage(row_index, 0,'source_image')" loading="lazy"/>
+                  <img :src="getImage(row_index, 0,'source_image',underfined,scene)" loading="lazy"/>
                 </figure>
               </td>
               <td v-for="col, col_index in experiment_details[col_query]">
                 <figure class="image is-128x128">
-                  <img :src="getImage(row_index, col_index,'crop_image')" loading="lazy"/>
+                  <img :src="getImage(row_index, col_index,'crop_image',underfined,scene)" loading="lazy"/>
                 </figure>
               </td>
             </tr>
@@ -115,7 +115,7 @@
   <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <script>
     async function getImageIndex(){
-      const response = await fetch('/pakkapon/datasets/multi_illumination/spherical/split-test3-relight-array.json');
+      const response = await fetch('/pakkapon/datasets/multi_illumination/spherical/split-test-30-light-4-array.json');
       const data = await response.json();
       return data;
     }
@@ -141,10 +141,8 @@
             'text_cond': ['static','BLIP'],
             'checkpoint': [99]
           }
+          
           const url = new URL(window.location.href);
-          console.log("============================")
-          console.log(url.searchParams.get('text_cond'))
-          console.log("============================")
           let current_query = {
             'scene':  url.searchParams.get('scene'),
             'light':  url.searchParams.get('light'),
@@ -156,10 +154,10 @@
           let row_q= url.searchParams.get('row');
           let col_q = url.searchParams.get('col');
           if(!row_q){
-            row_q = 'guidance'
+            row_q = 'text_cond'
           }
           if(!col_q){
-            col_q = 'scene'
+            col_q = 'guidance'
           }
           const row_query = ref(row_q)
           const col_query = ref(col_q)
@@ -191,14 +189,13 @@
             return '0';
           },
           getDirection(text_type){
-            console.log(text_type)
             if(text_type == 'static'){
               return '20241012';
             }else{
               return '20241008';
             }
           },
-          getImage(row_id, col_id, dir_type='crop_image',light_id=undefined){
+          getImage(row_id, col_id, dir_type='crop_image', light_id=undefined, scene=undefined){
             let content = this.getCurrentQuery()
             
             content[this.row_query] = this.experiment_details[this.row_query][row_id];
@@ -208,7 +205,10 @@
             if(light_id !== undefined){
               content['light'] = light_id;
             }
-            return '/pakkapon/sd-light-time/output/'+content['directory']+'/val_multillum_test3/vae/'+content['guidance']+'/'+content['method']+'/1e-4/chk'+content['checkpoint']+'/lightning_logs/version_'+content['version']+'/'+dir_type+'/'+content['scene']+'-dir_0_mip2_'+content['scene']+'-dir_'+content['light']+'_mip2.png';
+            if(scene !== undefined){
+              content['scene'] = scene;
+            }
+            return '/pakkapon/sd-light-time/output/'+content['directory']+'/val_multiillum_test30_light4/vae/'+content['guidance']+'/'+content['method']+'/1e-4/chk'+content['checkpoint']+'/lightning_logs/version_'+content['version']+'/'+dir_type+'/'+content['scene']+'-dir_0_mip2_'+content['scene']+'-dir_'+content['light']+'_mip2.png';
           },
           inject_details(){
             const url = new URL(window.location.href);

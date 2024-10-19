@@ -198,6 +198,8 @@ def get_from_mode(mode):
         return "/data/pakkapon/datasets/multi_illumination/spherical/train", 100, DDIMArrayEnvDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/split-train2-relight-array.json"}, "a photo realistic image"
     elif mode == "multillum_test3":
         return "/data/pakkapon/datasets/multi_illumination/spherical/test", 100, DDIMArrayEnvDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/split-test3-relight-array.json"}, "a photo realistic image"
+    elif mode == "multiillum_test30_light4":        
+        return "/data/pakkapon/datasets/multi_illumination/spherical/test", 100, DDIMArrayEnvDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/split-test-30-light-4-array.json"}, "a photo realistic image"
     # elif mode == "multillum_train2_nulltext":
     #     return "/data/pakkapon/datasets/multi_illumination/spherical/train", 100, DDIMArrayEnvDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/split-test-30-bothbae2-array.json"}, None
     else:

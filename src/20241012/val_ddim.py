@@ -22,7 +22,7 @@ CHECKPOINT_FOLDER_NAME = "20241012"
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-i", "--version", type=str, default="2")
-parser.add_argument("-m", "--mode", type=str, default="multillum_test_30_array_v2")
+parser.add_argument("-m", "--mode", type=str, default="multiillum_test30_light4")
 parser.add_argument("-g", "--guidance_scale", type=str, default="1,1.25,1.5,1.75,2,2.25,2.5,2.75,3,4,5,7")
 parser.add_argument("-c", "--checkpoint", type=str, default="99")
 
@@ -116,6 +116,8 @@ def get_from_mode(mode):
         return "/data/pakkapon/datasets/multi_illumination/spherical/train", 100, DDIMArrayEnvDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/split-train2-relight-array.json"}, "a photo realistic image"
     elif mode == "multillum_test3":
         return "/data/pakkapon/datasets/multi_illumination/spherical/test", 100, DDIMArrayEnvDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/split-test3-relight-array.json"}, "a photo realistic image"
+    elif mode == "multiillum_test30_light4":        
+        return "/data/pakkapon/datasets/multi_illumination/spherical/test", 100, DDIMArrayEnvDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/split-test-30-light-4-array.json"}, "a photo realistic image"
     else:
         raise Exception("mode not found")
 
