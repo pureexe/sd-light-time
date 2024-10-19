@@ -22,30 +22,38 @@ CHECKPOINT_FOLDER_NAME = "20241012"
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-i", "--version", type=str, default="2")
-parser.add_argument("-m", "--mode", type=str, default="multillum_test_30_array_v2")
-parser.add_argument("-g", "--guidance_scale", type=str, default="1,1.25,1.5,1.75,2,2.25,2.5,2.75,3,4,5,7")
-parser.add_argument("-c", "--checkpoint", type=str, default="99")
+parser.add_argument("-m", "--mode", type=str, default="multillum_test3")
+parser.add_argument("-g", "--guidance_scale", type=str, default="1,3,5,7")
+parser.add_argument("-c", "--checkpoint", type=str, default="59")
 
 args = parser.parse_args()
 NAMES = {
-    2: 'depth',
-    3: 'bae_both',
-    4: 'no_control',
-    5: 'bae',
+    0: 'depth',
+    1: 'both_bae'
+    2: 'bae',
+    3: 'no_control',
+    4: 'bae',
+    5: 'no_control',
 }
 METHODS = {
+    0: 'vae',
+    1: 'vae',
     2: 'vae',
     3: 'vae',
     4: 'vae',
     5: 'vae',
 }
 CONDITIONS_CLASS = {
-    2: AffineDepth,
-    3: AffineDepthNormal,
-    4: AffineNoControl,
-    5: AffineNormal,
+    0: AffineDepth,
+    1: AffineDepthNormalBae,
+    2: AffineNormalBae,
+    3: AffineNoControl,
+    4: AffineNormalBae,
+    5: AffineNoControl,
 }
 LRS = {
+    0: '1e-4',
+    1: '1e-4',
     2: '1e-4',
     3: '1e-4',
     4: '1e-4',

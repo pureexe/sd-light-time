@@ -367,7 +367,7 @@ class AffineControl(L.LightningModule):
             if is_save_image:
                 # save ddim_latents to file
                 os.makedirs(f"{log_dir}/ddim_latents", exist_ok=True)
-                torch.save(ddim_latents, f"{log_dir}/ddim_latents/{source_name}.pt.pt")
+                torch.save(ddim_latents, f"{log_dir}/ddim_latents/{source_name}.pt")
                 torch.save(ddim_timesteps, f"{log_dir}/ddim_latents/{source_name}_timesteps.pt")
 
         if self.use_null_text and self.guidance_scale > 1:                
@@ -491,6 +491,8 @@ class AffineControl(L.LightningModule):
                     "num_inference_steps": self.num_inversion_steps,
                     "generator": torch.Generator().manual_seed(self.seed)
                 }
+                pred_latents = []
+                pred_timesteps = []
                 if isinstance(self.pipe, IFImg2ImgPipeline): # support for deepfloyd
                     pipe_args["image"] = ddim_latents[-1]
                     pipe_args["strength"] = 1.0
@@ -509,12 +511,11 @@ class AffineControl(L.LightningModule):
                         ddim_pipe = self.pipe
                         if hasattr(self.pipe, "controlnet"):
                             pipe_args["image"] = self.get_control_image(batch)    
-                        # support callback to swap source and light
-                        timesteps = []
-                        step_ids = []
+                        
+                        # support callback to swap source and light                                                
                         def callback_swap_source_light(pipe, step_index, timestep, callback_kwargs):
-                            timesteps.append(timestep)
-                            step_ids.append(step_index)
+                            pred_timesteps.append(timestep)
+                            pred_latents.append(callback_kwargs['latents'])
                             swap_id = self.get_swap_light_id(step_index, timestep)
                             features = source_light_features if swap_id == "SOURCE" else target_light_features
                             set_light_direction(
@@ -526,6 +527,13 @@ class AffineControl(L.LightningModule):
                         pipe_args["callback_on_step_end"] = callback_swap_source_light
 
                     pt_image, _ = ddim_pipe(**pipe_args)
+    
+                    if is_save_image and len(pred_latents) > 0:
+                        # save ddim_latents to file
+                        filename = f"{batch['name'][0].replace('/','-')}_{batch['word_name'][target_idx][0].replace('/','-')}"
+                        os.makedirs(f"{log_dir}/ddim_latents", exist_ok=True)
+                        torch.save(ddim_latents, f"{log_dir}/ddim_latents/{filename}.pt")
+                        torch.save(ddim_timesteps, f"{log_dir}/ddim_latents/{filename}_timesteps.pt")
                     
 
             gt_on_batch = 'target_image' if "target_image" in batch else 'source_image'
