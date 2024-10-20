@@ -123,8 +123,7 @@ class AffineDeepFloyd(AffineControl):
             self.pipe_upscale.unet.requires_grad_(False)
 
         # load vae for encoder 
-        vae_varience = "fp16" if MASTER_TYPE == torch.float16 else  None
-        self.vae = AutoencoderKL.from_pretrained("runwayml/stable-diffusion-v1-5", subfolder="vae", torch_dtype=MASTER_TYPE, variant=vae_varience).to('cuda')
+        self.vae = AutoencoderKL.from_pretrained("runwayml/stable-diffusion-v1-5", subfolder="vae", torch_dtype=MASTER_TYPE).to('cuda')
         self.vae.requires_grad_(False)
 
         # change scheduler

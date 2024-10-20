@@ -44,7 +44,7 @@ class AffineControl(L.LightningModule):
             guidance_scale=3.0,
             gate_multipiler=1,
             feature_type="vae",
-            num_inversion_steps=2,
+            num_inversion_steps=999,
             num_inference_steps=50,
             *args,
             **kwargs

@@ -53,6 +53,10 @@ class LineNotify:
 
 def notify(func):
     def wrapper(*args, **kwargs):
+        hostname = socket.gethostname()
+        if hostname.startswith("ist-gpu-"):
+            result = func(*args, **kwargs)
+            return result
         line = LineNotify()
         arg_stirng = ""
         for arg_id in (range(len(sys.argv))):
