@@ -17,8 +17,10 @@ from PIL import Image
 import bitsandbytes as bnb
 
 from constants import *
-from diffusers import ControlNetModel, StableDiffusionControlNetPipeline, StableDiffusionImg2ImgPipeline, StableDiffusionControlNetImg2ImgPipeline, DDIMScheduler, DDIMInverseScheduler, IFPipeline, IFImg2ImgPipeline
+from diffusers import ControlNetModel, StableDiffusionControlNetPipeline, StableDiffusionImg2ImgPipeline, StableDiffusionControlNetImg2ImgPipeline, DDIMScheduler, DDIMInverseScheduler
+from pipeline import PureIFPipeline
 from diffusers.pipelines.controlnet.multicontrolnet import MultiControlNetModel
+from diffusers.utils import pt_to_pil
 
 from LightEmbedingBlock import set_light_direction, add_light_block
 
@@ -42,7 +44,7 @@ class AffineControl(L.LightningModule):
             guidance_scale=3.0,
             gate_multipiler=1,
             feature_type="vae",
-            num_inversion_steps=200,
+            num_inversion_steps=2,
             num_inference_steps=50,
             *args,
             **kwargs
@@ -284,7 +286,7 @@ class AffineControl(L.LightningModule):
                 return_dict=False,
             )[0]
 
-            if isinstance(self.pipe, IFPipeline) or isinstance(self.pipe, IFImg2ImgPipeline):
+            if isinstance(self.pipe, PureIFPipeline):
                 # THIS TRAINING won't support original schudler, please use DDIM from now on.
                 model_pred, _ = model_pred.split(noisy_latents.shape[1], dim=1)
 
@@ -311,7 +313,7 @@ class AffineControl(L.LightningModule):
             raise ValueError(f"feature_type {self.feature_type} is not supported")
         return batch
     
-    def generate_tensorboard(self, batch, batch_idx, is_save_image=False, is_seperate_dir_with_epoch=False):        
+    def generate_tensorboard(self, batch, batch_idx, is_save_image=False, is_seperate_dir_with_epoch=False):                
         try:
             log_dir = self.logger.log_dir
         except:
@@ -346,9 +348,9 @@ class AffineControl(L.LightningModule):
         text_embbeding = get_text_embeddings(self.pipe, batch['text']).to(self.pipe.unet.dtype)
         negative_embedding = get_text_embeddings(self.pipe, '').to(self.pipe.unet.dtype)
         
-        if os.path.exists(f"{log_dir}/ddim_latents/{source_name}.pt"):
+        if os.path.exists(f"{log_dir}/{epoch_text}ddim_latents/{source_name}.pt"):
             # skip the ddim_latents if it already exists
-            ddim_latents = torch.load(f"{log_dir}/ddim_latents/{source_name}.pt")
+            ddim_latents = torch.load(f"{log_dir}/{epoch_text}ddim_latents/{source_name}.pt")
         else:
             interrupt_index = int(self.num_inversion_steps * self.ddim_strength) if self.ddim_strength > 0 else None
             if interrupt_index is not None:
@@ -364,11 +366,18 @@ class AffineControl(L.LightningModule):
                 guidance_scale=self.ddim_guidance_scale,
                 interrupt_index=interrupt_index
             )
+            
             if is_save_image:
                 # save ddim_latents to file
-                os.makedirs(f"{log_dir}/ddim_latents", exist_ok=True)
-                torch.save(ddim_latents, f"{log_dir}/ddim_latents/{source_name}.pt")
-                torch.save(ddim_timesteps, f"{log_dir}/ddim_latents/{source_name}_timesteps.pt")
+                os.makedirs(f"{log_dir}/{epoch_text}ddim_latents", exist_ok=True)
+                torch.save(ddim_latents, f"{log_dir}/{epoch_text}ddim_latents/{source_name}.pt")
+                torch.save(ddim_timesteps, f"{log_dir}/{epoch_text}ddim_latents/{source_name}_timesteps.pt")
+                if isinstance(self.pipe, PureIFPipeline):
+                    os.makedirs(f"{log_dir}/{epoch_text}ddim_latents_viz", exist_ok=True)
+                    skip_index = 50 if self.num_inversion_steps == 999 else 1
+                    for idx, ddim_latent in enumerate(ddim_latents[::skip_index]):
+                        output_image = pt_to_pil(ddim_latent)[0]
+                        output_image.save(f"{log_dir}/{epoch_text}ddim_latents_viz/{source_name}_{idx:03d}.png")
 
         if self.use_null_text and self.guidance_scale > 1:                
             if os.path.exists(f"{log_dir}/null_embeddings/{source_name}.pt"):
@@ -493,12 +502,18 @@ class AffineControl(L.LightningModule):
                 }
                 pred_latents = []
                 pred_timesteps = []
-                if isinstance(self.pipe, IFImg2ImgPipeline): # support for deepfloyd
-                    pipe_args["image"] = ddim_latents[-1]
-                    pipe_args["strength"] = 1.0
-                    ddim_pipe = self.pipe
-                    self.pipe.scheduler.config.variance_type = "place_holder"
-                    pt_image, _, _ = ddim_pipe(**pipe_args)
+                if isinstance(self.pipe, PureIFPipeline): # support for deepfloyd
+                    regen_latents = []
+                    def callback(i, t, regen_latent):
+                        regen_latents.append(regen_latent)
+                    self.pipe.set_initial_image(ddim_latents[-1])
+                    pt_image, _, _ = self.pipe(**pipe_args)
+                    if is_save_image:
+                        os.makedirs(f"{log_dir}/{epoch_text}ddim_regent_viz", exist_ok=True)
+                        skip_index = 50 if self.num_inversion_steps == 999 else 1
+                        for idx, ddim_latent in enumerate(regen_latents[::skip_index]):
+                            output_image = pt_to_pil(ddim_latent)[0]                            
+                            output_image.save(f"{log_dir}/{epoch_text}ddim_regent_viz/{source_name}_{idx:03d}.png")
                 else: #support other pipeline
                     if self.ddim_strength > 0: # support denoise but not all the way
                         pipe_args["strength"] = self.ddim_strength                        
@@ -531,9 +546,9 @@ class AffineControl(L.LightningModule):
                     if is_save_image and len(pred_latents) > 0:
                         # save ddim_latents to file
                         filename = f"{batch['name'][0].replace('/','-')}_{batch['word_name'][target_idx][0].replace('/','-')}"
-                        os.makedirs(f"{log_dir}/ddim_latents", exist_ok=True)
-                        torch.save(ddim_latents, f"{log_dir}/ddim_latents/{filename}.pt")
-                        torch.save(ddim_timesteps, f"{log_dir}/ddim_latents/{filename}_timesteps.pt")
+                        os.makedirs(f"{log_dir}/{epoch_text}ddim_latents", exist_ok=True)
+                        torch.save(ddim_latents, f"{log_dir}/{epoch_text}ddim_latents/{filename}.pt")
+                        torch.save(ddim_timesteps, f"{log_dir}/{epoch_text}ddim_latents/{filename}_timesteps.pt")
                     
 
             gt_on_batch = 'target_image' if "target_image" in batch else 'source_image'
@@ -550,7 +565,7 @@ class AffineControl(L.LightningModule):
                     torch.save(text_embbeding, f"{log_dir}/{epoch_text}upscale/{filename}_text_embbeding.pt")
                     torch.save(negative_embedding, f"{log_dir}/{epoch_text}upscale/{filename}_negative_embedding.pt")
                     
-                if True:
+                if True and hasattr(self,'pipe_upscale'):
                     pt_image = self.pipe_upscale(
                         image=pt_image,
                         prompt_embeds=text_embbeding,
@@ -563,7 +578,7 @@ class AffineControl(L.LightningModule):
                     pt_image = torch.clamp(pt_image, 0, 1)
                     gt_image = torch.nn.functional.interpolate(gt_image, size=pt_image.shape[-2:], mode="bilinear", align_corners=False)
 
-            if isinstance(self.pipe, IFPipeline) or isinstance(self.pipe, IFImg2ImgPipeline):
+            if isinstance(self.pipe, PureIFPipeline):
                 if is_save_image:
                     os.makedirs(f"{log_dir}/{epoch_text}upscale", exist_ok=True)
                     # save pt_image, text_embedding and negative_embedding as torch

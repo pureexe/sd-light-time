@@ -1,6 +1,7 @@
 import torch
 import numpy as np 
-from diffusers import DDIMInverseScheduler, DDIMScheduler, StableDiffusionPipeline, IFImg2ImgPipeline
+from diffusers import DDIMInverseScheduler, DDIMScheduler, StableDiffusionPipeline
+from pipeline import PureIFPipeline
 from diffusers.pipelines.stable_diffusion.pipeline_stable_diffusion import rescale_noise_cfg
 
 from torch.amp import autocast, GradScaler
@@ -145,16 +146,19 @@ def denoise_step(pipe, hidden_states, latents, timestep, callback_kwargs, noise_
 
 
 def get_ddim_latents(pipe, image, text_embbeding, num_inference_steps, generator = None, controlnet_image=None, guidance_scale=1.0, interrupt_index=None):
-    normal_scheduler = DDIMScheduler.from_config(pipe.scheduler.config, subfolder='scheduler')
-    inverse_scheduler = DDIMInverseScheduler.from_config(pipe.scheduler.config, subfolder='scheduler')
+    if isinstance(pipe,PureIFPipeline):
+        scheduler_config = {k: v for k, v in pipe.scheduler.config.items()}    
+        scheduler_config["variance_type"] = "fixed_small"
+    else:
+        scheduler_config = pipe.scheduler.config
 
+    normal_scheduler = DDIMScheduler.from_config(scheduler_config, subfolder='scheduler')
+    inverse_scheduler = DDIMInverseScheduler.from_config(scheduler_config, subfolder='scheduler')
 
     pipe.scheduler = inverse_scheduler
 
     if hasattr(pipe, 'vae'):
         z0_noise = get_latent_from_image(pipe.vae, image)
-    
-
 
     # do ddim inverse to noise 
     ddim_latents = []
@@ -167,19 +171,17 @@ def get_ddim_latents(pipe, image, text_embbeding, num_inference_steps, generator
         "num_inference_steps": num_inference_steps,
         "generator": generator,        
     }
-    if isinstance(pipe,IFImg2ImgPipeline): # support for deepfloyd
+    if isinstance(pipe,PureIFPipeline): # support for deepfloyd
         # resize image to 64x64
-        ddim_args['image'] = torch.nn.functional.interpolate(image, size=(64, 64), mode='bilinear', align_corners=False)        
-        ddim_args['strength'] = 1.0 # inverted all the way
+        image = torch.nn.functional.interpolate(image, size=(64, 64), mode='bilinear', align_corners=False)        
+        pipe.set_initial_image(image)
         ddim_args['output_type'] = 'pt'
         def callback_deepfloyd(step_index, timestep, latents):
             ddim_timesteps.append(timestep)
             ddim_latents.append(latents)
         ddim_args['callback'] = callback_deepfloyd
-        # skip add noise function
-        pipe.scheduler.add_noise = lambda a, b, c: a
-        pipe.scheduler.config.variance_type = "place_holder"
         zt_noise, _, _ = pipe(**ddim_args)
+        pipe.set_initial_image(None)
     else: #other pipelines
         def callback_ddim(pipe, step_index, timestep, callback_kwargs):
             ddim_timesteps.append(timestep)

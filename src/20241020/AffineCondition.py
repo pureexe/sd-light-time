@@ -3,7 +3,9 @@ from AffineControl import AffineControl
 from diffusers import StableDiffusionPipeline
 from diffusers import ControlNetModel
 from ball_helper import pipeline2controlnetinpaint
-from diffusers import IFPipeline, IFSuperResolutionPipeline, DiffusionPipeline, AutoencoderKL, IFImg2ImgPipeline
+from diffusers import IFPipeline, IFSuperResolutionPipeline, DiffusionPipeline, AutoencoderKL, DDIMScheduler 
+from pipeline import PureIFPipeline
+from transformers import T5EncoderModel
  
 MASTER_TYPE = torch.float16
  
@@ -88,34 +90,46 @@ class AffineNoControl(AffineControl):
 class AffineDeepFloyd(AffineControl):
    
     def setup_sd(self):
+        USE_UPSCALE = False
+        USE_TEXT8BIT = True 
+
         if MASTER_TYPE == torch.float16:
-            self.pipe = IFImg2ImgPipeline.from_pretrained("DeepFloyd/IF-I-M-v1.0", variant="fp16", torch_dtype=MASTER_TYPE, watermarker=None).to('cuda')
-            self.pipe_upscale =  IFSuperResolutionPipeline.from_pretrained(
-                "DeepFloyd/IF-II-M-v1.0", text_encoder=None, variant="fp16", torch_dtype=MASTER_TYPE, watermarker=None
-            ).to('cuda')
-            self.pipe.watermarker = None    
-            self.pipe_upscale.watermarker = None
-            self.pipe_upscale.enable_model_cpu_offload()
+            self.pipe = PureIFPipeline.from_pretrained("DeepFloyd/IF-I-M-v1.0", variant="fp16", torch_dtype=MASTER_TYPE, watermarker=None).to('cuda')
+            #self.pipe.enable_model_cpu_offload()
+            self.pipe.watermarker = None
+            if USE_UPSCALE:
+                self.pipe_upscale =  IFSuperResolutionPipeline.from_pretrained(
+                    "DeepFloyd/IF-II-M-v1.0", text_encoder=None, variant="fp16", torch_dtype=MASTER_TYPE, watermarker=None
+                ).to('cuda')
+                self.pipe_upscale.watermarker = None
+                self.pipe_upscale.enable_model_cpu_offload()
         else:
-            self.pipe = IFImg2ImgPipeline.from_pretrained("DeepFloyd/IF-I-M-v1.0").to('cuda')
-            self.pipe_upscale = IFSuperResolutionPipeline.from_pretrained(
-                "DeepFloyd/IF-II-M-v1.0", text_encoder=None, watermarker=None
-            ).to('cuda')
+            self.pipe = PureIFPipeline.from_pretrained("DeepFloyd/IF-I-M-v1.0", text_encoder=text_encoder).to('cuda')
             self.pipe.watermarker = None    
-            self.pipe_upscale.watermarker = None
-            self.pipe_upscale.enable_model_cpu_offload()
+            if USE_UPSCALE:
+                self.pipe_upscale = IFSuperResolutionPipeline.from_pretrained(
+                    "DeepFloyd/IF-II-M-v1.0", text_encoder=None, watermarker=None
+                ).to('cuda')
+                self.pipe_upscale.watermarker = None
+                self.pipe_upscale.enable_model_cpu_offload()
 
 
         # disable pipe grad
         self.pipe.unet.requires_grad_(False)
         self.pipe.text_encoder.requires_grad_(False)
 
-        # disable pipe_upscale grad
-        self.pipe_upscale.unet.requires_grad_(False)
+        if USE_UPSCALE:
+            # disable pipe_upscale grad
+            self.pipe_upscale.unet.requires_grad_(False)
 
         # load vae for encoder 
-        self.vae = AutoencoderKL.from_pretrained("runwayml/stable-diffusion-v1-5", subfolder="vae")
+        vae_varience = "fp16" if MASTER_TYPE == torch.float16 else  None
+        self.vae = AutoencoderKL.from_pretrained("runwayml/stable-diffusion-v1-5", subfolder="vae", torch_dtype=MASTER_TYPE, variant=vae_varience).to('cuda')
         self.vae.requires_grad_(False)
 
+        # change scheduler
+        scheduler_config = {k: v for k, v in self.pipe.scheduler.config.items() if k != "variance_type"}
+        scheduler_config["variance_type"] = "fixed_small"
+        self.pipe.scheduler = DDIMScheduler.from_config(scheduler_config)
 
 
