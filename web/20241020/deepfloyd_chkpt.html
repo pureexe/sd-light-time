@@ -1,0 +1,132 @@
+<!-- show different between guidance and method-->
+<!DOCTYPE html class="has-navbar-fixed-top has-navbar-fixed-bottom">
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Dataset viewer </title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/1.0.2/css/bulma.min.css">
+    <style>
+      .image.is-128x256 {
+          height: 128px;
+          width: 256px;
+      }
+      .is-flip-image {
+          transform: scaleX(-1);
+      }
+      body{
+        width: 100vw;
+      }
+    </style>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@cityssm/bulma-sticky-table@3.0.0/bulma-with-sticky-table.min.css" />
+  </head>
+  <body>
+    <div id="app">
+      <div v-for="image_name,image_idx in image_index">
+        <table v-for="envmap_name, envmap_idx in envmap_index[image_idx]" class="table is-bordered is-striped mx-auto">
+          <thead>
+            <tr>
+              <th>{{image_name.split('/')[0]}} | {{ getLightId(image_name) }} -> {{ getLightId(envmap_name) }} </th>
+              <th v-for="checkpoint in checkpoints ">
+                {{checkpoint}}
+              </th>    
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td> Ground Truth</td>
+              <td v-for="checkpoint in checkpoints" class="has-background-link">
+                <figure class="image is-128x128">
+                  <img :src="'http://10.204.100.117/pakkapon/c2/project/sd-light-time/output/20241020/multi_mlp_fit/lightning_logs/version_0/epoch_'+String(checkpoint).padStart(4, '0')+'/source_image/'+getSceneName(image_name)+'-dir_'+getLightId(image_name)+'_mip2_'+getSceneName(envmap_name)+'-dir_'+getLightId(envmap_name)+'_mip2.png'" loading="lazy"/>
+                </figure>
+              </td>
+            </tr>
+            <tr>
+                <td> Relight Image</td>
+                <td v-for="checkpoint in checkpoints" >
+                  <figure class="image is-128x128">
+                    <img :src="'http://10.204.100.117/pakkapon/c2/project/sd-light-time/output/20241020/multi_mlp_fit/lightning_logs/version_0/epoch_'+String(checkpoint).padStart(4, '0')+'/crop_image/'+getSceneName(image_name)+'-dir_'+getLightId(image_name)+'_mip2_'+getSceneName(envmap_name)+'-dir_'+getLightId(envmap_name)+'_mip2.png'" loading="lazy"/>
+                  </figure>
+                </td>
+            </tr>            
+          </tbody>
+        </table>
+      </div>
+    </div>
+    </div>
+        
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script>
+    async function getImageIndex(){
+      const response = await fetch('/pakkapon/datasets/multi_illumination/spherical/split-test-1-light-2-array.json');
+      const data = await response.json();
+      return data;
+    }
+    function range(start, end) {
+        return Array.from({ length: end - start }, (_, i) => i + start);
+    }
+    function zeroPad(number, length) {
+        return String(number).padStart(length, '0');
+    }
+    const { createApp, ref } = Vue
+      createApp({
+        setup() {
+          const image_index = ref([]);
+          const envmap_index = ref([]);
+          const checkpoints = ref(range(0, 25));              
+          return {
+            image_index,
+            envmap_index,
+            checkpoints          
+          }
+        },
+        methods:{
+          getCurrentQuery(){
+            return {
+            }
+          },
+          getVersion(content){
+            return '0';
+          },
+          getLightId(name){
+            name = name.split('/')[1]
+            name = name.replace('dir_','')
+            name = name.replace('_mip2','')
+            return name
+          },
+          getImage(row_id, col_id, dir_type='crop_image'){
+            let content = this.getCurrentQuery()
+            return "";
+          },
+          getSceneName(name){
+            return name.split('/')[0]
+          },
+          inject_details(){
+            const url = new URL(window.location.href);
+            let details = url.searchParams.get('q');
+            if(details){
+              details = JSON.parse(details);
+              console.log(details)
+              for (let key in details) {
+                console.log(key)
+                if (this.experiment_details.hasOwnProperty(key)) {
+                  console.log("UPDATE!")
+                  this.experiment_details[key] = details[key];  // Update A's property with B's value
+                }
+              }
+            }
+          }
+        },
+        mounted() {
+          this.current_query = this.getCurrentQuery();
+          var self = this;
+          getImageIndex().then(ids =>{
+            self.image_index = ids.image_index;
+            self.envmap_index = ids.envmap_index;
+            //self.inject_details();
+          });
+        }
+      }).mount('#app')
+            </script>
+  </body>
+</html>

@@ -367,7 +367,7 @@ class AffineControl(L.LightningModule):
             if is_save_image:
                 # save ddim_latents to file
                 os.makedirs(f"{log_dir}/ddim_latents", exist_ok=True)
-                torch.save(ddim_latents, f"{log_dir}/ddim_latents/{source_name}.pt.pt")
+                torch.save(ddim_latents, f"{log_dir}/ddim_latents/{source_name}.pt")
                 torch.save(ddim_timesteps, f"{log_dir}/ddim_latents/{source_name}_timesteps.pt")
 
         if self.use_null_text and self.guidance_scale > 1:                
@@ -498,6 +498,7 @@ class AffineControl(L.LightningModule):
                     self.pipe.scheduler.config.variance_type = "place_holder"
                     pt_image, _, _ = ddim_pipe(**pipe_args)
                 else: #support other pipeline
+                    forward_latents = []
                     if self.ddim_strength > 0: # support denoise but not all the way
                         pipe_args["strength"] = self.ddim_strength                        
                         ddim_pipe = self.pipe_img2img
@@ -512,6 +513,7 @@ class AffineControl(L.LightningModule):
                         # support callback to swap source and light
                         timesteps = []
                         step_ids = []
+                        
                         def callback_swap_source_light(pipe, step_index, timestep, callback_kwargs):
                             timesteps.append(timestep)
                             step_ids.append(step_index)
@@ -522,10 +524,18 @@ class AffineControl(L.LightningModule):
                                 features,
                                 is_apply_cfg=is_apply_cfg
                             )
+                            forward_latents.append(callback_kwargs["latents"])
                             return callback_kwargs
                         pipe_args["callback_on_step_end"] = callback_swap_source_light
 
                     pt_image, _ = ddim_pipe(**pipe_args)
+                    if is_save_image and len(forward_latents) > 0:
+                        filename = f"{batch['name'][0].replace('/','-')}_{batch['word_name'][target_idx][0].replace('/','-')}"
+                        os.makedirs(f"{log_dir}/{epoch_text}ddim_latents", exist_ok=True)
+                        torch.save(forward_latents, f"{log_dir}/ddim_latents/{filename}.pt")
+                        torch.save(forward_latents, f"{log_dir}/ddim_latents/{filename}_timesteps.pt")
+                        
+                        #torchvision.utils.save_image(pt_image, f"{log_dir}/{epoch_text}denoise/{filename}.png")
                     
 
             gt_on_batch = 'target_image' if "target_image" in batch else 'source_image'
