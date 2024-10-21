@@ -1,7 +1,7 @@
 # val_grid is a validation at step 
 import os 
 #from RelightDDIMInverse import create_ddim_inversion
-from AffineCondition import AffineDepth, AffineNormal, AffineNormalBae, AffineDepthNormal, AffineDepthNormalBae, AffineNoControl
+from AffineCondition import AffineDepth, AffineNormal, AffineNormalBae, AffineDepthNormal, AffineDepthNormalBae, AffineNoControl, AffineDeepFloyd
 
 #from DDIMUnsplashLiteDataset import DDIMUnsplashLiteDataset
 from datasets.DDIMDataset import DDIMDataset
@@ -29,12 +29,14 @@ parser.add_argument("-c", "--checkpoint", type=str, default="39")
 args = parser.parse_args()
 NAMES = {
     0: 'deepfloyd',
+    86524: 'deepfloyd',
 }
 METHODS = {
     0: 'vae',
+    86524: 'vae',
 }
 CONDITIONS_CLASS = {
-    0: AffineDepth,
+    0: AffineDeepFloyd,
     1: AffineDepthNormalBae,
     2: AffineNormalBae,
     3: AffineNoControl,
@@ -56,7 +58,6 @@ def get_from_mode(mode):
         raise Exception("mode not found")
 
 def main():
-    CONDITIONS_CLASS[0] = AffineNoControl
     versions = [int(a.strip()) for a in args.version.split(",")]
     guidance_scales = [float(a.strip()) for a in args.guidance_scale.split(",")]
     checkpoints = [int(a.strip()) for a in args.checkpoint.split(",")]
