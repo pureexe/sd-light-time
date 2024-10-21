@@ -17,31 +17,21 @@ import argparse
 from constants import FOLDER_NAME
 
 MASTER_TYPE = 16
-CHECKPOINT_FOLDER_NAME = "20241012"
+CHECKPOINT_FOLDER_NAME = "20241020"
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument("-i", "--version", type=str, default="2")
-parser.add_argument("-m", "--mode", type=str, default="multillum_test3")
-parser.add_argument("-g", "--guidance_scale", type=str, default="1,3,5,7")
-parser.add_argument("-c", "--checkpoint", type=str, default="59")
+parser.add_argument("-i", "--version", type=str, default="0")
+parser.add_argument("-m", "--mode", type=str, default="multillum_test10_light4")
+parser.add_argument("-g", "--guidance_scale", type=str, default="1.0,3.0,5.0,7.0,1.25,1.5,1.75,2.0,2.25,2.5,2.75")
+parser.add_argument("-c", "--checkpoint", type=str, default="39")
 
 args = parser.parse_args()
 NAMES = {
-    0: 'depth',
-    1: 'both_bae'
-    2: 'bae',
-    3: 'no_control',
-    4: 'bae',
-    5: 'no_control',
+    0: 'deepfloyd',
 }
 METHODS = {
     0: 'vae',
-    1: 'vae',
-    2: 'vae',
-    3: 'vae',
-    4: 'vae',
-    5: 'vae',
 }
 CONDITIONS_CLASS = {
     0: AffineDepth,
@@ -53,67 +43,15 @@ CONDITIONS_CLASS = {
 }
 LRS = {
     0: '1e-4',
-    1: '1e-4',
-    2: '1e-4',
-    3: '1e-4',
-    4: '1e-4',
-    5: '1e-4',
  }
 DIRNAME = {
-    2: CHECKPOINT_FOLDER_NAME,
-    3: CHECKPOINT_FOLDER_NAME,
-    4: CHECKPOINT_FOLDER_NAME,
-    5: CHECKPOINT_FOLDER_NAME,
+    0: CHECKPOINT_FOLDER_NAME,
 }
 
 
 def get_from_mode(mode):
-    if mode == "ddim_left2right":
-        return "/data/pakkapon/datasets/unsplash-lite/train_under", 1, DDIMUnsplashLiteDataset,{'index_file': 'src/20240824/ddim_left2right100.json'}, None
-    elif mode == "ddim_left2right_dev":
-        return "/data/pakkapon/datasets/unsplash-lite/train_under", 1, DDIMUnsplashLiteDataset,{'index_file': 'src/20240824/ddim_dev.json'}, None
-    elif mode == "face10":
-        return "datasets/face10", 1000, DDIMCrossDataset,{'index_file': None, 'envmap_file':'datasets/face10/target_envmap.json', 'envmap_dir':"/data/pakkapon/datasets/unsplash-lite/train_under" }, None
-    elif mode == "shoe":
-        return "/data/pakkapon/datasets/shoe_validation", 60, DDIMDataset, {'index_file': '/data/pakkapon/datasets/shoe_validation/ddim.json'}, None
-    elif mode == "shoe_trainlight2":
-        control_paths = {
-            'control_depth': '/data/pakkapon/datasets/shoe_validation/control_depth/00000.png',
-            'control_normal': '/data/pakkapon/datasets/shoe_validation/control_normal/00000.png', 
-            'control_normal_bae': '/data/pakkapon/datasets/shoe_validation/control_normal_bae/00000.png',
-        }
-        source_env_ldr = '/data/pakkapon/datasets/shoe_validation/env_ldr/00000.png'
-        source_env_under = '/data/pakkapon/datasets/shoe_validation/env_under/00000.png'
-        image_path = '/data/pakkapon/datasets/shoe_validation/images/00000.png'
-        return "/data/pakkapon/datasets/unsplash-lite/train_under", 10, DDIMSingleImageDataset, {'index_file': 'src/20240902/ddim_10right1left.json', 'image_path': image_path, 'control_paths': control_paths, 'source_env_ldr': source_env_ldr, 'source_env_under': source_env_under}, None
-    elif mode == "face_left_ddim_v2":
-        return "/data/pakkapon/datasets/face/face2000", 100, DDIMDataset,{"index_file":"/data/pakkapon/datasets/face/face2000/split-x-minus.json"}, None
-    elif mode == "face_right_ddim_v2":
-        return "/data/pakkapon/datasets/face/face2000", 100, DDIMDataset,{"index_file":"/data/pakkapon/datasets/face/face2000/split-x-plus.json"}, None
-    elif mode == "face_identity_guidacne_hfcode":
-        return "/data/pakkapon/datasets/face/face2000", 100, DDIMDataset,{"index_file":"/data/pakkapon/datasets/face/face2000/split-identity.json"}, None
-    elif mode == "face_identity_guidacne_hfcode":
-        return "/data/pakkapon/datasets/face/face2000", 100, DDIMDataset,{"index_file":"/data/pakkapon/datasets/face/face2000/split-identity.json"}, None
-    elif mode == "multillum_train_v2":
-        return "/data/pakkapon/datasets/multi_illumination/spherical/train", 100, DDIMSHCoeffsDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/split-train3scenes.json"}, None
-    elif mode == "multillum_test_v2":
-        return "/data/pakkapon/datasets/multi_illumination/spherical/test", 100, DDIMSHCoeffsDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/split-test3scenes.json"}, None
-    elif mode == "multillum_val_array_v3":
-        return "/data/pakkapon/datasets/multi_illumination/spherical/val", 100, DDIMArrayEnvDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/split-val-relight-array.json"}, None   
-    elif mode == "multillum_val":
-        return "/data/pakkapon/datasets/multi_illumination/spherical/val", 100, DDIMDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/split-val-relight.json"}, None   
-    elif mode == "multillum_val_rotate_test":
-        return "/data/pakkapon/datasets/multi_illumination/spherical/val_rotate", 100, DDIMArrayEnvDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/val_rotate/split.json"}, None   
-    elif mode == "multillum_test_30_array_v2":
-        return "/data/pakkapon/datasets/multi_illumination/spherical/test", 100, DDIMArrayEnvDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/split-test-30-array.json"}, None
-    elif mode == "multillum_train2_nulltext":
-        return "/data/pakkapon/datasets/multi_illumination/spherical/train", 100, DDIMArrayEnvDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/split-train2-relight-array.json"}, None
-    elif mode == "multillum_train2_nulltext":
-        return "/data/pakkapon/datasets/multi_illumination/spherical/train", 100, DDIMArrayEnvDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/split-train2-relight-array.json"}, None
-    elif mode == "multillum_train2":
-        return "/data/pakkapon/datasets/multi_illumination/spherical/train", 100, DDIMArrayEnvDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/split-train2-relight-array.json"}, "a photo realistic image"
-    elif mode == "multillum_test3":
-        return "/data/pakkapon/datasets/multi_illumination/spherical/test", 100, DDIMArrayEnvDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/split-test3-relight-array.json"}, "a photo realistic image"
+    if mode == "multillum_test10_light4":
+        return "/data/pakkapon/datasets/multi_illumination/spherical/test", 100, DDIMArrayEnvDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/split-test-10-light-4-array.json"}, "a photo realistic image"
     else:
         raise Exception("mode not found")
 
@@ -129,8 +67,8 @@ def main():
                 #condition_class = CONDITIONS_CLASS[version]
                 #ddim_class = create_ddim_inversion(condition_class)
                 ddim_class = CONDITIONS_CLASS[version]
-                try:
-                #if True:
+                # try:
+                if True:
                     for checkpoint in checkpoints:
                         dirname = DIRNAME[version]
                         if checkpoint == 0:
@@ -169,8 +107,8 @@ def main():
                             trainer.test(model, dataloaders=val_dataloader, ckpt_path=CKPT_PATH)
 
 
-                except:
-                    pass
+                # except:
+                #     pass
 
                                 
 if __name__ == "__main__":

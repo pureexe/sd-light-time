@@ -547,8 +547,8 @@ class AffineControl(L.LightningModule):
                         # save ddim_latents to file
                         filename = f"{batch['name'][0].replace('/','-')}_{batch['word_name'][target_idx][0].replace('/','-')}"
                         os.makedirs(f"{log_dir}/{epoch_text}ddim_latents", exist_ok=True)
-                        torch.save(ddim_latents, f"{log_dir}/{epoch_text}ddim_latents/{filename}.pt")
-                        torch.save(ddim_timesteps, f"{log_dir}/{epoch_text}ddim_latents/{filename}_timesteps.pt")
+                        torch.save(pred_latents, f"{log_dir}/{epoch_text}ddim_latents/{filename}.pt")
+                        torch.save(pred_latents, f"{log_dir}/{epoch_text}ddim_latents/{filename}_timesteps.pt")
                     
 
             gt_on_batch = 'target_image' if "target_image" in batch else 'source_image'
