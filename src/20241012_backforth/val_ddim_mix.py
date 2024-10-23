@@ -22,10 +22,10 @@ CHECKPOINT_FOLDER_NAME = "20241012"
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-i", "--version", type=str, default="2")
-parser.add_argument("-m", "--mode", type=str, default="backforth_v2")
+parser.add_argument("-m", "--mode", type=str, default="backforth9")
 parser.add_argument("-g", "--guidance_scale", type=str, default="1.0")
 parser.add_argument("-c", "--checkpoint", type=str, default="199")
-parser.add_argument("-s", "--split_type", type=str, default="0.0,1.0")
+parser.add_argument("-s", "--split_type", type=str, default="1.0")
 
 args = parser.parse_args()
 NAMES = {
@@ -63,6 +63,8 @@ DIRNAME = {
 def get_from_mode(mode):
     if mode == "backforth_v2":
         return "/data/pakkapon/datasets/multi_illumination/spherical/test", 100, DDIMArrayEnvDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/split-test-backforth-relight-array.json"}, "a photo realistic image"
+    if mode == "backforth9":
+        return "/data/pakkapon/datasets/multi_illumination/spherical/test", 100, DDIMArrayEnvDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/split-test-backforth9-relight-array.json"}, "a photo realistic image"
     else:
         raise Exception("mode not found")
 

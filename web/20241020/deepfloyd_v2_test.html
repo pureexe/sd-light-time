@@ -1,0 +1,222 @@
+<!-- show different between guidance and method-->
+<!DOCTYPE html class="has-navbar-fixed-top has-navbar-fixed-bottom">
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Dataset viewer </title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/1.0.2/css/bulma.min.css">
+    <style>
+      .image.is-128x256 {
+          height: 128px;
+          width: 256px;
+      }
+      .is-flip-image {
+          transform: scaleX(-1);
+      }
+      body{
+        width: 100vw;
+      }
+    </style>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@cityssm/bulma-sticky-table@3.0.0/bulma-with-sticky-table.min.css" />
+  </head>
+  <body>
+    <div id="app">
+      <div style="display: none;">
+        {{image_index}} This need for start fetch data
+      </div>
+      
+      <div>
+        <div>
+          <div>
+            available_query: {{experiment_details}}
+          </div>
+          <div>
+            {{col_query}}
+          </div>
+          <div>
+            {{row_query}}
+          </div>
+        </div>
+      </div>
+      <div class="container">
+        <div class="notification is-info">
+          Setting column and row using <strong>&row/&col</strong> and change default set using <strong>&guidance=3.0</strong> limit the amount of display using <strong>?q={"scene":["scene1","scene2"]}</strong> 
+        </div>  
+      </div>
+      <div>
+        <table class="table is-bordered is-striped mx-auto">
+          <thead>
+            <tr>
+              <th>Query</th>
+              <th v-for="(value, key) in current_query">{{key}}</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Current</td>
+              <td v-for="(value, key) in getCurrentQuery()" :class="{ 'has-background-primary': key==row_query || key==col_query }" >
+                <div v-if="key==row_query || key==col_query">
+                  ###
+                </div>
+                <div v-else >
+                  {{value}}
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>  
+      <div>
+        <table class="table is-bordered is-striped mx-auto">
+          <thead>
+            <tr>
+              <th></th>
+              <th> {{col_query}}</th>
+              <th v-for="col in experiment_details[col_query]">
+                {{col}}
+              </th>    
+            </tr>
+            
+          </thead>
+          <tbody>
+            <tr>
+              <td>{{row_query}} </td>
+              <td class="has-background-danger">
+                <figure class="image is-128x128">
+                  <img :src="getImage(0, 0,'source_image',0)" loading="lazy"/>
+                </figure>
+              </td>
+              <td v-for="col,col_index in experiment_details[col_query]" class="has-background-link">
+                <figure class="image is-128x128">
+                  <img :src="getImage(0, col_index,'source_image')" loading="lazy"/>
+                </figure>
+              </td>
+            </tr>
+            <tr v-for="row,row_index in experiment_details[row_query]">
+              <td>{{row}}</td>
+              <td class="has-background-link">
+                <figure class="image is-128x128">
+                  <img :src="getImage(row_index, 0,'source_image')" loading="lazy"/>
+                </figure>
+              </td>
+              <td v-for="col, col_index in experiment_details[col_query]">
+                <figure class="image is-128x128">
+                  <img :src="getImage(row_index, col_index,'crop_image')" loading="lazy"/>
+                </figure>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    </div>
+        
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script>
+    async function getImageIndex(){
+      const response = await fetch('/pakkapon/datasets/multi_illumination/spherical/split-test-10-light-4-array.json');
+      const data = await response.json();
+      return data;
+    }
+    const { createApp, ref } = Vue
+      createApp({
+        setup() {
+          const image_index = ref([]);
+          const envmap_index = ref([]);        
+          
+          const method_names = ref({
+            'deepfloyd': 'Deep Floyd',
+          })
+
+          const available_query = ['scene','light', 'guidance', 'method', 'checkpoint'] 
+          const experiment_details = {
+            'scene': [],
+            'light': [0,2,3,21,24],
+            'guidance': ['1.0','1.25','1.5','1.75','2.0','2.25','2.5','2.75','3.0','4.0','5.0', '6.0', '7.0'],
+            'method': ['deepfloyd'],
+            'checkpoint': [39, 0]
+          }
+          
+          const url = new URL(window.location.href);
+          let current_query = {
+            'scene':  url.searchParams.get('scene'),
+            'light':  url.searchParams.get('light'),
+            'guidance':  url.searchParams.get('guidance'),
+            'method':  url.searchParams.get('method'),
+            'checkpoint': url.searchParams.get('checkpoint')
+          }
+          let row_q= url.searchParams.get('row');
+          let col_q = url.searchParams.get('col');
+          if(!row_q){
+            row_q = 'light'
+          }
+          if(!col_q){
+            col_q = 'guidance'
+          }
+          const row_query = ref(row_q)
+          const col_query = ref(col_q)
+
+          return {
+            image_index,
+            envmap_index,
+            method_names,
+            row_query,
+            col_query,
+            experiment_details,
+            current_query
+          }
+        },
+        methods:{
+          
+          getCurrentQuery(){
+            return {
+              'scene': (this.current_query['scene']) ? this.current_query['scene'] : 'everett_dining1',
+              'light': (this.current_query['light']) ? this.current_query['light'] : 24,
+              'guidance': (this.current_query['guidance']) ? this.current_query['guidance'] : '1.0',
+              'method': (this.current_query['method']) ? this.current_query['method'] : 'deepfloyd',
+              'checkpoint': (this.current_query['checkpoint']) ? this.current_query['checkpoint'] : this.experiment_details['checkpoint'][0],
+            }
+          },
+          getImage(row_id, col_id, dir_type='crop_image',light_id=undefined){
+            let content = this.getCurrentQuery()
+            
+            content[this.row_query] = this.experiment_details[this.row_query][row_id];
+            content[this.col_query] = this.experiment_details[this.col_query][col_id];
+            if(light_id !== undefined){
+              content['light'] = light_id;
+            }
+            //return '/pakkapon/sd-light-time/output/'+content['directory']+'/val_multillum_train2/vae/'+content['guidance']+'/'+content['method']+'/1e-4/chk'+content['checkpoint']+'/lightning_logs/version_'+content['version']+'/'+dir_type+'/'+content['scene']+'-dir_0_mip2_'+content['scene']+'-dir_'+content['light']+'_mip2.png';
+            return '/pakkapon/c2/project/sd-light-time/output/20241020/val_multillum_test10_light4/vae/'+content['guidance']+'/'+content['method']+'/1e-4/chk'+content['checkpoint']+'/lightning_logs/version_0/'+dir_type+'/'+content['scene']+'-dir_0_mip2_'+content['scene']+'-dir_'+content['light']+'_mip2.png'
+          },
+          inject_details(){
+            const url = new URL(window.location.href);
+            let details = url.searchParams.get('q');
+            if(details){
+              details = JSON.parse(details);
+              console.log(details)
+              for (let key in details) {
+                console.log(key)
+                if (this.experiment_details.hasOwnProperty(key)) {
+                  console.log("UPDATE!")
+                  this.experiment_details[key] = details[key];  // Update A's property with B's value
+                }
+              }
+            }
+
+          }
+        },
+        mounted() {
+          this.current_query = this.getCurrentQuery();
+          var self = this;
+          getImageIndex().then(ids =>{
+            self.image_index = ids.image_index;
+            self.envmap_index = ids.envmap_index;
+            self.experiment_details['scene'] = ids.image_index.map(x => x.split('/')[0])
+            self.inject_details();
+          });
+        }
+      }).mount('#app')
+            </script>
+  </body>
+</html>
