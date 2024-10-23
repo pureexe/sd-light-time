@@ -48,14 +48,14 @@ NAMES = {
     20: 'bae',
     21: 'bae_both',
     22: 'bae',
-    23: 'bae_both',
+    23: 'both_bae',
     24: 'no_control',
     25: 'depth',
-    26: 'bae_both',
+    26: 'both_bae',
     27: 'bae',
     29: 'no_control',
     30: 'depth',
-    31: 'bae_both',
+    31: 'both_bae',
     32: 'bae'
 }
 METHODS = {
@@ -186,6 +186,12 @@ def get_from_mode(mode):
         return "/data/pakkapon/datasets/multi_illumination/spherical/val", 100, DDIMArrayEnvDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/split-val-relight-array.json"}, None   
     elif mode == "multillum_val_rotate_v2":
         return "/data/pakkapon/datasets/multi_illumination/spherical/val_rotate", 100, DDIMArrayEnvDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/val_rotate/split.json"}, None   
+    elif mode == "multillum_train":
+        return "/data/pakkapon/datasets/multi_illumination/spherical/train", 100, DDIMArrayEnvDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/split-train2-relight-array.json"}, None
+    elif mode == "multillum_test":
+        return "/data/pakkapon/datasets/multi_illumination/spherical/test", 100, DDIMArrayEnvDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/split-test3-relight-array.json"}, None
+    elif mode == "multillum_test2":
+        return "/data/pakkapon/datasets/multi_illumination/spherical/test", 100, DDIMArrayEnvDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/split-test3-relight24-array.json"}, None
     else:
         raise Exception("mode not found")
 
@@ -218,6 +224,8 @@ def main():
                             del model.pipe_chromeball
                         model.eval() # disable randomness, dropout, etc...
                         model.disable_plot_train_loss()
+                        model.num_inversion_steps = 500 # set inversion steps to 500
+                        model.num_inference_steps = 500 # set inference steps to 500
                         for guidance_scale in guidance_scales:
                             model.set_guidance_scale(guidance_scale)                        
                             output_dir = f"output/{FOLDER_NAME}/val_{mode}/{METHODS[version]}/{guidance_scale}/{NAMES[version]}/{LRS[version]}/chk{checkpoint}/"

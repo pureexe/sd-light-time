@@ -306,6 +306,8 @@ class AffineControl(L.LightningModule):
                 num_inference_steps=self.num_inference_steps,
                 generator=torch.Generator().manual_seed(self.seed)
             )
+            if hasattr(self.pipe, "controlnet"):
+                pipe_args["image"] = self.get_control_image(batch)
             self.pipe.scheduler = self.nomral_scheduler
 
         # if dataset is not list, convert to list
