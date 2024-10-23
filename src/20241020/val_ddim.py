@@ -53,7 +53,9 @@ DIRNAME = {
 
 def get_from_mode(mode):
     if mode == "multillum_test10_light4":
-        return "/data/pakkapon/datasets/multi_illumination/spherical/test", 100, DDIMArrayEnvDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/split-test-10-light-4-array.json"}, "a photo realistic image"
+        return "/data/pakkapon/datasets/multi_illumination/spherical/test", 100, DDIMArrayEnvDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/split-test-10-light-4-array.json"}, None
+    elif mode == "multillum_train2_light4":
+        return "/data/pakkapon/datasets/multi_illumination/spherical/train", 100, DDIMArrayEnvDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/split-train-2-light-4-array.json"}, None
     else:
         raise Exception("mode not found")
 
