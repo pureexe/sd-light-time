@@ -64,7 +64,8 @@ class AffineControl(L.LightningModule):
         self.num_inference_steps = num_inference_steps
         self.save_hyperparameters()
         self.light_feature_indexs = [True] * self.num_inversion_steps
-
+        self.use_mix_noise = True
+        self.target_noise = 1.0
         self.already_load_img2img = False
         
 
@@ -462,12 +463,17 @@ class AffineControl(L.LightningModule):
         mse_output = []
         for target_idx in range(len(batch['target_image'])):
             target_light_features = self.get_light_features(batch, array_index=target_idx, generator=torch.Generator().manual_seed(self.seed))            
+            
             if target_idx > 0:                
-                set_light_direction(
-                    self.pipe.unet,
-                    target_light_features,
-                    is_apply_cfg=is_apply_cfg
-                )
+                # light_shape = [1, 8192]
+                light_features = torch.cat([target_light_features, source_light_features], dim=0) if self.use_mix_noise else target_light_features
+            else:
+                light_features = torch.cat([source_light_features, source_light_features], dim=0) if self.use_mix_noise else source_light_features  
+            set_light_direction(
+                self.pipe.unet,
+                light_features,
+                is_apply_cfg=is_apply_cfg
+            )
             
             if self.use_null_text and self.guidance_scale > 1:
                 pt_image = apply_null_embedding(
@@ -482,9 +488,11 @@ class AffineControl(L.LightningModule):
                     null_latents=null_latents
                 )
             else:
+                pipe_text_embbeding = torch.cat([text_embbeding, text_embbeding], dim=0) if self.use_mix_noise else text_embbeding
+                pipe_negative_embedding = torch.cat([negative_embedding, negative_embedding], dim=0) if self.use_mix_noise else negative_embedding  
                 pipe_args = {
-                    "prompt_embeds": text_embbeding,
-                    "negative_prompt_embeds": negative_embedding,
+                    "prompt_embeds": pipe_text_embbeding, #1,77,768
+                    "negative_prompt_embeds": pipe_negative_embedding,
                     "output_type": "pt",
                     "guidance_scale": self.guidance_scale,
                     "return_dict": False,
@@ -492,6 +500,7 @@ class AffineControl(L.LightningModule):
                     "generator": torch.Generator().manual_seed(self.seed)
                 }
                 if isinstance(self.pipe, IFImg2ImgPipeline): # support for deepfloyd
+                    #TODO: support 2 mixing_scale
                     pipe_args["image"] = ddim_latents[-1]
                     pipe_args["strength"] = 1.0
                     ddim_pipe = self.pipe
@@ -501,34 +510,35 @@ class AffineControl(L.LightningModule):
                     forward_latents = []
                     if self.ddim_strength > 0: # support denoise but not all the way
                         pipe_args["strength"] = self.ddim_strength                        
-                        ddim_pipe = self.pipe_img2img
-                        pipe_args["image"] = ddim_latents[interrupt_index]
+                        pipe_args["image"] = torch.cat([ddim_latents[interrupt_index], ddim_latents[interrupt_index]], dim=0) if self.use_mix_noise else ddim_latents[interrupt_index]
                         if hasattr(self.pipe, "controlnet"):
-                            pipe_args["control_image"] = self.get_control_image(batch)  
+                            control_image = self.get_control_image(batch)                            
+                            pipe_args["control_image"] = torch.cat([control_image, control_image], dim=0) if self.use_mix_noise else control_image
                     else: # original DDIM
-                        pipe_args["latents"] = ddim_latents[-1]
+                        pipe_args["latents"] = torch.cat([ddim_latents[-1], ddim_latents[-1]], dim=0) if self.use_mix_noise else ddim_latents[-1]
                         ddim_pipe = self.pipe
                         if hasattr(self.pipe, "controlnet"):
-                            pipe_args["image"] = self.get_control_image(batch)    
+                            control_image = self.get_control_image(batch)
+                            pipe_args["image"] = torch.cat([control_image, control_image], dim=0) if self.use_mix_noise else control_image
                         # support callback to swap source and light
                         timesteps = []
                         step_ids = []
                         
-                        def callback_swap_source_light(pipe, step_index, timestep, callback_kwargs):
+                        def callback_mix_light(pipe, step_index, timestep, callback_kwargs):
                             timesteps.append(timestep)
                             step_ids.append(step_index)
-                            swap_id = self.get_swap_light_id(step_index, timestep)
-                            features = source_light_features if swap_id == "SOURCE" else target_light_features
-                            set_light_direction(
-                                pipe.unet,
-                                features,
-                                is_apply_cfg=is_apply_cfg
-                            )
                             forward_latents.append(callback_kwargs["latents"])
+                            if self.use_mix_noise:
+                                latents_Target, latent_Source = callback_kwargs["latents"].chunk(2, dim=0)
+                                # interpolate latents
+                                mixed_light_latents = latents_Target * (self.target_noise) + latent_Source * (1.0 - self.target_noise)
+                                callback_kwargs["latents"] = torch.cat([mixed_light_latents, mixed_light_latents], dim=0)
                             return callback_kwargs
-                        pipe_args["callback_on_step_end"] = callback_swap_source_light
+                        pipe_args["callback_on_step_end"] = callback_mix_light
 
                     pt_image, _ = ddim_pipe(**pipe_args)
+                    if self.use_mix_noise:
+                        pt_image, _ = pt_image.chunk(2, dim=0)
                     if is_save_image and len(forward_latents) > 0:
                         filename = f"{batch['name'][0].replace('/','-')}_{batch['word_name'][target_idx][0].replace('/','-')}"
                         os.makedirs(f"{log_dir}/{epoch_text}ddim_latents", exist_ok=True)
@@ -725,3 +735,7 @@ class AffineControl(L.LightningModule):
     
     def set_light_feature_indexs(self, light_feature_indexs):
         self.light_feature_indexs = light_feature_indexs
+
+    def set_mix_noise(self, noise_ratio):
+        self.use_mix_noise = True
+        self.target_noise = noise_ratio

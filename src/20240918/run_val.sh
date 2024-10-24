@@ -36,5 +36,5 @@ CUDA_VISIBLE_DEVICES=3 bin/py src/20240918/val_ddim.py -m multillum_train,multil
 # val no_control_shcoeff
 #output/20240918/multi_mlp_fit/lightning_logs/version_24/checkpoints/epoch=000079.ckpt
 CUDA_VISIBLE_DEVICES=0 bin/py src/20240918/val_ddim.py -m multillum_train,multillum_test -g 1.0,3.0,5.0,7.0 -c 79 -i 24
-CUDA_VISIBLE_DEVICES=0 bin/py src/20240918/val_ddim.py -m multillum_test -g 1.0,3.0 -c 79 -i 24
+CUDA_VISIBLE_DEVICES=3 bin/py src/20240918/val_ddim.py -m multillum_test2 -g 1.0,3.0 -c 79 -i 24
 CUDA_VISIBLE_DEVICES=0 bin/py src/20240918/val_ddim.py -m multillum_test -g 5.0,7.0 -c 79 -i 24

@@ -22,7 +22,7 @@ CHECKPOINT_FOLDER_NAME = "20241012"
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-i", "--version", type=str, default="2")
-parser.add_argument("-m", "--mode", type=str, default="backforth_v2")
+parser.add_argument("-m", "--mode", type=str, default="mix_noise")
 parser.add_argument("-g", "--guidance_scale", type=str, default="1.0")
 parser.add_argument("-c", "--checkpoint", type=str, default="199")
 parser.add_argument("-s", "--split_type", type=str, default="0.0,1.0")
@@ -61,75 +61,18 @@ DIRNAME = {
 
 
 def get_from_mode(mode):
-    if mode == "backforth_v2":
+    if mode == "mix_noise":
         return "/data/pakkapon/datasets/multi_illumination/spherical/test", 100, DDIMArrayEnvDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/split-test-backforth-relight-array.json"}, "a photo realistic image"
+    elif mode == "multillum_test10_light4":
+        return "/data/pakkapon/datasets/multi_illumination/spherical/test", 100, DDIMArrayEnvDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/split-test-10-light-4-array.json"}, None
+    elif mode == "multillum_train2_light4":
+        return "/data/pakkapon/datasets/multi_illumination/spherical/train", 100, DDIMArrayEnvDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/split-train-2-light-4-array.json"}, None
+    
     else:
         raise Exception("mode not found")
 
-"""    
-def get_split_index(split_type, inversion_step):
-    if split_type == "1.0":
-        return [True] * inversion_step
-    elif split_type == "0.5":
-        return [False] * (inversion_step // 2) + [True] * (inversion_step // 2)
-    elif split_type == "0.5_alter":
-        return [False,True] * (inversion_step // 2)
-    elif split_type == "0.75":
-        return [False] * (inversion_step * 3 // 4) + [True] * (inversion_step // 4)
-    elif split_type == "0.1":
-        return [False] * (inversion_step  * 1 //10) + [True] * (inversion_step * 9 // 10)
-    elif split_type == "0.2":
-        return [False] * (inversion_step  * 2 //10) + [True] * (inversion_step * 8 // 10)
-    elif split_type == "0.25":
-        return [False] * (inversion_step // 4) + [True] * (inversion_step * 3 // 4)
-    elif split_type == "0.3":
-        return [False] * (inversion_step  * 3 //10) + [True] * (inversion_step * 7 // 10)
-    elif split_type == "0.4":
-        return [False] * (inversion_step * 4 // 10) + [True] * (inversion_step * 6 // 10)
-    elif split_type == "0.6":
-        return [False] * (inversion_step * 6 // 10) + [True] * (inversion_step * 4 // 10)
-    elif split_type == "0.7":
-        return [False] * (inversion_step * 7 // 10) + [True] * (inversion_step * 3 // 10)
-    elif split_type == "0.8":
-        return [False] * (inversion_step * 8 // 10) + [True] * (inversion_step * 2 // 10)
-    elif split_type == "0.9":
-        return [False] * (inversion_step * 9 // 10) + [True] * (inversion_step * 1 // 10)
-    elif split_type == "0.0":
-        return [False] * inversion_step
-    else:
-        raise Exception("split type not found")
-
-"""
-
-def get_split_index(split_type, inversion_step):
-    if split_type == "1.0":
-        return [True] * inversion_step
-    elif split_type == "0.5":
-        return [False] * (inversion_step // 2) + [True] * (inversion_step // 2)
-    elif split_type == "0.1":
-        return [False] * (inversion_step  * 9 //10) + [True] * (inversion_step * 1 // 10)
-    elif split_type == "0.2":
-        return [False] * (inversion_step  * 8 //10) + [True] * (inversion_step * 2 // 10)
-    elif split_type == "0.3":
-        return [False] * (inversion_step  * 7 //10) + [True] * (inversion_step * 3 // 10)
-    elif split_type == "0.4":
-        return [False] * (inversion_step * 6 // 10) + [True] * (inversion_step * 4 // 10)
-    elif split_type == "0.6":
-        return [False] * (inversion_step * 4 // 10) + [True] * (inversion_step * 6 // 10)
-    elif split_type == "0.7":
-        return [False] * (inversion_step * 3 // 10) + [True] * (inversion_step * 7 // 10)
-    elif split_type == "0.8":
-        return [False] * (inversion_step * 2 // 10) + [True] * (inversion_step * 8 // 10)
-    elif split_type == "0.9":
-        return [False] * (inversion_step * 1 // 10) + [True] * (inversion_step * 9 // 10)
-    elif split_type == "0.0":
-        return [False] * inversion_step
-    else:
-        raise Exception("split type not found")
-
 
 def main():
-    CONDITIONS_CLASS[0] = AffineNoControl
     versions = [int(a.strip()) for a in args.version.split(",")]
     guidance_scales = [float(a.strip()) for a in args.guidance_scale.split(",")]
     checkpoints = [int(a.strip()) for a in args.checkpoint.split(",")]
@@ -169,8 +112,7 @@ def main():
                                 print("================================")
                                 trainer = L.Trainer(max_epochs=1000, precision=MASTER_TYPE, check_val_every_n_epoch=1, default_root_dir=output_dir, inference_mode=False, gradient_clip_val=0)
                                 val_root, count_file, dataset_class, dataset_args, specific_prompt = get_from_mode(mode)
-                                split_index = get_split_index(split_type, model.num_inversion_steps)
-                                model.set_light_feature_indexs(split_index)
+                                model.set_mix_noise(float(split_type))
                                 if type(count_file) == int:
                                     split = slice(0, count_file, 1)
                                 else:

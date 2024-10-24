@@ -1,7 +1,7 @@
 import os 
 import socket
 
-FOLDER_NAME = "20241012_backforth"
+FOLDER_NAME = "20241012_mix_noise"
 OUTPUT = f"output/{FOLDER_NAME}/"
 OUTPUT_DIR = OUTPUT
 OUTPUT_CHROMEBALL_DIR = f"{OUTPUT_DIR}/chrome_ball_sd"
