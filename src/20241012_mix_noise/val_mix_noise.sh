@@ -55,3 +55,20 @@ CUDA_VISIBLE_DEVICES=0 bin/py src/20241012_mix_noise/val_ddim_mix.py -m "multill
 CUDA_VISIBLE_DEVICES=1 bin/py src/20241012_mix_noise/val_ddim_mix.py -m "multillum_train2_light4" -s '1.0' -g '5.0,6.0,7.0' -i 2
 CUDA_VISIBLE_DEVICES=2 bin/py src/20241012_mix_noise/val_ddim_mix.py -m "multillum_test10_light4" -s '0.5' -g '5.0,6.0,7.0' -i 2
 CUDA_VISIBLE_DEVICES=3 bin/py src/20241012_mix_noise/val_ddim_mix.py -m "multillum_test10_light4" -s '1.0' -g '5.0,6.0,7.0' -i 2
+
+
+CUDA_VISIBLE_DEVICES=2 bin/py src/20241012_mix_noise/val_ddim_mix.py -m "multillum_test10_light4" -s '0.5' -g '5.0,6.0,7.0' -i 2
+CUDA_VISIBLE_DEVICES=0 bin/py src/20241012_mix_noise/val_ddim_mix.py -m "multillum_test10_light4" -s '1.0' -g '7.0' -i 2
+CUDA_VISIBLE_DEVICES=1 bin/py src/20241012_mix_noise/val_ddim_mix.py -m "multillum_test10_light4" -s '0.5' -g '7.0' -i 2
+
+
+CUDA_VISIBLE_DEVICES=0 bin/py src/20241012_mix_noise/val_ddim_mix.py -m "multillum_test10_light4" -s '1.0' -g '2.75' -i 2
+CUDA_VISIBLE_DEVICES=1 bin/py src/20241012_mix_noise/val_ddim_mix.py -m "multillum_test10_light4" -s '0.5' -g '2.75' -i 2
+
+
+CUDA_VISIBLE_DEVICES=0 bin/py src/20241012_mix_noise/val_ddim_mix.py -m "multillum_test10_light4" -s '1.0' -g '2.5' -i 2
+CUDA_VISIBLE_DEVICES=1 bin/py src/20241012_mix_noise/val_ddim_mix.py -m "multillum_test10_light4" -s '0.5' -g '2.5' -i 2
+
+
+CUDA_VISIBLE_DEVICES=0 bin/py src/20241012_mix_noise/val_ddim_mix.py -m "multillum_test10_light4" -s '1.0' -g '1.75' -i 2
+CUDA_VISIBLE_DEVICES=1 bin/py src/20241012_mix_noise/val_ddim_mix.py -m "multillum_test10_light4" -s '0.5' -g '1.75' -i 2
