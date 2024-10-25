@@ -119,9 +119,9 @@ class BaseRelightDataset(torch.utils.data.Dataset):
         word_name = self.files[idx]
 
         pixel_values = self.transform['image'](self.get_image(name,"images", 512, 512))
-        control_depth = self.transform['control'](self.get_image(name,"control_depth", 512, 512))   
-        control_normal = self.transform['control'](self.get_image(name,"control_normal", 512, 512))
-        control_normal_bae = self.transform['control'](self.get_image(name,"control_normal_bae", 512, 512))
+        control_depth = self.transform['control'](self.get_control_image(name,"control_depth", 512, 512))   
+        control_normal = self.transform['control'](self.get_control_image(name,"control_normal", 512, 512))
+        control_normal_bae = self.transform['control'](self.get_control_image(name,"control_normal_bae", 512, 512))
         
         shcoeffs = self.get_shcoeffs(name).flatten()
 

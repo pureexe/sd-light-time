@@ -654,6 +654,11 @@ class AffineControl(L.LightningModule):
                     os.makedirs(f"{log_dir}/{epoch_text}source_norm_envmap", exist_ok=True)
                     torchvision.utils.save_image(batch['source_norm_envmap'], f"{log_dir}/{epoch_text}source_norm_envmap/{filename}.jpg")
                 
+                # save sh_coeff
+                if self.feature_type == "shcoeff_order2":
+                    os.makedirs(f"{log_dir}/{epoch_text}shcoeffs", exist_ok=True)
+                    torch.save(batch['sh_coeffs'], f"{log_dir}/{epoch_text}shcoeffs/{filename}.pt")
+                
                 # save prompt
                 os.makedirs(f"{log_dir}/{epoch_text}prompt", exist_ok=True) 
                 with open(f"{log_dir}/{epoch_text}prompt/{filename}.txt", 'w') as f:

@@ -13,3 +13,6 @@ bin/siatv100 src/20241020/train.py -lr 5e-5 -ct deepfloyd --feature_type vae --g
 # 1e-5 version_86528
 cd /ist/ist-share/vision/pakkapon/relight/sd-light-time
 bin/siatv100 src/20241020/train.py -lr 1e-5 -ct deepfloyd --feature_type vae --guidance_scale 1.0 --batch_size 8 
+
+
+# v23 deeeofloyd need to resume
