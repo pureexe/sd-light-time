@@ -6,7 +6,7 @@ from datasets.DDIMArrayEnvDataset import DDIMArrayEnvDataset
 class Coeff27DDIMArrayDataset(DDIMArrayEnvDataset):
 
     def get_mixing_shcoeff(self, source_coeff, target_coeff):
-        return torch.cat([target_coeff[:27]],[source_coeff[27:]], dim=0)
+        return torch.cat([target_coeff[:27],source_coeff[27:]], dim=0)
 
 
     def get_item(self, idx, batch_idx):

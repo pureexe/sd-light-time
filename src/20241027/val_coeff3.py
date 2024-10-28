@@ -19,9 +19,9 @@ CHECKPOINT_FOLDER_NAME = "20241027"
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-i", "--version", type=str, default="87186")
-parser.add_argument("-m", "--mode", type=str, default="faceval10k_fuse_test")
+parser.add_argument("-m", "--mode", type=str, default="face60k_fuse_train3")
 parser.add_argument("-g", "--guidance_scale", type=str, default="1.0")
-parser.add_argument("-c", "--checkpoint", type=str, default="1,2,3,4,5,6,7,8")
+parser.add_argument("-c", "--checkpoint", type=str, default="0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,29,20")
 
 args = parser.parse_args()
 NAMES = {
@@ -43,10 +43,10 @@ CONDITIONS_CLASS = {
     87189: AffineNoControl,
 }
 LRS = {
-    87186: 1e-4,
-    87187: 5e-5,
-    87188: 1e-5,
-    87189: 5e-4,
+    87186: "1e-4",
+    87187: "5e-5",
+    87188: "1e-5",
+    87189: "5e-4",
  }
 DIRNAME = {
     87186: CHECKPOINT_FOLDER_NAME,
@@ -57,10 +57,14 @@ DIRNAME = {
 
 
 def get_from_mode(mode):
-    if mode == "face60k_fuse_train":
-        return "/data/pakkapon/datasets/face/face60k_fuse", 100, CoeffAxis3DDIMArrayDataset,{"index_file":"/data/pakkapon/datasets/face/face60k/train-viz-array.json"}, None
+    if mode == "face60k_fuse_train3":
+        return "/data/pakkapon/datasets/face/face60k_fuse", 100, CoeffAxis3DDIMArrayDataset,{"index_file":"/data/pakkapon/datasets/face/face60k/train-viz-array.json"}, "a photorealistic image"
     elif mode == "faceval10k_fuse_test":
-        return "/data/pakkapon/datasets/face/faceval10k_fuse", 100, CoeffAxis3DDIMArrayDataset,{"index_file":"/data/pakkapon/datasets/face/faceval10k_fuse/val-viz-array.json"}, None
+        return "/data/pakkapon/datasets/face/faceval10k_fuse", 100, CoeffAxis3DDIMArrayDataset,{"index_file":"/data/pakkapon/datasets/face/faceval10k_fuse/val-viz-array.json"}, "a photorealistic image"
+    elif mode == "faceval10k_fuse_test_left":
+        return "/data/pakkapon/datasets/face/faceval10k_fuse", 100, CoeffAxis3DDIMArrayDataset,{"index_file":"/data/pakkapon/datasets/face/faceval10k_fuse/split-x-minus-array.json"}, "a photorealistic image"
+    elif mode == "faceval10k_fuse_test_right":
+        return "/data/pakkapon/datasets/face/faceval10k_fuse", 100, CoeffAxis3DDIMArrayDataset,{"index_file":"/data/pakkapon/datasets/face/faceval10k_fuse/split-x-plus-array.json"}, "a photorealistic image"
     else:
         raise Exception("mode not found")
 
