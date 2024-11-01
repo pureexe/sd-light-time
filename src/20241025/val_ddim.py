@@ -17,11 +17,11 @@ import argparse
 from constants import FOLDER_NAME
 
 MASTER_TYPE = 16
-CHECKPOINT_FOLDER_NAME = "20241021"
+CHECKPOINT_FOLDER_NAME = "20241025"
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument("-i", "--version", type=str, default="2")
+parser.add_argument("-i", "--version", type=str, default="3")
 parser.add_argument("-m", "--mode", type=str, default="multillum_test3")
 parser.add_argument("-g", "--guidance_scale", type=str, default="1,3,5,7")
 parser.add_argument("-c", "--checkpoint", type=str, default="59")
@@ -34,22 +34,21 @@ NAMES = {
     3: 'no_control',
 }
 METHODS = {
-    0: 'vae',
-    1: 'vae',
-    2: 'vae',
-    3: 'vae',
-    4: 'vae',
+    0: 'shcoeff2',
+    1: 'shcoeff2',
+    2: 'shcoeff2',
+    3: 'shcoeff2',
 }
 CONDITIONS_CLASS = {
-    0: AffineDepth,
-    1: AffineDepthNormalBae,
-    2: AffineNormalBae,
+    0: AffineNoControl,
+    1: AffineNoControl,
+    2: AffineNoControl,
     3: AffineNoControl,
 }
 LRS = {
     0: '1e-4',
-    1: '1e-4',
-    2: '1e-4',
+    1: '1e-5',
+    2: '5e-5',
     3: '1e-4',
  }
 DIRNAME = {
@@ -61,12 +60,10 @@ DIRNAME = {
 
 
 def get_from_mode(mode):
-    if mode == "multillum_train":
-        return "/data/pakkapon/datasets/multi_illumination/spherical/train", 100, DDIMArrayEnvDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/split-train2-relight-array.json"}, None
-    elif mode == "multillum_test":
-        return "/data/pakkapon/datasets/multi_illumination/spherical/test", 100, DDIMArrayEnvDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/split-test3-relight-array.json"}, None
-    elif mode == "multillum_test2":
-        return "/data/pakkapon/datasets/multi_illumination/spherical/test", 100, DDIMArrayEnvDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/split-test3-relight24-array.json"}, None
+    if mode == "face_test_left":
+        return "/data/pakkapon/datasets/face/faceval10k", 100, DDIMArrayEnvDataset, {"index_file":"/data/pakkapon/datasets/face/faceval10k/split-x-minus-array.json"}, None
+    elif mode == "face_test_right":
+        return "/data/pakkapon/datasets/face/faceval10k", 100, DDIMArrayEnvDataset, {"index_file":"/data/pakkapon/datasets/face/faceval10k/split-x-plus-array.json"}, None 
     else:
         raise Exception("mode not found")
 
