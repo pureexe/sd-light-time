@@ -2,6 +2,9 @@ Bootstrap: docker
 From: pytorch/pytorch:2.4.1-cuda12.1-cudnn9-devel
 Stage: build
 
+%files
+    requirements.txt requirements.txt
+
 %post
     # update from ubuntu first
     apt update
@@ -10,7 +13,7 @@ Stage: build
     # install openexr-related 
     apt install -y libopenexr-dev
     # install pytorch related library
-    pip install -r https://raw.githubusercontent.com/pureexe/sd-light-time/refs/heads/main/requirement.txt
+    pip install -r requirements.txt
     NOW=`date`
     echo "export NOW=\"${NOW}\"" >> $SINGULARITY_ENVIRONMENT
 
