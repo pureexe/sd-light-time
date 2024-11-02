@@ -1,0 +1,276 @@
+<!-- show different between guidance and method-->
+<!DOCTYPE html class="has-navbar-fixed-top has-navbar-fixed-bottom">
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Dataset viewer </title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/1.0.2/css/bulma.min.css">
+    <style>
+      .image.is-128x256 {
+          height: 128px;
+          width: 256px;
+      }
+      .is-flip-image {
+          transform: scaleX(-1);
+      }
+      body{
+        width: 100vw;
+      }
+    </style>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@cityssm/bulma-sticky-table@3.0.0/bulma-with-sticky-table.min.css" />
+  </head>
+  <body>
+    <div id="app">
+      <div style="display: none;">
+        {{image_index}} This need for start fetch data
+      </div>
+      
+      <div>
+        <div>
+          <div>
+            available_query: {{experiment_details}}
+          </div>
+          <div>
+            {{col_query}}
+          </div>
+          <div>
+            {{row_query}}
+          </div>
+        </div>
+      </div>
+      <div class="container">
+        <div class="notification is-info">
+          Setting column and row using <strong>&row/&col</strong> and change default set using <strong>&guidance=3.0</strong> limit the amount of display using <strong>?q={"scene":["scene1","scene2"]}</strong> 
+        </div>  
+      </div>
+      <div>
+        <table class="table is-bordered is-striped mx-auto">
+          <thead>
+            <tr>
+              <th>Query</th>
+              <th v-for="(value, key) in current_query">{{key}}</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Current</td>
+              <td v-for="(value, key) in getCurrentQuery()" :class="{ 'has-background-primary': key==row_query || key==col_query }" >
+                <div v-if="key==row_query || key==col_query">
+                  ###
+                </div>
+                <div v-else >
+                  {{value}}
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>  
+      <div>
+        <table class="table is-bordered is-striped mx-auto">
+          <thead>
+            <tr>
+              <th></th>
+              <th> {{col_query}}</th>
+              <th v-for="col in experiment_details[col_query]">
+                {{col}}
+              </th>    
+            </tr>
+            
+          </thead>
+          <tbody>
+            <tr>
+              <td>{{row_query}} </td>
+              <td class="has-background-danger">
+                <figure class="image is-128x128">
+                    <img :src="getImage(0, 0,'source_image', 'source')" loading="lazy"/>
+                  </figure>
+              </td>
+              <td v-for="col,col_index in experiment_details[col_query]" class="has-background-link">
+                <figure class="image is-128x128">
+                  <img :src="getImage(0, col_index,'source_image')" loading="lazy"/>
+                </figure>
+              </td>
+            </tr>
+            <tr v-for="row,row_index in experiment_details[row_query]">
+              <td>{{row}}</td>
+              <td class="has-background-link">
+                <figure class="image is-128x128">
+                  <img :src="getImage(row_index, 0,'source_image')" loading="lazy"/>
+                </figure>
+              </td>
+              <td v-for="col, col_index in experiment_details[col_query]">
+                <figure class="image is-128x128">
+                  <img :src="getImage(row_index, col_index,'crop_image')" loading="lazy"/>
+                </figure>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    </div>
+        
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script>
+    async function getImageIndex(){
+      const response = await fetch('/datasets/face/faceval10k/split-x-plus-array.json');
+      const data = await response.json();
+      return data;
+    }
+    const { createApp, ref } = Vue
+      createApp({
+        setup() {
+          const image_index = ref([]);
+          const envmap_index = ref([]);        
+          const methods = ref(['no_control', 'depth', 'bae', 'both_bae']);
+          const checkpoints = ref({
+            'no_control': 254,
+            'depth': 299,
+            'bae': 304,
+            'both_bae': 349
+          })
+          const method_names = ref({
+            'no_control': 'No Control',
+            'depth': 'Depth',
+            'bae': 'Normal (BAE)',
+            'both_bae': 'Depth + Normal (BAE)'
+          })
+
+          const available_query = ['scene','light', 'guidance', 'method', 'ratio'] // 'denosing_step'
+          const experiment_details = {
+            'scene': [],
+            'source': [
+              "60000/60000",
+              "60000/60001",
+              "60000/60002",
+              "60000/60003",
+              "60000/60004",
+              "60000/60005",
+              "60000/60006",
+              "60000/60007",
+              "60000/60008",
+              "60000/60009"
+            ],
+            'target': [
+              "67000/67411",
+              "60000/60059",
+              "63000/63026",
+              "62000/62832",
+              "67000/67136",
+              "61000/61783",
+              "66000/66417",
+              "69000/69875",
+              "63000/63677",
+              "61000/61066"
+            ],
+            'guidance': ['1.0', '3.0', '5.0', '7.0'],
+            'ratio': ['1.0'],
+            'method': [ 'no_control' ],
+            'checkpoint': [0,10,20]
+          }
+          
+          const url = new URL(window.location.href);
+          let current_query = {
+            'scene':  url.searchParams.get('scene'),
+            'source':  url.searchParams.get('source'),
+            'target':  url.searchParams.get('target'),
+            'guidance':  url.searchParams.get('guidance'),
+            //'denosing_step':  url.searchParams.get('denosing_step'),
+            'ratio':  url.searchParams.get('ratio'),
+            'method':  url.searchParams.get('method'),
+            'checkpoint': url.searchParams.get('checkpoint')
+          }
+          let row_q= url.searchParams.get('row');
+          let col_q = url.searchParams.get('col');
+          if(!row_q){
+            row_q = 'source'
+          }
+          if(!col_q){
+            col_q = 'checkpoint'
+          }
+          const row_query = ref(row_q)
+          const col_query = ref(col_q)
+
+          
+          return {
+            image_index,
+            envmap_index,
+            methods,
+            method_names,
+            checkpoints,
+            row_query,
+            col_query,
+            experiment_details,
+            current_query
+          }
+        },
+        methods:{
+          
+          getCurrentQuery(){
+            return {
+              'scene': (this.current_query['scene']) ? this.current_query['scene'] : '???',
+              'source': (this.current_query['source']) ? this.current_query['source'] : this.experiment_details['source'][0],
+              'target': (this.current_query['target']) ? this.current_query['target'] : this.experiment_details['target'][0],
+              'guidance': (this.current_query['guidance']) ? this.current_query['guidance'] : '1.0',
+              'ratio': (this.current_query['ratio']) ? this.current_query['ratio'] : '1.0',
+              'method': (this.current_query['method']) ? this.current_query['method'] : this.experiment_details['method'][0],
+              'checkpoint': (this.current_query['checkpoint']) ? this.current_query['checkpoint'] : this.experiment_details['checkpoint'][0] 
+            }
+          },
+          getVersion(content){
+            return '87757';
+          },
+          getImage(row_id, col_id, dir_type='crop_image',target_type='target'){
+            let content = this.getCurrentQuery()
+            
+            content[this.row_query] = this.experiment_details[this.row_query][row_id];
+            content[this.col_query] = this.experiment_details[this.col_query][col_id];
+            content['version'] = this.getVersion(content);
+            target_type = (target_type == 'target') ? 'target' : 'source';
+            source_image = content['source'].replace('/','-');
+            target_image = content['target'].replace('/','-');
+            if (target_type == 'source'){
+              return '/datasets/face/faceval10k/images/'+content['target']+'.jpg'
+            }
+            if(dir_type=='source_image'){
+              return '/datasets/face/faceval10k/images/'+content['source']+'.jpg'
+            }
+            
+            //return '/output/20241027/val_coeff27_faceval10k_fuse_test_right/no_control/'+content['guidance']+'/no_control/1e-4/chk'+content['checkpoint']+'/lightning_logs/version_87762/'+dir_type+'/'+source_image+'_'+target_image+'.png'
+            return '/output/20241027/val_coeff27_faceval10k_fuse_test_right/no_control/'+content['guidance']+'/no_control/0.0001/chk'+content['checkpoint']+'/lightning_logs/version_87762/crop_image/'+source_image+'_'+target_image+'.png';
+
+          },
+          inject_details(){
+            const url = new URL(window.location.href);
+            let details = url.searchParams.get('q');
+            if(details){
+              details = JSON.parse(details);
+              console.log(details)
+              for (let key in details) {
+                console.log(key)
+                if (this.experiment_details.hasOwnProperty(key)) {
+                  console.log("UPDATE!")
+                  this.experiment_details[key] = details[key];  // Update A's property with B's value
+                }
+              }
+            }
+
+          }
+        },
+        mounted() {
+          this.current_query = this.getCurrentQuery();
+          var self = this;
+          getImageIndex().then(ids =>{
+            self.image_index = ids.image_index;
+            self.envmap_index = ids.envmap_index;
+            self.current_scene = ids.image_index[0].split('/')[0];
+            self.experiment_details['scene'] = ids.image_index.map(x => x.split('/')[1])
+            self.inject_details();
+          });
+        }
+      }).mount('#app')
+            </script>
+  </body>
+</html>
