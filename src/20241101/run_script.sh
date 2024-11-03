@@ -1,1 +1,1 @@
-NODE=v23 GPU=0 NAME=test_ddim bin/silocal src/20241102/face_ddim_inversion.py
+NODE=v15 GPU=0 NAME=test_sd35_medium bin/siat /pure/c2/project/sd-light-time/src/20241101/sd35-medium.py
