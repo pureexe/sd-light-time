@@ -6,4 +6,4 @@ export SINGULARITYENV_HF_HUB_OFFLINE=1
 export SINGULARITYENV_HF_HUB_HOME=/ist/ist-share/vision/huggingface/
 export SINGULARITYENV_HF_HUB_CACHE=/ist/ist-share/vision/huggingface/hub/
 
-singularity exec --bind /ist/ist-share/vision/relight/datasets:/data/pakkapon/datasets --bind /ist:/ist --nv /ist/ist-share/vision/pakkapon/singularity/lighttime-deepfloyd.sif python $@
+singularity exec --bind /ist/ist-share/vision/relight/datasets:/data/pakkapon/datasets --bind /ist:/ist --nv /ist/ist-share/vision/pakkapon/singularity/sd35.sif python $@

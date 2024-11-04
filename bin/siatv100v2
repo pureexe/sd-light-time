@@ -1,0 +1,5 @@
+#!/bin/bash
+
+
+singularity exec --bind /ist:/ist  --bind /ist/ist-share/vision/relight/datasets:/data/pakkapon/datasets --nv --env HF_HUB_CACHE=/ist/ist-share/vision/huggingface/hub/ --env HUB_HOME=/ist/ist-share/vision/huggingface/ --env HF_HUB_OFFLINE=1 --env HF_HOME=/ist/users/$USER/.cache/huggingface --env PYTHONPATH=$(pwd):$(pwd)/src /ist/ist-share/vision/pakkapon/singularity/diffusers0310.sif python $@
+
