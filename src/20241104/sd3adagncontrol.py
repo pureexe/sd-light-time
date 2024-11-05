@@ -102,17 +102,24 @@ class SD3AdagnControl(L.LightningModule):
         #     subfolder="text_encoder_3",
         #     quantization_config=quantization_config,
         # )
+        DISABLE_T5 = False
 
+        pipe_args = {
+            'pretrained_model_name_or_path': sd_path,
+            'safety_checker': None, 
+            'torch_dtype': MASTER_TYPE
+        }
+
+        if DISABLE_T5:
+            pipe_args['text_encoder_3'] = None 
+            pipe_args['tokenizer_3'] = None
 
         # load pipeline
         self.pipe =  StableDiffusion3Pipeline.from_pretrained(
             sd_path,
             safety_checker=None,
             torch_dtype=MASTER_TYPE,
-            #text_encoder_3=text_encoder_3,
-            #device_map="balanced",
-
-            text_encoder_3=None, #
+            text_encoder_3=None, 
             tokenizer_3=None,
         )
 
@@ -306,7 +313,7 @@ class SD3AdagnControl(L.LightningModule):
 
         # precompute-variable
         is_apply_cfg = self.guidance_scale > 1
-        epoch_text = f"epoch_{self.current_epoch:04d}/" if is_seperate_dir_with_epoch else ""
+        epoch_text = f"epoch_{self.current_epoch:04d}_step_{self.global_step:06d}/" if is_seperate_dir_with_epoch else ""
         source_name = f"{batch['name'][0].replace('/','-')}"
 
         # Apply the source light direction

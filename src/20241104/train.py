@@ -18,10 +18,10 @@ parser = argparse.ArgumentParser()
 parser.add_argument('-lr', '--learning_rate', type=float, default=1e-4)
 parser.add_argument('-ckpt', '--checkpoint', type=str, default=None)
 parser.add_argument('--batch_size', type=int, default=1)
-parser.add_argument('-c', '--every_n_epochs', type=int, default=5) 
-parser.add_argument('--feature_type', type=str, default='vae')
+parser.add_argument('-c', '--every_n_epochs', type=int, default=1) 
+parser.add_argument('--feature_type', type=str, default='shcoeff_order2')
 parser.add_argument('-gm', '--gate_multipiler', type=float, default=1)
-parser.add_argument('--val_check_interval', type=float, default=1.0)
+parser.add_argument('--val_check_interval', type=float, default=0.05)
 parser.add_argument(
     '-ct', 
     '--control_type', 
@@ -77,7 +77,6 @@ def main():
         callbacks=[checkpoint_callback],
         default_root_dir=OUTPUT_MULTI,
         val_check_interval=args.val_check_interval,
-        num_sanity_val_steps=0
     )
     if not args.checkpoint or not os.path.exists(args.checkpoint):
        trainer.validate(model, val_dataloader)
