@@ -51,7 +51,7 @@
                   </td>
                   <td v-for="timestep in timesteps">
                     <figure class="image is-128x128 mx-auto">
-                      <img :src="'/output/20241104/multi_mlp_fit/lightning_logs/version_'+version+'/epoch_0000_step_'+getStepId(timestep)+'/crop_image/'+getImageDir(image_idx)+'-'+getImageName(image_idx)+'_'+getImageDir(envmap_idx)+'-'+getImageName(envmap_idx)+'.png'" loading="lazy"/>
+                      <img :src="'/output/20241104/multi_mlp_fit/lightning_logs/version_'+version+'/epoch_'+getEpochId(timestep)+'_step_'+getStepId(timestep)+'/crop_image/'+getImageDir(image_idx)+'-'+getImageName(image_idx)+'_'+getImageDir(envmap_idx)+'-'+getImageName(envmap_idx)+'.png'" loading="lazy"/>
                     </figure>
                   </td>
                 </tr>
@@ -72,7 +72,7 @@
         setup() {
           const image_index = ref([0,1,2]);
           const envmap_index = ref(['self',1237,1425]);
-          const timesteps = ref([0, 3000, 6000, 9000, 12000, 15000, 18000, 21000, 24000])
+          const timesteps = ref([0, 30000, 60000, 90000, 120000, 150000, 180000,])
           const learnring_rates = ref(['1e-4', '5e-4', '5e-5', '1e-5'])
           const versions = ref(['89249','89250','89251','89252'])
           return {
@@ -97,9 +97,13 @@
             let width = 6;
             return String(step_id).padStart(width, '0');
           },
-          getEpochId(epoch_id){
+          getEpochId(step_id){
             let width = 4;
-            return String(epoch_id).padStart(width, '0');
+            let n_step_id = step_id-1;
+            if(n_step_id < 0){
+              n_step_id = 0;
+            }
+            return String(Math.floor((n_step_id) / 60000)).padStart(width, '0');
           },
           getDirection(){
             return "left";
