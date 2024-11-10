@@ -25,3 +25,4 @@ bitsandbytes==0.44.0
 
 # DeepFloyd dependencies
 sentencepiece==0.2.0
+einops==0.8.0
