@@ -1,0 +1,1 @@
+NODE=v22 GPU=1 NAME=test_sd35_medium bin/siat src/20241102/flux_dev.py
