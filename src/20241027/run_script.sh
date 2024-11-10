@@ -26,3 +26,4 @@ bin/siatv100 src/20241027/train.py -lr 5e-5 -ct no_control --feature_type shcoef
 bin/siatv100 src/20241027/train.py -lr 1e-5 -ct no_control --feature_type shcoeff_fuse --guidance_scale 1.0 --batch_size 16 -c 1 -ckpt output/20241027/multi_mlp_fit/lightning_logs/version_87188/checkpoints/epoch=000039.ckpt
 
 # LR 5e-4: version 88089 continue from version_87188
+bin/siatv100 src/20241027/train.py -lr 5e-4 -ct no_control --feature_type shcoeff_fuse --guidance_scale 1.0 --batch_size 16 -c 1 -ckpt output/20241027/multi_mlp_fit/lightning_logs/version_87189/checkpoints/epoch=000039.ckpt

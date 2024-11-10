@@ -1,0 +1,123 @@
+<!-- show different between guidance and method-->
+<!DOCTYPE html class="has-navbar-fixed-top has-navbar-fixed-bottom">
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Dataset viewer </title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/1.0.2/css/bulma.min.css">
+    <style>
+      .image.is-128x256 {
+          height: 128px;
+          width: 256px;
+      }
+      .is-flip-image {
+          transform: scaleX(-1);
+      }
+      body{
+        width: 100vw;
+      }
+      
+    </style>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@cityssm/bulma-sticky-table@3.0.0/bulma-with-sticky-table.min.css" />
+  </head>
+  <body>
+    
+    <div id="app" style="max-width: 100vw;">
+      <section class="section" style="text-align: center;">
+        <h1 class="title">SD3.5 Medium training</h1>
+      </section>
+      <section class="section" v-for="version, version_idx in versions">
+        <p  class="is-size-3	has-text-centered	">
+            Learning rate: {{learnring_rates[version_idx]}}
+        </p>
+        <table v-for="image_idx in image_index" class="table is-bordered is-striped mx-auto">
+            <thead>
+                <tr>
+                    <th class="is-link">
+                        Target Lighting
+                    </th>
+                    <th v-for="timestep in timesteps">
+                        {{timestep}}
+                    </th>
+                </tr>
+            </thead>
+            <tbody>  
+                <tr v-for="envmap_idx, envmap_i in envmap_index.map((a) => a == 'self' ? image_idx : a)">
+                  <td :class="{'is-danger': envmap_i == 0, 'is-link': envmap_i != 0,}">
+                    <figure class="image is-128x128 mx-auto">
+                      <img :src="'/output/datasets/face/face60k/images/'+getImageDir(envmap_idx)+'/'+getImageName(envmap_idx)+'.jpg'" loading="lazy"/>
+                    </figure>
+                  </td>
+                  <td v-for="timestep in timesteps">
+                    <figure class="image is-128x128 mx-auto">
+                      <img :src="'/output/20241104/multi_mlp_fit/lightning_logs/version_'+version+'/epoch_'+getEpochId(timestep)+'_step_'+getStepId(timestep)+'/crop_image/'+getImageDir(image_idx)+'-'+getImageName(image_idx)+'_'+getImageDir(envmap_idx)+'-'+getImageName(envmap_idx)+'.png'" loading="lazy"/>
+                    </figure>
+                  </td>
+                </tr>
+            </tbody>
+        </table>
+      </section>
+    </div>
+        
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script>
+    async function getImageIndex(){
+      const response = await fetch('/output/datasets/face/face60k/boy.json');
+      const data = await response.json();
+      return data;
+    }
+    const { createApp, ref } = Vue
+      createApp({
+        setup() {
+          const image_index = ref([0,1,2]);
+          const envmap_index = ref(['self',1237,1425]);
+          const timesteps = ref([0, 30000, 60000, 90000, 120000, 150000, 180000,])
+          const learnring_rates = ref(['1e-4', '5e-4', '5e-5', '1e-5'])
+          const versions = ref(['89249','89250','89251','89252'])
+          return {
+            image_index,
+            envmap_index,
+            timesteps,
+            learnring_rates,
+            versions
+          }
+        },
+        methods: {
+          getImageName(file_id){
+            let width = 5;
+            return String(file_id).padStart(width, '0');
+          },
+          getImageDir(file_id){
+            let width = 5;
+            let dir_id = Math.floor(file_id / 1000) * 1000
+            return String(dir_id).padStart(width, '0');
+          },
+          getStepId(step_id){
+            let width = 6;
+            return String(step_id).padStart(width, '0');
+          },
+          getEpochId(step_id){
+            let width = 4;
+            let n_step_id = step_id-1;
+            if(n_step_id < 0){
+              n_step_id = 0;
+            }
+            return String(Math.floor((n_step_id) / 60000)).padStart(width, '0');
+          },
+          getDirection(){
+            return "left";
+          },
+        },
+        mounted() {
+          var self = this;
+          /*
+          getImageIndex().then(ids =>{
+            self.image_index = ids;
+          });
+          */
+        }
+      }).mount('#app')
+    </script>
+  </body>
+</html>
