@@ -15,6 +15,7 @@ from LineNotify import notify
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-lr', '--learning_rate', type=float, default=1e-4)
+parser.add_argument('-clr', '--ctrlnet_lr', type=float, default=1)
 parser.add_argument('-ckpt', '--checkpoint', type=str, default=None)
 parser.add_argument('--batch_size', type=int, default=1)
 parser.add_argument('-c', '--every_n_epochs', type=int, default=5) 
@@ -58,6 +59,7 @@ def main():
         gate_multipiler=args.gate_multipiler,
         guidance_scale=args.guidance_scale,
         feature_type=args.feature_type,
+        ctrlnet_lr=args.ctrlnet_lr
     )
     train_dir = args.dataset
     val_dir = args.dataset_val 

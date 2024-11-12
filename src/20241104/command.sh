@@ -9,3 +9,12 @@ bin/siatv100v2 src/20241104/train.py -lr 5e-5 -ct no_control --feature_type shco
 
 # version 89252
 bin/siatv100v2 src/20241104/train.py -lr 1e-5 -ct no_control --feature_type shcoeff_order2 --guidance_scale 3.5 --batch_size 1 -c 1
+
+# version 
+
+# version 89755 1e-4cltr0.1 (NAN at epoch 1)
+
+# version 89760 1e-4cltr0.05 (NAN at epoch 1)
+
+
+# version 89741  scrath 1e-5

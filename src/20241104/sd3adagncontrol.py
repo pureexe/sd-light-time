@@ -374,6 +374,7 @@ class SD3AdagnControl(L.LightningModule):
                 num_steps=28,
                 seed=self.seed
             )
+            # need to re-generate without inversion 
 
             pt_image = decode_imgs(relit_latents, self.pipe) #[range 0-1] shape[b,c,h,w]
             gt_on_batch = 'target_image' if "target_image" in batch else 'source_image'

@@ -27,6 +27,7 @@ class SDDiffusionFace(L.LightningModule):
             feature_type="diffusion_face",
             num_inversion_steps=500,
             num_inference_steps=500,
+            ctrlnet_lr=1,
             *args,
             **kwargs
         ) -> None:
@@ -37,6 +38,7 @@ class SDDiffusionFace(L.LightningModule):
         self.use_set_guidance_scale = False
         self.learning_rate = learning_rate
         self.feature_type = feature_type
+        self.ctrlnet_lr = ctrlnet_lr
 
         self.num_inversion_steps = num_inversion_steps
         self.num_inference_steps = num_inference_steps
@@ -395,7 +397,7 @@ class SDDiffusionFace(L.LightningModule):
     def configure_optimizers(self):
         optimizer = torch.optim.Adam([
             {'params': self.adaptive_group_norm, 'lr': self.learning_rate},
-            {'params': self.controlnet_trainable, 'lr': self.learning_rate},
+            {'params': self.controlnet_trainable, 'lr': self.learning_rate * self.ctrlnet_lr},
         ])
         return optimizer
     
