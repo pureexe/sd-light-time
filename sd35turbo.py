@@ -1,5 +1,6 @@
 from diffusers import BitsAndBytesConfig, SD3Transformer2DModel
 from diffusers import StableDiffusion3Pipeline
+from transformers import T5EncoderModel
 import torch
 
 model_id = "stabilityai/stable-diffusion-3.5-large-turbo"
