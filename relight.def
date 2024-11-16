@@ -6,7 +6,7 @@ Stage: build
     # update from ubuntu first
     apt update
     # install Linux tools for ffmpeg
-    apt install -y libxrender1 libfontconfig1 ffmpeg 
+    apt install -y libxrender1 libfontconfig1 ffmpeg git
     # install openexr-related 
     apt install -y libopenexr-dev
     # install pytorch related library
