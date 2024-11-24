@@ -12,7 +12,7 @@ import numpy as np
 import torchvision
 
 from constants import *
-from diffusers import StableDiffusionControlNetPipeline, UNet2DConditionModel, ControlNetModel
+from diffusers import StableDiffusionControlNetPipeline, UNet2DConditionModel, ControlNetModel, StableDiffusionPipeline
 from InversionHelper import get_ddim_latents
 from LightEmbedingBlock import set_light_direction, add_light_block
 
@@ -431,3 +431,49 @@ class ScrathSDDiffusionFace(SDDiffusionFace):
             self.pipe.enable_model_cpu_offload()
             self.pipe.enable_xformers_memory_efficient_attention()
 
+
+class SDWithoutAdagnDiffusionFace(SDDiffusionFace):
+    
+    def get_light_features(self, *args, **kwargs):
+        # We don't use light feature, we only use controlnet path
+        return None
+    
+    def setup_light_block(self):
+        self.pipe.to('cuda')
+
+
+class SDOnlyAdagnDiffusionFace(SDDiffusionFace):
+    def setup_sd(self, sd_path="runwayml/stable-diffusion-v1-5", controlnet_path=None):
+        # load main UNet
+        unet = UNet2DConditionModel.from_pretrained(sd_path, subfolder='unet')
+
+        # load pipeline
+        self.pipe =  StableDiffusionPipeline.from_pretrained(
+            sd_path,
+            unet=unet, # We add unet here to prevent it from reloading Unet
+            safety_checker=None,
+            torch_dtype=MASTER_TYPE
+        )
+
+        # load unet from pretrain 
+        self.pipe.unet.requires_grad_(False)
+        self.pipe.vae.requires_grad_(False)
+        self.pipe.text_encoder.requires_grad_(False)
+
+        is_save_memory = False
+        if is_save_memory:
+            self.pipe.enable_model_cpu_offload()
+            self.pipe.enable_xformers_memory_efficient_attention()
+    
+    def setup_trainable(self):
+        # register trainable module to pytorch lighting model 
+
+        # register adaptive group_norm
+        adaptive_group_norm = filter(lambda p: p.requires_grad, self.pipe.unet.parameters())
+        self.adaptive_group_norm = torch.nn.ParameterList(adaptive_group_norm)
+
+    def configure_optimizers(self):
+        optimizer = torch.optim.Adam([
+            {'params': self.adaptive_group_norm, 'lr': self.learning_rate},
+        ])
+        return optimizer

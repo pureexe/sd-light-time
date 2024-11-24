@@ -28,9 +28,28 @@ class DiffusionFaceRelightDataset(torch.utils.data.Dataset):
         self.setup_transform()
         self.setup_diffusion_face()
         # setup image index
-        self.index_file = self.get_avaliable_images()
+        if index_file != "" and index_file != None:
+            self.index_file = kwargs['index_file']
+            self.build_index()
+        else:
+            self.index_file = self.get_avaliable_images()
         self.image_index = self.index_file
         self.files = self.image_index
+
+    def build_index(self):
+        if isinstance(self.index_file, dict):
+            self.image_index = self.index_file['image_index']
+            self.envmap_index = self.index_file['envmap_index']
+        # check if index_file exists
+        elif os.path.exists(self.index_file):
+            with open(self.index_file) as f:
+                index = json.load(f)
+            self.image_index = index['image_index']
+            self.envmap_index = index['envmap_index']
+        else:
+            raise ValueError("index_file should be a dictionary or a path to a file")
+                
+        assert len(self.image_index) == len(self.envmap_index), "image_index and envmap_index should have the same length"
 
     def get_avaliable_images(self, directory_path = None, accept_extensions=ACCEPT_EXTENSION):
         """

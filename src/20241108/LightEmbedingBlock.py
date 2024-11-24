@@ -147,12 +147,12 @@ def forward_lightcondition(self, input_tensor: torch.Tensor, temb: torch.Tensor,
 def set_light_direction(self, direction, is_apply_cfg=False):
     for block_id in range(len(self.down_blocks)):
         for resblock_id in range(len(self.down_blocks[block_id].resnets)):
-            if hasattr(self.down_blocks[block_id].resnets[resblock_id], 'time_emb_proj'):
+            if hasattr(self.down_blocks[block_id].resnets[resblock_id], 'time_emb_proj') and hasattr(self.down_blocks[block_id].resnets[resblock_id], 'light_block'):
                 self.down_blocks[block_id].resnets[resblock_id].light_block.set_light_direction(direction)
                 self.down_blocks[block_id].resnets[resblock_id].light_block.set_apply_cfg(is_apply_cfg) 
     for block_id in range(len(self.up_blocks)):
         for resblock_id in range(len(self.up_blocks[block_id].resnets)):
-            if hasattr(self.up_blocks[block_id].resnets[resblock_id], 'time_emb_proj'):
+            if hasattr(self.up_blocks[block_id].resnets[resblock_id], 'time_emb_proj') and hasattr(self.up_blocks[block_id].resnets[resblock_id], 'light_block'):
                 self.up_blocks[block_id].resnets[resblock_id].light_block.set_light_direction(direction)
                 self.up_blocks[block_id].resnets[resblock_id].light_block.set_apply_cfg(is_apply_cfg)
 

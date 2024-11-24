@@ -1,33 +1,33 @@
 import torch
 
-from datasets.DDIMDiffusionFaceRelightDataset import DDIMDiffusionFaceRelightDataset
-from datasets.DiffusionFaceRelightDataset import DiffusionFaceRelightDataset
+from sd3lightattentioncontrol import SD3LightAttentionControl
+
+from datasets.RelightDataset import RelightDataset
+from datasets.DDIMArrayEnvDataset import DDIMArrayEnvDataset
 
 import lightning as L
 
 import argparse 
 import os
 
-from constants import OUTPUT_MULTI, DATASET_ROOT_DIR, DATASET_VAL_DIR, DATASET_VAL_SPLIT
-from sddiffusionface import SDDiffusionFace, ScrathSDDiffusionFace, SDWithoutAdagnDiffusionFace, SDOnlyAdagnDiffusionFace
+from constants import OUTPUT_MULTI, DATASET_ROOT_DIR, DATASET_VAL_DIR, DATASET_VAL_SPLIT,DATASET_TRAIN_SPLIT
 
 from LineNotify import notify
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-lr', '--learning_rate', type=float, default=1e-4)
-parser.add_argument('-clr', '--ctrlnet_lr', type=float, default=1)
 parser.add_argument('-ckpt', '--checkpoint', type=str, default=None)
 parser.add_argument('--batch_size', type=int, default=1)
-parser.add_argument('-c', '--every_n_epochs', type=int, default=5) 
-parser.add_argument('--feature_type', type=str, default='diffusion_face')
+parser.add_argument('-c', '--every_n_epochs', type=int, default=1) 
+parser.add_argument('--feature_type', type=str, default='shcoeff_order2')
 parser.add_argument('-gm', '--gate_multipiler', type=float, default=1)
-parser.add_argument('--val_check_interval', type=float, default=1.0)
+parser.add_argument('--val_check_interval', type=float, default=0.05)
 parser.add_argument('--dataset_train_multiplier', type=int, default=1)
 parser.add_argument(
-    '-nt', 
-    '--network_type', 
+    '-ct', 
+    '--control_type', 
     type=str,
-    choices=['sd','scrath', 'sd_without_adagn', 'sd_only_adagn'],  # Restrict the input to the accepted strings
+    choices=['depth','normal', 'both','no_control', 'bae', 'both_bae', 'deepfloyd'],  # Restrict the input to the accepted strings
     help="select control type for the model",
     required=True
 )
@@ -35,8 +35,8 @@ parser.add_argument('-guidance', '--guidance_scale', type=float, default=1.0)
 parser.add_argument('-dataset', '--dataset', type=str, default=DATASET_ROOT_DIR) 
 parser.add_argument('-dataset_val', '--dataset_val', type=str, default=DATASET_VAL_DIR) 
 parser.add_argument('-dataset_val_split', '--dataset_val_split', type=str, default=DATASET_VAL_SPLIT) 
-parser.add_argument('-specific_prompt', type=str, default="a photorealistic image")  # we use static prompt to make thing same as mint setting
-
+parser.add_argument('-dataset_train_split', '--dataset_train_split', type=str, default=DATASET_TRAIN_SPLIT) 
+parser.add_argument('-specific_prompt', type=str, default="") 
 parser.add_argument(
     '-split',  
     type=str,
@@ -47,14 +47,7 @@ parser.add_argument(
 args = parser.parse_args()
 
 def get_model_class():
-    if args.network_type == 'sd':
-        return SDDiffusionFace
-    elif args.network_type == 'scrath':
-        return ScrathSDDiffusionFace
-    elif args.network_type == 'sd_without_adagn':
-        return SDWithoutAdagnDiffusionFace
-    elif args.network_type == 'sd_only_adagn':
-        return SDOnlyAdagnDiffusionFace
+    return SD3LightAttentionControl
 
 @notify
 def main():
@@ -64,18 +57,16 @@ def main():
         gate_multipiler=args.gate_multipiler,
         guidance_scale=args.guidance_scale,
         feature_type=args.feature_type,
-        ctrlnet_lr=args.ctrlnet_lr
     )
     train_dir = args.dataset
     val_dir = args.dataset_val 
     specific_prompt = args.specific_prompt if args.specific_prompt != "" else None
-    train_dataset = DiffusionFaceRelightDataset(root_dir=train_dir, dataset_multiplier=args.dataset_train_multiplier,specific_prompt=specific_prompt)
-    val_dataset = DDIMDiffusionFaceRelightDataset(root_dir=val_dir, index_file=args.dataset_val_split,specific_prompt=specific_prompt)
+    train_dataset = RelightDataset(root_dir=train_dir, index_file=args.dataset_train_split, dataset_multiplier=args.dataset_train_multiplier,specific_prompt=specific_prompt, image_size=1024)
+    val_dataset = DDIMArrayEnvDataset(root_dir=val_dir, index_file=args.dataset_val_split,specific_prompt=specific_prompt, image_size=1024)
     train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, num_workers=8)
     val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=1, shuffle=False)
 
     checkpoint_callback = L.pytorch.callbacks.ModelCheckpoint(
-        #filename="epoch{epoch:06d}_step{step:06d}",
         filename="{epoch:06d}",
         every_n_epochs=args.every_n_epochs,
         save_top_k=-1,  # <--- this is important!
@@ -88,7 +79,6 @@ def main():
         callbacks=[checkpoint_callback],
         default_root_dir=OUTPUT_MULTI,
         val_check_interval=args.val_check_interval,
-        num_sanity_val_steps=0
     )
     if not args.checkpoint or not os.path.exists(args.checkpoint):
        trainer.validate(model, val_dataloader)

@@ -7,8 +7,11 @@ from torch.utils.data import DataLoader
 from datasets.DiffusionFaceRelightDataset import DiffusionFaceRelightDataset
 
 DATASET_TRAIN_PATH ="/ist/ist-share/vision/relight/datasets/face/ffhq_defareli/train"
+DATASET_VIS_PATH ="/ist/ist-share/vision/relight/datasets/face/ffhq_defareli/train"
 
 def main():
+
+
     dataset = DiffusionFaceRelightDataset(root_dir=DATASET_TRAIN_PATH)
     # test if it can get 60k image 
     assert len(dataset) == 60000, "training set size is 60k"
@@ -20,8 +23,6 @@ def main():
         for k in ['name', 'source_image', 'background', 'shading', 'diffusion_face', 'text']:
             assert k in batch
         # test if it return shape 616 
-        print(batch['diffusion_face'].shape)
-        exit()
         break # we only test for 1 batch 
 
 

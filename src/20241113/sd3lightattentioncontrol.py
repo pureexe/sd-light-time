@@ -1,6 +1,6 @@
 """
-sd3adagncontrol.py
-SD3 Adaptive group norm
+sd3lightattentioncontrol.py
+Stable Diffusion 3 with light control similar to prompt control
 """
 import copy
 import os 
@@ -13,15 +13,16 @@ import torchvision
 
 from constants import *
 from diffusers import StableDiffusion3Pipeline
+from diffusers.utils import pt_to_pil
 from diffusers.training_utils import compute_density_for_timestep_sampling, compute_loss_weighting_for_sd3
+from light_injector.transformer import inject_transformer
 
-from lightembedblock_sd3 import set_light_direction, add_light_block
 from sd3RFinversion import interpolated_inversion, interpolated_denoise, encode_imgs, decode_imgs
 from transformers import T5EncoderModel, BitsAndBytesConfig
 
 MASTER_TYPE = torch.float16
 
-class SD3AdagnControl(L.LightningModule):
+class SD3LightAttentionControl(L.LightningModule):
 
     def __init__(
             self,
@@ -52,12 +53,9 @@ class SD3AdagnControl(L.LightningModule):
         self.rf_start_step = rf_start_step
         self.rf_end_step = rf_end_step
 
-
         self.num_inversion_steps = num_inversion_steps
         self.num_inference_steps = num_inference_steps
         self.save_hyperparameters()
-
-        
 
         self.seed = 42
         self.is_plot_train_loss = True
@@ -81,7 +79,7 @@ class SD3AdagnControl(L.LightningModule):
             mlp_in_channel = 4*4*4*2
         else:
             raise ValueError(f"feature_type {self.feature_type} is not supported")
-        add_light_block(self.pipe.transformer, in_channel=mlp_in_channel)
+        inject_transformer(self.pipe.transformer, in_channel=mlp_in_channel)
         self.pipe.to('cuda')
 
         # filter trainable layer
@@ -95,14 +93,10 @@ class SD3AdagnControl(L.LightningModule):
         
         # recommend: drop T5 encoder to save memory as mention in https://huggingface.co/docs/diffusers/main/en/api/pipelines/stable_diffusion/stable_diffusion_3#dropping-the-t5-text-encoder-during-inference
 
-        # load T5 at 8bit 
-        # quantization_config = BitsAndBytesConfig(load_in_8bit=True)
-        # text_encoder_3 = T5EncoderModel.from_pretrained(
-        #     sd_path,
-        #     subfolder="text_encoder_3",
-        #     quantization_config=quantization_config,
-        # )
-        DISABLE_T5 = False
+
+        DISABLE_T5 = True
+        T5_8BIT = False
+
 
         pipe_args = {
             'pretrained_model_name_or_path': sd_path,
@@ -113,15 +107,20 @@ class SD3AdagnControl(L.LightningModule):
         if DISABLE_T5:
             pipe_args['text_encoder_3'] = None 
             pipe_args['tokenizer_3'] = None
+        elif T5_8BIT:
+            #load T5 at 8bit 
+            quantization_config = BitsAndBytesConfig(load_in_8bit=True)
+            text_encoder_3 = T5EncoderModel.from_pretrained(
+                sd_path,
+                subfolder="text_encoder_3",
+                quantization_config=quantization_config,
+            )
+            pipe_args['text_encoder_3'] = text_encoder_3 
+            
+
 
         # load pipeline
-        self.pipe =  StableDiffusion3Pipeline.from_pretrained(
-            sd_path,
-            safety_checker=None,
-            torch_dtype=MASTER_TYPE,
-            text_encoder_3=None, 
-            tokenizer_3=None,
-        )
+        self.pipe =  StableDiffusion3Pipeline.from_pretrained(**pipe_args)
 
         # load transformer from pretrain 
         self.pipe.transformer.requires_grad_(False)
@@ -130,7 +129,6 @@ class SD3AdagnControl(L.LightningModule):
         self.pipe.text_encoder_2.requires_grad_(False)
         if self.pipe.text_encoder_3 is not None: 
             self.pipe.text_encoder_3.requires_grad_(False)
-
 
         is_save_memory = False
         if is_save_memory:
@@ -181,7 +179,7 @@ class SD3AdagnControl(L.LightningModule):
             if array_index is not None:
                 shcoeff = shcoeff[array_index]
             shcoeff = shcoeff.view(shcoeff.size(0), -1) #flatten shcoeff to [B, 27]
-            return shcoeff
+            return shcoeff[:,None] #attention mechanism need shape [B,TOKEN,D], we treat light as 1 token
         else:
             raise ValueError(f"feature_type {self.feature_type} is not supported")
         
@@ -199,11 +197,9 @@ class SD3AdagnControl(L.LightningModule):
     def compute_train_loss(self, batch, batch_idx, timesteps=None, seed=None):
         USE_PRECONDITION_OUTPUT = True 
 
-        # compute light source 
-        light_features = self.get_light_features(batch, generator=torch.Generator().manual_seed(self.seed))
-        set_light_direction(self.pipe.transformer, light_features,  is_apply_cfg=False)
+        # get light features 
+        light_features = self.get_light_features(batch)
 
-        # compute text embeding 
         (
             prompt_embeds,
             negative_prompt_embeds,
@@ -261,10 +257,11 @@ class SD3AdagnControl(L.LightningModule):
             hidden_states=noisy_model_input,
             timestep=timesteps,
             encoder_hidden_states=prompt_embeds,
+            light_hidden_states=light_features,
             pooled_projections=pooled_prompt_embeds,
             return_dict=False,
         )[0]
-        
+
         # Follow: Section 5 of https://arxiv.org/abs/2206.00364.
         # Preconditioning of the model outputs.
         if USE_PRECONDITION_OUTPUT:
@@ -308,7 +305,7 @@ class SD3AdagnControl(L.LightningModule):
             raise ValueError(f"feature_type {self.feature_type} is not supported")
         return batch
     
-    def generate_tensorboard(self, batch, batch_idx, is_save_image=False, is_seperate_dir_with_epoch=False):                
+    def generate_tensorboard(self, batch, batch_idx, is_save_image=False, is_seperate_dir_with_epoch=False):           
         try:
             log_dir = self.logger.log_dir
         except:
@@ -319,7 +316,6 @@ class SD3AdagnControl(L.LightningModule):
 
         # precompute-variable
         is_apply_cfg = self.guidance_scale > 1
-        #epoch_text = f"epoch_{self.current_epoch:04d}_step_{self.global_step:06d}/" if is_seperate_dir_with_epoch else ""
         epoch_text = f"step_{self.global_step:06d}/" if is_seperate_dir_with_epoch else ""
         source_name = f"{batch['name'][0].replace('/','-')}"
 
@@ -329,7 +325,6 @@ class SD3AdagnControl(L.LightningModule):
         # set direction for inversion        
         source_light_features = self.get_light_features(batch, generator=torch.Generator().manual_seed(self.seed))
         source_light_features = source_light_features if USE_LIGHT_DIRECTION_CONDITION else None
-        set_light_direction(self.pipe.transformer, source_light_features,  is_apply_cfg=False) # or should we set to None?  
 
         current_prompt = batch['text']
 
@@ -341,6 +336,7 @@ class SD3AdagnControl(L.LightningModule):
             self.rf_gamma,
             source_latents.dtype,
             prompt = current_prompt, 
+            light_features = source_light_features,
             num_steps=self.num_inversion_steps,
             seed=self.seed
         )
@@ -352,35 +348,37 @@ class SD3AdagnControl(L.LightningModule):
 
         if USE_LIGHT_DIRECTION_CONDITION:
             #Apply the target light direction
-            self.select_batch_keyword(batch, 'target')    
+            self.select_batch_keyword(batch, 'target')  
 
         # generate image without relighting to see if the model is not collaspe
         if CHECK_IF_REGULAR_GENERATION_NO_COLLAPSE:
-            image = self.pipe(
+            pt_latents =  interpolated_denoise(
+                self.pipe, 
+                source_latents,
+                self.rf_eta_base,                    # base eta value
+                'constant',                   # constant, linear_increase, linear_decrease
+                0,                  # 0-based indexing, closed interval
+                1,                    # 0-based indexing, open interval
+                None,            # can be none if not using inversed latents
+                use_inversed_latents=False,
+                guidance_scale=self.guidance_scale,
                 prompt=current_prompt,
-                negative_prompt="",
-                num_inference_steps=28,
-                height=1024,
-                width=1024,
-                guidance_scale=7.0,
-            ).images[0]
+                light_features = source_light_features,
+                DTYPE=source_latents.dtype,
+                num_steps=28,
+                seed=self.seed
+            )
+            pt_image = decode_imgs(pt_latents, self.pipe) #[range 0-1] shape[b,c,h,w]
+            image = pt_to_pil(pt_image)[0]
             filename = f"{batch['name'][0].replace('/','-')}"
             os.makedirs(f"{log_dir}/{epoch_text}from_prompt", exist_ok=True)
-            image.save(f"{log_dir}/{epoch_text}from_prompt/{filename}.jpg")
+            torchvision.utils.save_image(pt_image, f"{log_dir}/{epoch_text}from_prompt/{filename}.jpg")
 
 
         # compute inpaint from nozie
         mse_output = []
         for target_idx in range(len(batch['target_image'])):
             target_light_features = self.get_light_features(batch, array_index=target_idx, generator=torch.Generator().manual_seed(self.seed))            
-            if True:
-            #if target_idx > 0:
-                set_light_direction(
-                    self.pipe.transformer,
-                    target_light_features,
-                    is_apply_cfg=is_apply_cfg
-                )
-            # TODO: proper handle relit_latent
             relit_latents =  interpolated_denoise(
                 self.pipe, 
                 source_latents,
@@ -392,6 +390,7 @@ class SD3AdagnControl(L.LightningModule):
                 use_inversed_latents=True,
                 guidance_scale=self.guidance_scale,
                 prompt=current_prompt,
+                light_features = source_light_features,
                 DTYPE=source_latents.dtype,
                 num_steps=28,
                 seed=self.seed

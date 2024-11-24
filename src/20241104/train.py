@@ -10,7 +10,7 @@ import lightning as L
 import argparse 
 import os
 
-from constants import OUTPUT_MULTI, DATASET_ROOT_DIR, DATASET_VAL_DIR, DATASET_VAL_SPLIT
+from constants import OUTPUT_MULTI, DATASET_ROOT_DIR, DATASET_VAL_DIR, DATASET_VAL_SPLIT, DATASET_TRAIN_SPLIT
 
 from LineNotify import notify
 
@@ -22,6 +22,7 @@ parser.add_argument('-c', '--every_n_epochs', type=int, default=1)
 parser.add_argument('--feature_type', type=str, default='shcoeff_order2')
 parser.add_argument('-gm', '--gate_multipiler', type=float, default=1)
 parser.add_argument('--val_check_interval', type=float, default=0.05)
+parser.add_argument('--dataset_train_multiplier', type=int, default=1)
 parser.add_argument(
     '-ct', 
     '--control_type', 
@@ -34,6 +35,7 @@ parser.add_argument('-guidance', '--guidance_scale', type=float, default=1.0)
 parser.add_argument('-dataset', '--dataset', type=str, default=DATASET_ROOT_DIR) 
 parser.add_argument('-dataset_val', '--dataset_val', type=str, default=DATASET_VAL_DIR) 
 parser.add_argument('-dataset_val_split', '--dataset_val_split', type=str, default=DATASET_VAL_SPLIT) 
+parser.add_argument('-dataset_train_split', '--dataset_train_split', type=str, default=DATASET_TRAIN_SPLIT) 
 parser.add_argument('-specific_prompt', type=str, default="") 
 parser.add_argument(
     '-split',  
@@ -59,7 +61,7 @@ def main():
     train_dir = args.dataset
     val_dir = args.dataset_val 
     specific_prompt = args.specific_prompt if args.specific_prompt != "" else None
-    train_dataset = RelightDataset(root_dir=train_dir, dataset_multiplier=1,specific_prompt=specific_prompt, image_size=1024)
+    train_dataset = RelightDataset(root_dir=train_dir, index_file=args.dataset_train_split, dataset_multiplier=args.dataset_train_multiplier,specific_prompt=specific_prompt, image_size=1024)
     val_dataset = DDIMArrayEnvDataset(root_dir=val_dir, index_file=args.dataset_val_split,specific_prompt=specific_prompt, image_size=1024)
     train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, num_workers=8)
     val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=1, shuffle=False)

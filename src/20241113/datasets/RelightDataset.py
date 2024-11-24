@@ -1,7 +1,7 @@
 from datasets.base_relight_dataset import BaseRelightDataset
 import os 
 import torch
-import json
+import json 
 
 ACCEPT_EXTENSION = ('jpg', 'png', 'jpeg', 'exr')
 

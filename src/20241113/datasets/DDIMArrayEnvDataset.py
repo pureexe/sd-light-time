@@ -2,10 +2,9 @@
 
 import os 
 import json
-from datasets.DiffusionFaceRelightDataset import DiffusionFaceRelightDataset
+from datasets.base_relight_dataset import BaseRelightDataset
 
-class DDIMDiffusionFaceRelightDataset(DiffusionFaceRelightDataset):
-
+class DDIMArrayEnvDataset(BaseRelightDataset):
     def __init__(self, index_file, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         # check if index_file is dict
@@ -29,30 +28,35 @@ class DDIMDiffusionFaceRelightDataset(DiffusionFaceRelightDataset):
                 
         assert len(self.image_index) == len(self.envmap_index), "image_index and envmap_index should have the same length"
 
+    def check_output(self, output):
+        for key in ['name', 'word_name', 'source_ldr_envmap', 'source_norm_envmap', 'target_ldr_envmap', 'target_norm_envmap']:
+            assert key in output, f"{key} is not in output"
+        return True
+    
     def get_item(self, idx, batch_idx):
 
         output = super().get_item(idx, batch_idx)
 
         # we will rename both 'ldr_envmap' and 'norm_envmap' to 'source_ldr_envmap' and 'source_norm_envmap'
-        output['source_diffusion_face'] = output.pop('diffusion_face')
-        output['source_background'] = output.pop('background')
-        output['source_shading'] = output.pop('shading')
+        output['source_ldr_envmap'] = output.pop('ldr_envmap')
+        output['source_norm_envmap'] = output.pop('norm_envmap')
+        output['source_sh_coeffs'] = output.pop('sh_coeffs')
 
-        # here is the thing that will output in format of array 
+        # here is the thing that will output in for mat of array 
+
         output['target_image'] = []
         output['word_name'] = []
- 
-        output['target_diffusion_face'] = []
-        output['target_background'] = []
-        output['target_shading'] = []
+        # support VAE mode
+        output['target_ldr_envmap'] = []
+        output['target_norm_envmap'] = []
+        # support shcoeffs
+        output['target_sh_coeffs'] = []
 
         for envmap_name in self.envmap_index[idx]:
-            output['target_diffusion_face'].append(self.diffusion_face_features[envmap_name])
-            output['target_background'].append(self.transform['image'](self.get_image(envmap_name,"backgrounds", 512, 512)))
-            output['target_shading'].append(self.transform['image'](self.get_image(envmap_name,"shadings", 512, 512)))
+            output['target_ldr_envmap'].append(self.get_envmap(envmap_name,"env_ldr", 256, 256))
+            output['target_norm_envmap'].append(self.get_envmap(envmap_name,"env_under", 256, 256))
             output['target_image'].append(self.transform['image'](self.get_image(envmap_name,"images", 512, 512)))
+            output['target_sh_coeffs'].append(self.get_shcoeffs(envmap_name).flatten())
             output['word_name'].append(envmap_name)
-
         return output
-    
-        # need a proper way to support new shading :O
+        
