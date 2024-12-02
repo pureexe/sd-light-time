@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Diffusion Face Relighting - Reimplmented in SD</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@1.0.2/css/bulma.min.css">
+    <style>
+        .fixed-tabs {
+          position: fixed;
+          top: 0;
+          width: 100%;
+          z-index: 1000;
+        }
+        body {
+          padding-top: 3rem; /* Adjust for the height of the fixed tab */
+        }
+    </style>
+</head>
+<body>
+<div id="app">
+<div class="tabs is-centered fixed-tabs has-background-dark">
+    <div class="select select is-primary">
+        <select v-model="current_splittype">
+            <option 
+                v-for="splittype in avaliable_spittypes"
+                :key="splittype" 
+                :value="splittype"
+            >
+                Split: {{splittype}}
+        </option>
+        </select>
+    </div>
+    <div class="select select is-primary">
+        <select v-model="current_guidance">
+            <option 
+                v-for="guidance in avaliable_guidances"
+                :key="guidance" 
+                :value="guidance"
+            >
+                Guidance: {{guidance}}
+        </option>
+        </select>
+    </div>    
+    <ul>
+        <li 
+            v-for='tab,tab_id in avaliable_tabs'
+            :class="{'is-active': tab_id == current_tab}"
+            @mouseover="current_tab = tab_id"
+            @mouseclick="current_tab = tab_id"
+            ><a>{{tab}}</a></li>
+    </ul>
+</div>     
+<div class="container">
+    <div class="notification" style="margin-top: 1rem; margin-bottom:1rem;text-align:center">
+        press arrow left, arrow right, number (1-4) or hovering mouse on tab to switch between the config
+    </div>
+</div>   
+<div class="table-container mx-auto" v-for="face_id in [...Array(10).keys()]">
+    <table class="table is-bordered is-striped is-narrow mx-auto" v-for="direction in getFaceSplit()">
+        <thead>
+            <th>
+                Source Image
+            </th>
+            <th>
+                DDIM Inversion <br>
+                Same lighting
+            </th>
+            <th v-for="index in [...Array(9).keys()]">
+                <figure class="image is-128x128 mx-auto" >
+                    <img v-if="current_tab != 1" :src="'/output/datasets/face/ffhq_defareli/'+current_splittype+'2'+direction+'/shadings/00000/'+(face_id * 10 + index).toString().padStart(5, '0')+'.png'" loading="lazy"/>
+                </figure>    
+            </th>
+        </thead>
+        <tbody>
+            <tr>
+                <td>
+                    <figure class="image is-128x128 mx-auto">
+                        <img :src="'/output/datasets/face/ffhq_defareli/'+current_splittype+'2'+direction+'/images/00000/'+(face_id*10).toString().padStart(5, '0')+'.jpg'" loading="lazy"/>
+                    </figure>
+                </td>
+                <td v-for="index in [...Array(10).keys()]">
+                    <figure class="image is-128x128 mx-auto">
+                        <img v-if="current_tab == 1" :src="'/output/datasets/face/ffhq_defareli/'+current_splittype+'2'+direction+'/images/00000/'+(face_id*10).toString().padStart(5, '0')+'.jpg'" loading="lazy"/>
+                        <img v-else :src="'/output/20241108/val_'+current_splittype+'2'+direction+'/default/'+current_guidance+'/mint_pretrain/1e-5/chk50/lightning_logs/version_'+getVersion(current_splittype, direction,current_guidance)+'/crop_image/00000-'+(face_id * 10).toString().padStart(5, '0')+'_00000-'+(face_id * 10 + index).toString().padStart(5, '0')+'.png'" loading="lazy"/>
+                    </figure>    
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+</div>
+<script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+<script>
+const { createApp, ref } = Vue
+createApp({
+    setup() {
+        const avaliable_guidances = ['1.0','3.0'];
+        const current_guidance = ref(avaliable_guidances[0]);
+        const current_tab = ref(0);
+        const avaliable_spittypes = ['valid', 'train'];
+        const current_splittype = ref(avaliable_spittypes[0])
+        const avaliable_tabs = ref(['Both', 'Input', 'Left', 'Right']);
+        return {
+            avaliable_guidances,
+            current_guidance,
+            current_tab, 
+            avaliable_tabs,
+            avaliable_spittypes,
+            current_splittype
+        }
+    },
+    methods: {
+        handleKeyPress(event) {
+            const key = event.key; // Get the key pressed
+            if (key === "ArrowLeft") {
+                this.current_tab = this.current_tab == 0 ? this.avaliable_tabs.length - 1: (this.current_tab-1);
+            } else if (key === "ArrowRight") {
+                this.current_tab = (this.current_tab+1) % this.avaliable_tabs.length;
+            } else if (["1", "2", "3", "4"].includes(key)) {
+                this.current_tab = parseInt(key)-1
+            }
+        },
+        getVersion(splittype, direction,guidance){
+            if(splittype == 'valid' && guidance=='1.0' && direction == 'left') return '91561';
+            if(splittype == 'valid' && guidance=='3.0' && direction == 'left') return '91561';
+            if(splittype == 'valid' && guidance=='1.0' && direction == 'right') return '91562';
+            if(splittype == 'valid' && guidance=='3.0' && direction == 'right') return '91562';
+            if(splittype == 'train' && guidance=='1.0' && direction == 'left') return '91563';
+            if(splittype == 'train' && guidance=='3.0' && direction == 'left') return '91563';
+            if(splittype == 'train' && guidance=='1.0' && direction == 'right') return '91564';
+            if(splittype == 'train' && guidance=='3.0' && direction == 'right') return '91564';
+            return "";
+        },
+        getFaceSplit(){
+            if(this.current_tab == 1){
+                return ['left']
+            }
+            if(this.current_tab == 2){
+                return ['left'];
+            }
+            if(this.current_tab == 3){
+                return ['right'];
+            }
+            return ['left','right'];
+        }
+    },
+    mounted() {
+        window.addEventListener('keydown', this.handleKeyPress);
+    },
+    beforeDestroy() {
+     window.removeEventListener('keydown', this.handleKeyPress);
+    }
+}).mount('#app')
+</script>
+</body>
+</html>

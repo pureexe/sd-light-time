@@ -27,3 +27,19 @@ bin/siatv100 src/20241027/train.py -lr 1e-5 -ct no_control --feature_type shcoef
 
 # LR 5e-4: version 88089 continue from version_87188
 bin/siatv100 src/20241027/train.py -lr 5e-4 -ct no_control --feature_type shcoeff_fuse --guidance_scale 1.0 --batch_size 16 -c 1 -ckpt output/20241027/multi_mlp_fit/lightning_logs/version_87189/checkpoints/epoch=000039.ckpt
+
+
+### RESUME TRAINING 2 
+
+# LR 1e-4: version 91518  continue from version_88057
+bin/siatv100 src/20241027/train.py -lr 1e-4 -ct no_control --feature_type shcoeff_fuse --guidance_scale 1.0 --batch_size 16 -c 1 -ckpt output/20241027/multi_mlp_fit/lightning_logs/version_88057/checkpoints/epoch=000078.ckpt
+
+# LR 5e-5: version 91519 continue from version_88058
+bin/siatv100 src/20241027/train.py -lr 5e-5 -ct no_control --feature_type shcoeff_fuse --guidance_scale 1.0 --batch_size 16 -c 1 -ckpt output/20241027/multi_mlp_fit/lightning_logs/version_88058/checkpoints/epoch=000079.ckpt
+
+# LR 1e-5: version  continue from version_88059
+bin/siatv100 src/20241027/train.py -lr 1e-5 -ct no_control --feature_type shcoeff_fuse --guidance_scale 1.0 --batch_size 16 -c 1 -ckpt output/20241027/multi_mlp_fit/lightning_logs/version_88059/checkpoints/epoch=000079.ckpt
+
+# LR 1e-5: version  continue from version_88059
+bin/siatv100 src/20241027/train.py -lr 5e-4 -ct no_control --feature_type shcoeff_fuse --guidance_scale 1.0 --batch_size 16 -c 1 -ckpt output/20241027/multi_mlp_fit/lightning_logs/version_88060/checkpoints/epoch=000079.ckpt
+

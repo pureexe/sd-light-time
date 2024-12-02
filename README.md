@@ -11,3 +11,6 @@ bash install_pip_a4000.sh
 
 
 # Singularity Setup
+
+
+# HOW TO START WEBSERVER

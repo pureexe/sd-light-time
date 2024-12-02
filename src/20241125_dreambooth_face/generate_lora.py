@@ -35,6 +35,7 @@ def main():
     lora_path = os.path.join(chkdir, 'pytorch_lora_weights.safetensors')
     prompts = get_prompts()
     output_dir = os.path.join(OUTPUT_DIR, EXP_NAME)
+    print("output_dir: ", output_dir)
     os.makedirs(output_dir,exist_ok=True)
 
     pipe = StableDiffusion3Pipeline.from_pretrained("stabilityai/stable-diffusion-3.5-medium", torch_dtype=torch.bfloat16)
@@ -52,4 +53,7 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    for exp in ["right_321/lr1e-4_rank32", "right_321/lr1e-4_rank4", "right_321/lr1e-4_rank8", "right_321/lr1e-4_rank16", "right_321/lr1e-4_rank32", "right_321/lr1e-4_rank32", "right_321/lr1e-5_rank4", "right_321/lr1e-5_rank8", "right_321/lr1e-5_rank16", "right_321/lr1e-5_rank32"]:
+        EXP_NAME = exp
+        PATH = f"/ist/ist-share/vision/pakkapon/relight/sd-light-time/output/20241125_dreambooth_face/{EXP_NAME}"
+        main()

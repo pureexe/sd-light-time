@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fixed Tab Navbar</title>
+  <link
+    rel="stylesheet"
+    href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css"
+  >
+  <style>
+    .fixed-tabs {
+      position: fixed;
+      top: 0;
+      width: 100%;
+      z-index: 1000;
+      background-color: white; /* Optional: Adjust based on your theme */
+      border-bottom: 1px solid #ddd; /* Optional: For separation */
+    }
+    body {
+      padding-top: 3rem; /* Adjust for the height of the fixed tab */
+    }
+  </style>
+</head>
+<body>
+  <!-- Tabs Component -->
+  <div class="tabs is-centered fixed-tabs">
+    <ul>
+      <li class="is-active"><a>Home</a></li>
+      <li><a>About</a></li>
+      <li><a>Services</a></li>
+      <li><a>Contact</a></li>
+    </ul>
+  </div>
+
+  <!-- Page Content -->
+  <section class="section">
+    <div class="container">
+      <h1 class="title">Welcome to the Page</h1>
+      <p>
+        This is a sample content area. The tabs at the top remain fixed while you scroll.
+      </p>
+      <div style="height: 2000px;"></div>
+    </div>
+  </section>
+</body>
+</html>
