@@ -8,34 +8,32 @@ import lightning as L
 import argparse 
 import os
 
+from diffusers import StableDiffusionControlNetPipeline, UNet2DConditionModel, ControlNetModel, StableDiffusionPipeline
 from constants import OUTPUT_MULTI, DATASET_ROOT_DIR, DATASET_VAL_DIR, DATASET_VAL_SPLIT
-from sddiffusionface import SDDiffusionFace, ScrathSDDiffusionFace, SDWithoutAdagnDiffusionFace, SDOnlyAdagnDiffusionFace, SDDiffusionFaceNoBg, SDDiffusionFaceNoShading
-
-from LineNotify import notify
+from sdKeyValueFinetune import SDKeyValueFinetune, SDKeyValueFinetuneWithoutControlNet
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-lr', '--learning_rate', type=float, default=1e-4)
-parser.add_argument('-clr', '--ctrlnet_lr', type=float, default=1)
 parser.add_argument('-ckpt', '--checkpoint', type=str, default=None)
-parser.add_argument('--batch_size', type=int, default=1)
-parser.add_argument('-c', '--every_n_epochs', type=int, default=5) 
+parser.add_argument('--batch_size', type=int, default=16)
+parser.add_argument('-c', '--every_n_epochs', type=int, default=1) 
 parser.add_argument('--feature_type', type=str, default='diffusion_face')
 parser.add_argument('-gm', '--gate_multipiler', type=float, default=1)
 parser.add_argument('--val_check_interval', type=float, default=1.0)
 parser.add_argument('--dataset_train_multiplier', type=int, default=1)
-parser.add_argument(
-    '-nt', 
-    '--network_type', 
-    type=str,
-    choices=['sd','scrath', 'sd_without_adagn', 'sd_only_adagn', 'sd_no_bg', 'sd_no_shading'],  # Restrict the input to the accepted strings
-    help="select control type for the model",
-    required=True
-)
 parser.add_argument('-guidance', '--guidance_scale', type=float, default=1.0) 
 parser.add_argument('-dataset', '--dataset', type=str, default=DATASET_ROOT_DIR) 
 parser.add_argument('-dataset_val', '--dataset_val', type=str, default=DATASET_VAL_DIR) 
 parser.add_argument('-dataset_val_split', '--dataset_val_split', type=str, default=DATASET_VAL_SPLIT) 
 parser.add_argument('-specific_prompt', type=str, default="a photorealistic image")  # we use static prompt to make thing same as mint setting
+parser.add_argument(
+    '-nt', 
+    '--network_type', 
+    type=str,
+    choices=['diffusionface_keyvalue', 'without_controlnet_keyvalue'],  # Restrict the input to the accepted strings
+    help="select control type for the model",
+    required=True
+)
 
 parser.add_argument(
     '-split',  
@@ -47,28 +45,17 @@ parser.add_argument(
 args = parser.parse_args()
 
 def get_model_class():
-    if args.network_type == 'sd':
-        return SDDiffusionFace
-    elif args.network_type == 'scrath':
-        return ScrathSDDiffusionFace
-    elif args.network_type == 'sd_without_adagn':
-        return SDWithoutAdagnDiffusionFace
-    elif args.network_type == 'sd_only_adagn':
-        return SDOnlyAdagnDiffusionFace
-    elif args.network_type == 'sd_no_bg':
-        return SDDiffusionFaceNoBg
-    elif args.network_type == 'sd_no_shading':
-        return SDDiffusionFaceNoShading
+    if args.network_type == 'diffusionface_keyvalue':
+        return SDKeyValueFinetune
+    elif args.network_type == 'without_controlnet_keyvalue':
+        return SDKeyValueFinetuneWithoutControlNet
 
-@notify
 def main():
     model_class = get_model_class()
     model = model_class(
         learning_rate=args.learning_rate,
-        gate_multipiler=args.gate_multipiler,
         guidance_scale=args.guidance_scale,
         feature_type=args.feature_type,
-        ctrlnet_lr=args.ctrlnet_lr
     )
     train_dir = args.dataset
     val_dir = args.dataset_val 

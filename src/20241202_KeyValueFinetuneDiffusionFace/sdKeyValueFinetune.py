@@ -14,19 +14,21 @@ import torchvision
 from constants import *
 from diffusers import StableDiffusionControlNetPipeline, UNet2DConditionModel, ControlNetModel, StableDiffusionPipeline
 from InversionHelper import get_ddim_latents
-from LightEmbedingBlock import set_light_direction, add_light_block
 
-MASTER_TYPE = torch.float16
+from TrainableAttentionBlock import Light2TokenBlock, enable_grad_on_kv
 
-class SDDiffusionFace(L.LightningModule):
+MASTER_TYPE = torch.float32
+
+class SDKeyValueFinetune(L.LightningModule):
 
     def __init__(
             self,
             learning_rate=1e-4,
-            guidance_scale=3,
+            guidance_scale=1.0,
             feature_type="diffusion_face",
             num_inversion_steps=500,
             num_inference_steps=500,
+            num_light_token=1,
             ctrlnet_lr=1,
             *args,
             **kwargs
@@ -34,10 +36,11 @@ class SDDiffusionFace(L.LightningModule):
         super().__init__()
         self.condition_scale = 1.0
         self.guidance_scale = guidance_scale
-        self.ddim_guidance_scale = 1.0
+        self.ddim_guidance_scale = 1.0       
         self.use_set_guidance_scale = False
         self.learning_rate = learning_rate
         self.feature_type = feature_type
+        self.num_light_token = num_light_token
         self.ctrlnet_lr = ctrlnet_lr
 
         self.num_inversion_steps = num_inversion_steps
@@ -54,24 +57,35 @@ class SDDiffusionFace(L.LightningModule):
     def setup_trainable(self):
         # register trainable module to pytorch lighting model 
 
-        # register adaptive group_norm
-        adaptive_group_norm = filter(lambda p: p.requires_grad, self.pipe.unet.parameters())
-        self.adaptive_group_norm = torch.nn.ParameterList(adaptive_group_norm)
+        # light2token is already auto register
+
+        # register key value
+        trainable_kv = filter(lambda p: p.requires_grad, self.pipe.unet.parameters())
+        self.trainable_kv = torch.nn.ParameterList(trainable_kv)
 
         # register controlnet 
         self.controlnet_trainable = torch.nn.ParameterList(self.pipe.controlnet.parameters())
 
 
+
     def setup_light_block(self):
         if self.feature_type == "diffusion_face":
             mlp_in_channel = 616
+        elif self.feature_type == "shcoeff_order2":
+            mlp_in_channel = 27
         else:
             raise ValueError(f"feature_type {self.feature_type} is not supported")
-        add_light_block(self.pipe.unet, in_channel=mlp_in_channel)
+        
+        enable_grad_on_kv(self.pipe.unet)
         self.pipe.to('cuda')
-
+        self.light2token = Light2TokenBlock(out_dim=768, in_dim=mlp_in_channel, num_token=self.num_light_token)
 
     def setup_sd(self, sd_path="runwayml/stable-diffusion-v1-5", controlnet_path=None):
+        # check if controlnet_path is list
+        if controlnet_path is not None:
+            raise Exception('controlnet is not support at the moment')
+            # if later implement controlnet support, please disable require gradon controlnet also.
+        
         # load main UNet
         unet = UNet2DConditionModel.from_pretrained(sd_path, subfolder='unet')
 
@@ -99,7 +113,7 @@ class SDDiffusionFace(L.LightningModule):
             self.pipe.enable_model_cpu_offload()
             self.pipe.enable_xformers_memory_efficient_attention()
 
-    
+
     def set_seed(self, seed):
         self.seed = seed           
         
@@ -110,6 +124,12 @@ class SDDiffusionFace(L.LightningModule):
                 diffusion_face = diffusion_face[array_index]
             diffusion_face = diffusion_face.view(diffusion_face.size(0), -1) #flatten shcoeff to [B, 616]
             return diffusion_face
+        elif self.feature_type in ["shcoeff_order2","shcoeff_fuse"]:
+            shcoeff = batch['sh_coeffs']
+            if array_index is not None:
+                shcoeff = shcoeff[array_index]
+            shcoeff = shcoeff.view(shcoeff.size(0), -1) #flatten shcoeff to [B, 27]
+            return shcoeff
         else:
             raise ValueError(f"feature_type {self.feature_type} is not supported")
 
@@ -184,10 +204,10 @@ class SDDiffusionFace(L.LightningModule):
 
         # set light direction        
         light_features = self.get_light_features(batch)
-        set_light_direction(self.pipe.unet, light_features, is_apply_cfg=False) #B,C
-        
-        # this is intentional. we set didn't concat light into text prompt anymore
-        encoder_hidden_states = prompt_embeds
+
+        light_embeds = self.light2token(light_features)
+ 
+        encoder_hidden_states = torch.cat([prompt_embeds, light_embeds], dim=-2)
 
         down_block_res_samples = None
         mid_block_res_sample = None
@@ -231,11 +251,13 @@ class SDDiffusionFace(L.LightningModule):
             shading = shading[array_index]
         return torch.cat([background, shading],dim=1)
             
-    def select_batch_keyword(self, batch, keyword):            
+    def select_batch_keyword(self, batch, keyword):
         if self.feature_type in ["diffusion_face"]:
             batch['diffusion_face'] = batch[f'{keyword}_diffusion_face']
             batch['background'] = batch[f'{keyword}_background']
-            batch['shading'] = batch[f'{keyword}_shading']
+            batch['shading'] = batch[f'{keyword}_shading']          
+        elif self.feature_type in ["shcoeff_order2", "shcoeff_fuse"]:
+            batch['sh_coeffs'] = batch[f'{keyword}_sh_coeffs']
         else:
             raise ValueError(f"feature_type {self.feature_type} is not supported")
         return batch
@@ -247,6 +269,7 @@ class SDDiffusionFace(L.LightningModule):
             log_dir = self.log_dir
 
         USE_LIGHT_DIRECTION_CONDITION = True
+        USE_FROM_PROMPT_GENERATION = True
 
         # precompute-variable
         is_apply_cfg = self.guidance_scale > 1
@@ -261,8 +284,7 @@ class SDDiffusionFace(L.LightningModule):
         # set direction for inversion        
         source_light_features = self.get_light_features(batch, generator=torch.Generator().manual_seed(self.seed))
         source_light_features = source_light_features if USE_LIGHT_DIRECTION_CONDITION else None
-        set_light_direction(self.pipe.unet, None,  is_apply_cfg=False)
-
+        source_light_embeds = self.light2token(source_light_features)
 
         # Inversion to get z_noise 
         prompt_embeds, negative_prompt_embeds = self.pipe.encode_prompt(
@@ -272,17 +294,46 @@ class SDDiffusionFace(L.LightningModule):
             do_classifier_free_guidance=is_apply_cfg,
             negative_prompt = [""] * len(batch['text'])
         )
+
+        source_embeds = torch.cat([prompt_embeds, source_light_embeds], dim=-2)
+
         
         # get DDIM inversion  
         ddim_latents, ddim_timesteps = get_ddim_latents(
-                pipe=self.pipe,
-                image=batch['source_image'],
-                text_embbeding=prompt_embeds,
-                num_inference_steps=self.num_inversion_steps,
-                generator=torch.Generator().manual_seed(self.seed),
-                controlnet_image=self.get_control_image(batch) if hasattr(self.pipe, "controlnet") else None,
-                guidance_scale=self.ddim_guidance_scale,
-            )
+            pipe=self.pipe,
+            image=batch['source_image'],
+            text_embbeding=source_embeds,
+            num_inference_steps=self.num_inversion_steps,
+            generator=torch.Generator().manual_seed(self.seed),
+            controlnet_image=self.get_control_image(batch) if hasattr(self.pipe, "controlnet") else None,
+            guidance_scale=self.ddim_guidance_scale,
+        )
+
+        if USE_FROM_PROMPT_GENERATION:
+            # generate from text prompt to make sure model is not collapse (yet)
+            sd_args = {
+                "prompt": batch['text'],
+                "output_type": "pt",
+                "return_dict": False,
+                "generator": torch.Generator().manual_seed(self.seed),
+            }
+            if hasattr(self.pipe, "controlnet"):
+                sd_args["image"] = self.get_control_image(batch)  
+
+            # we store previous scheduler (likely DDIM) and switch to scheduler for regular generation (likely UniPC)
+            prev_scheduler = self.pipe.scheduler 
+            self.pipe.scheduler = self.regular_scheduler
+
+            sd_image, _ = self.pipe(**sd_args)
+
+            # reverse back to previous scheduler after generation
+            self.pipe.scheduler = prev_scheduler
+
+            if is_save_image:
+                filename = f"{batch['name'][0].replace('/','-')}"
+                # save image file
+                os.makedirs(f"{log_dir}/{epoch_text}from_prompt", exist_ok=True)
+                torchvision.utils.save_image(sd_image, f"{log_dir}/{epoch_text}from_prompt/{filename}.png")
 
         # if dataset is not list, convert to list
         for key in ['target_ldr_envmap', 'target_norm_envmap', 'target_image', 'target_sh_coeffs', 'word_name']:
@@ -296,16 +347,14 @@ class SDDiffusionFace(L.LightningModule):
         # compute inpaint from nozie
         mse_output = []
         for target_idx in range(len(batch['target_image'])):
+            # generate image from DDIM inversion 
             target_light_features = self.get_light_features(batch, array_index=target_idx, generator=torch.Generator().manual_seed(self.seed))            
-            if target_idx > 0:
-                set_light_direction(
-                    self.pipe.unet,
-                    target_light_features,
-                    is_apply_cfg=is_apply_cfg
-                )
+            target_light_embeds =  self.light2token(target_light_features)
+            target_embeds = torch.cat([prompt_embeds, target_light_embeds], dim=-2)
+            target_negative_prompt_embeds = torch.cat([prompt_embeds, target_light_embeds], dim=-2)
             pipe_args = {
-                "prompt_embeds": prompt_embeds,
-                "negative_prompt_embeds": negative_prompt_embeds,
+                "prompt_embeds": target_embeds,
+                "negative_prompt_embeds": target_negative_prompt_embeds,
                 "output_type": "pt",
                 "guidance_scale": self.guidance_scale,
                 "return_dict": False,
@@ -317,38 +366,42 @@ class SDDiffusionFace(L.LightningModule):
                 pipe_args["image"] = self.get_control_image(batch, array_index=target_idx)  
 
             pt_image, _ = self.pipe(**pipe_args)
-            
-            gt_on_batch = 'target_image' if "target_image" in batch else 'source_image'
-            gt_image = (batch[gt_on_batch][target_idx] + 1.0) / 2.0 #bump back to range[0-1]
-
-            gt_image = gt_image.to(pt_image.device)
-            tb_image = [gt_image, pt_image]
-            
+           
             # generation only to see if everything still work as expected
             sd_args = {
-                "prompt_embeds": prompt_embeds,
-                "negative_prompt_embeds": negative_prompt_embeds,
-                "guidance_scale": self.guidance_scale,
+                "prompt_embeds": target_embeds,
+                "negative_prompt_embeds": target_negative_prompt_embeds,
                 "output_type": "pt",
                 "return_dict": False,
                 "generator": torch.Generator().manual_seed(self.seed),
             }
             if hasattr(self.pipe, "controlnet"):
                 sd_args["image"] = self.get_control_image(batch, array_index=target_idx)  
+
             # we store previous scheduler (likely DDIM) and switch to scheduler for regular generation (likely UniPC)
             prev_scheduler = self.pipe.scheduler 
             self.pipe.scheduler = self.regular_scheduler
+
             sd_image, _ = self.pipe(**sd_args)
+
             # reverse back to previous scheduler after generation
             self.pipe.scheduler = prev_scheduler
-            tb_image.append(sd_image)
 
-            # add control image to tensorbaord to see how good image is produce 
+           
+            # concate image with ground truth
+            gt_on_batch = 'target_image' if "target_image" in batch else 'source_image'
+            gt_image = (batch[gt_on_batch][target_idx] + 1.0) / 2.0 #bump back to range[0-1]
+
+            gt_image = gt_image.to(pt_image.device)
+            tb_image = [gt_image, pt_image, sd_image]
+
+            # add controlnet image 
+            
             if "image" in pipe_args:
                 if pipe_args["image"].shape[1] % 3 == 0:
                     for i in range(pipe_args["image"].shape[1] // 3):
                         tb_image.append((pipe_args["image"][:, (i)*3:(i+1)*3]+1.0) / 2.0)
-            
+
             images = torch.cat(tb_image, dim=0)
             image = torchvision.utils.make_grid(images, nrow=int(np.ceil(np.sqrt(len(tb_image)))), normalize=True)
             
@@ -371,6 +424,11 @@ class SDDiffusionFace(L.LightningModule):
                 # save image file
                 os.makedirs(f"{log_dir}/{epoch_text}crop_image", exist_ok=True)
                 torchvision.utils.save_image(pt_image, f"{log_dir}/{epoch_text}crop_image/{filename}.png")
+
+                # save image file
+                os.makedirs(f"{log_dir}/{epoch_text}only_generation", exist_ok=True)
+                torchvision.utils.save_image(sd_image, f"{log_dir}/{epoch_text}only_generation/{filename}.png")
+
                 # save psnr to file
                 os.makedirs(f"{log_dir}/{epoch_text}psnr", exist_ok=True)
                 with open(f"{log_dir}/{epoch_text}psnr/{filename}.txt", "w") as f:
@@ -424,7 +482,8 @@ class SDDiffusionFace(L.LightningModule):
 
     def configure_optimizers(self):
         optimizer = torch.optim.Adam([
-            {'params': self.adaptive_group_norm, 'lr': self.learning_rate},
+            {'params': self.trainable_kv, 'lr': self.learning_rate},
+            {'params': self.light2token.parameters(), 'lr': self.learning_rate},
             {'params': self.controlnet_trainable, 'lr': self.learning_rate * self.ctrlnet_lr},
         ])
         return optimizer
@@ -433,96 +492,34 @@ class SDDiffusionFace(L.LightningModule):
         self.use_set_guidance_scale = True
         self.guidance_scale = guidance_scale
 
-class ScrathSDDiffusionFace(SDDiffusionFace):
-    def setup_sd(self, sd_path="runwayml/stable-diffusion-v1-5", controlnet_path=None):
-        # load main UNet
-        unet = UNet2DConditionModel.from_config(sd_path, subfolder='unet')
-
-        # create controlnet from unet. Unet take 6 channel input with are 3 channel of background and other 3 channel of shading
-        controlnet = ControlNetModel.from_unet(unet, conditioning_channels=6) 
-
-        # load pipeline
-        self.pipe =  StableDiffusionControlNetPipeline.from_pretrained(
-            sd_path,
-            unet=unet, # We add unet here to prevent it from reloading Unet
-            controlnet=controlnet,
-            safety_checker=None,
-            torch_dtype=MASTER_TYPE
-        )
-
-        # load unet from pretrain 
-        self.pipe.vae.requires_grad_(False)
-        self.pipe.text_encoder.requires_grad_(False)
-
-        is_save_memory = False
-        if is_save_memory:
-            self.pipe.enable_model_cpu_offload()
-            self.pipe.enable_xformers_memory_efficient_attention()
-
-
-class SDWithoutAdagnDiffusionFace(SDDiffusionFace):
-    
-    def get_light_features(self, *args, **kwargs):
-        # We don't use light feature, we only use controlnet path
-        return None
-    
-    def setup_light_block(self):
-        self.pipe.to('cuda')
-
-
-class SDOnlyAdagnDiffusionFace(SDDiffusionFace):
-    def setup_sd(self, sd_path="runwayml/stable-diffusion-v1-5", controlnet_path=None):
-        # load main UNet
-        unet = UNet2DConditionModel.from_pretrained(sd_path, subfolder='unet')
-
-        # load pipeline
-        self.pipe =  StableDiffusionPipeline.from_pretrained(
-            sd_path,
-            unet=unet, # We add unet here to prevent it from reloading Unet
-            safety_checker=None,
-            torch_dtype=MASTER_TYPE
-        )
-
-        # load unet from pretrain 
-        self.pipe.unet.requires_grad_(False)
-        self.pipe.vae.requires_grad_(False)
-        self.pipe.text_encoder.requires_grad_(False)
-
-        is_save_memory = False
-        if is_save_memory:
-            self.pipe.enable_model_cpu_offload()
-            self.pipe.enable_xformers_memory_efficient_attention()
-    
+class SDKeyValueFinetuneWithoutControlNet(SDKeyValueFinetune):
     def setup_trainable(self):
         # register trainable module to pytorch lighting model 
-
-        # register adaptive group_norm
-        adaptive_group_norm = filter(lambda p: p.requires_grad, self.pipe.unet.parameters())
-        self.adaptive_group_norm = torch.nn.ParameterList(adaptive_group_norm)
+        # register key value
+        trainable_kv = filter(lambda p: p.requires_grad, self.pipe.unet.parameters())
+        self.trainable_kv = torch.nn.ParameterList(trainable_kv)
 
     def configure_optimizers(self):
         optimizer = torch.optim.Adam([
-            {'params': self.adaptive_group_norm, 'lr': self.learning_rate},
+            {'params': self.trainable_kv, 'lr': self.learning_rate},
+            {'params': self.light2token.parameters(), 'lr': self.learning_rate},
         ])
         return optimizer
 
-class SDDiffusionFaceNoBg(SDDiffusionFace):
-
     def setup_sd(self, sd_path="runwayml/stable-diffusion-v1-5", controlnet_path=None):
-        # load main UNet
-        unet = UNet2DConditionModel.from_pretrained(sd_path, subfolder='unet')
-
-        # Change control to 3channel  Unet take 6 channel input with are 3 channel of background and other 3 channel of shading
-        controlnet = ControlNetModel.from_unet(unet, conditioning_channels=3) 
-
+        # check if controlnet_path is list
+        if controlnet_path is not None:
+            raise Exception('controlnet is not support at the moment')
+            # if later implement controlnet support, please disable require gradon controlnet also.
+  
         # load pipeline
-        self.pipe =  StableDiffusionControlNetPipeline.from_pretrained(
+        self.pipe =  StableDiffusionPipeline.from_pretrained(
             sd_path,
-            unet=unet, # We add unet here to prevent it from reloading Unet
-            controlnet=controlnet,
             safety_checker=None,
             torch_dtype=MASTER_TYPE
         )
+
+        self.regular_scheduler = self.pipe.scheduler
 
         # load unet from pretrain 
         self.pipe.unet.requires_grad_(False)
@@ -534,17 +531,3 @@ class SDDiffusionFaceNoBg(SDDiffusionFace):
             self.pipe.enable_model_cpu_offload()
             self.pipe.enable_xformers_memory_efficient_attention()
 
-    def get_control_image(self, batch, array_index=None):
-        shading = batch['shading']
-        if array_index is not None:
-            shading = shading[array_index]
-        return shading
-    
-class SDDiffusionFaceNoShading(SDDiffusionFaceNoBg):
-
-    def get_control_image(self, batch, array_index=None):
-        shading = batch['background']
-        if array_index is not None:
-            shading = shading[array_index]
-        return shading
-    

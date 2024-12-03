@@ -1,45 +1,11 @@
-# val_grid is a validation at step 
-# bin/siatv100 src/20241108/val_ddim.py -i 90499
-# bin/siatv100 src/20241108/val_ddim.py -i 90500
-# bin/siatv100 src/20241108/val_ddim.py -i 90501
-# bin/siatv100 src/20241108/val_ddim.py -i 90502
-# bin/siatv100 src/20241108/val_ddim.py -i 90532
-# bin/siatv100 src/20241108/val_ddim.py -i 90533
-# bin/siatv100 src/20241108/val_ddim.py -i 90535
-# bin/siatv100 src/20241108/val_ddim.py -i 90536
-# bin/siatv100 src/20241108/val_ddim.py -i 90499 -m train2left,train2right
-# bin/siatv100 src/20241108/val_ddim.py -i 90500 -m train2left,train2right
-# bin/siatv100 src/20241108/val_ddim.py -i 90501 -m train2left,train2right
-# bin/siatv100 src/20241108/val_ddim.py -i 90502 -m train2left,train2right
-# bin/siatv100 src/20241108/val_ddim.py -i 90532 -m train2left,train2right
-# bin/siatv100 src/20241108/val_ddim.py -i 90533 -m train2left,train2right
-# bin/siatv100 src/20241108/val_ddim.py -i 90535 -m train2left,train2right
-# bin/siatv100 src/20241108/val_ddim.py -i 90536 -m train2left,train2right
-# bin/siatv100 src/20241108/val_ddim.py -i 90499 -m viz
-# bin/siatv100 src/20241108/val_ddim.py -i 90500 -m viz
-# bin/siatv100 src/20241108/val_ddim.py -i 90501 -m viz
-# bin/siatv100 src/20241108/val_ddim.py -i 90502 -m viz
-# bin/siatv100 src/20241108/val_ddim.py -i 90532 -m viz
-# bin/siatv100 src/20241108/val_ddim.py -i 90533 -m viz
-# bin/siatv100 src/20241108/val_ddim.py -i 90535 -m viz
-# bin/siatv100 src/20241108/val_ddim.py -i 90536 -m viz
+
 # validation 
-# bin/siatv100 src/20241108/val_ddim.py -i 91542 -m valid2left
-# bin/siatv100 src/20241108/val_ddim.py -i 91542 -m valid2right
-# bin/siatv100 src/20241108/val_ddim.py -i 91542 -m train2left
-# bin/siatv100 src/20241108/val_ddim.py -i 91542 -m train2right
+# bin/siatv100 src/20241202_KeyValueFinetuneDiffusionFace/val_ddim.py -i 91829 -m valid2left
+# bin/siatv100 src/20241202_KeyValueFinetuneDiffusionFace/val_ddim.py -i 91829 -m valid2right
+# bin/siatv100 src/20241202_KeyValueFinetuneDiffusionFace/val_ddim.py -i 91829 -m train2left
+# bin/siatv100 src/20241202_KeyValueFinetuneDiffusionFace/val_ddim.py -i 91829 -m train2right
+# bin/siatv100 src/20241202_KeyValueFinetuneDiffusionFace/val_ddim.py -i 91829 -m viz_v2
 
-
-
-
-# testrun
-# bin/siatv100 src/20241108/val_ddim.py -i 90499 -m train_left_v2
-
-
-# 90532: 'default',
-# 90533: 'default',
-# 90535: 'default',
-# 90536: 'default'
 
 import os 
 
@@ -51,12 +17,12 @@ import argparse
 from constants import FOLDER_NAME
 
 from constants import OUTPUT_MULTI, DATASET_ROOT_DIR, DATASET_VAL_DIR, DATASET_VAL_SPLIT
-from sddiffusionface import SDDiffusionFace, ScrathSDDiffusionFace, SDWithoutAdagnDiffusionFace, SDOnlyAdagnDiffusionFace
+from sdKeyValueFinetune import SDKeyValueFinetune, SDKeyValueFinetuneWithoutControlNet
 
 from datasets.DDIMDiffusionFaceRelightDataset import DDIMDiffusionFaceRelightDataset
 
 MASTER_TYPE = 16
-CHECKPOINT_FOLDER_NAME = "20241108"
+CHECKPOINT_FOLDER_NAME = "20241202_KeyValueFinetuneDiffusionFace"
 
 
 parser = argparse.ArgumentParser()
@@ -75,76 +41,28 @@ args = parser.parse_args()
 
 
 NAMES = {
-    90499: 'mint_pretrain', #all 1e-4
-    90500: 'mint_pretrain', #all 1e-5
-    90501: 'mint_scrath',
-    90502: 'mint_scrath',
-    90532: 'controlnet_only',
-    90533: 'controlnet_only',
-    90535: 'adagan_only',
-    90536: 'adagan_only',
-    91539: 'mint_pretrain', #all 1e-4
-    91542: 'mint_pretrain', #all 1e-5
+    91829: 'mint_pretrain', #all 1e-4
+    91830: 'mint_pretrain', #all 1e-5
 }
 METHODS = {
-    90499: 'default',
-    90500: 'default',
-    90501: 'default',
-    90502: 'default',
-    90532: 'default',
-    90533: 'default',
-    90535: 'default',
-    90536: 'default',
-    91539: 'default',
-    91542: 'default'
+    91829: 'default',
+    91830: 'default'
 }
 CONDITIONS_CLASS = {
-    90499: SDDiffusionFace,
-    90500: SDDiffusionFace,
-    90501: ScrathSDDiffusionFace,
-    90502: ScrathSDDiffusionFace,
-    90532: SDWithoutAdagnDiffusionFace,
-    90533: SDWithoutAdagnDiffusionFace,
-    90535: SDOnlyAdagnDiffusionFace,
-    90536: SDOnlyAdagnDiffusionFace,
-    91539: SDDiffusionFace,
-    91542: SDDiffusionFace,
+    91829: SDKeyValueFinetune,
+    91830: SDKeyValueFinetune
 }
 LRS = {
-    90499: '1e-4',
-    90500: '1e-5',
-    90501: '1e-5',
-    90502: '5e-6',
-    90532: '1e-4',
-    90533: '1e-5',
-    90535: '1e-4',
-    90536: '1e-5',
-    91539: '1e-4',
-    91542: '1e-5'
+    91829: '1e-4',
+    91830: '1e-5'
 }
 DIRNAME = {
-    90499: CHECKPOINT_FOLDER_NAME,
-    90500: CHECKPOINT_FOLDER_NAME,
-    90501: CHECKPOINT_FOLDER_NAME,
-    90502: CHECKPOINT_FOLDER_NAME,
-    90532: CHECKPOINT_FOLDER_NAME,
-    90533: CHECKPOINT_FOLDER_NAME,
-    90535: CHECKPOINT_FOLDER_NAME,
-    90536: CHECKPOINT_FOLDER_NAME,
-    91539: CHECKPOINT_FOLDER_NAME,
-    91542: CHECKPOINT_FOLDER_NAME
+    91829: CHECKPOINT_FOLDER_NAME,
+    91830: CHECKPOINT_FOLDER_NAME,
 }
 CHECKPOINTS = {
-    90499: 42,
-    90500: 43,
-    90501: 34,
-    90502: 34,
-    90532: 8,
-    90533: 8,
-    90535: 11,
-    90536: 10,
-    91539: 50,
-    91542: 50
+    91829: 5,
+    91830: 4,
 }
 
 

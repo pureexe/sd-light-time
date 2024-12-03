@@ -93,3 +93,24 @@ bin/siatv100 src/20241108/train.py -lr 5e-6 --guidance_scale 1.0 --network_type 
 
 # 91594 ADAGAN  lr 1e-6
 bin/siatv100 src/20241108/train.py -lr 1e-6 --guidance_scale 1.0 --network_type sd_only_adagn --batch_size 4 -c 1 
+
+###########################################################################################################
+
+# 91783 NOBG 1e-4
+bin/siatv100 src/20241108/train.py -lr 1e-4 --guidance_scale 1.0 --network_type sd_no_bg --batch_size 4 -c 1 
+
+# 91784 NOBG 1e-5
+bin/siatv100 src/20241108/train.py -lr 1e-5 --guidance_scale 1.0 --network_type sd_no_bg --batch_size 4 -c 1 
+
+# 91785 NOBG 1e-6
+bin/siatv100 src/20241108/train.py -lr 1e-6 --guidance_scale 1.0 --network_type sd_no_bg --batch_size 4 -c 1 
+
+
+#  91786 NOSHADING 1e-4
+bin/siatv100 src/20241108/train.py -lr 1e-4 --guidance_scale 1.0 --network_type sd_no_shading --batch_size 4 -c 1 
+
+# 91787 NOSHADING 1e-5
+bin/siatv100 src/20241108/train.py -lr 1e-5 --guidance_scale 1.0 --network_type sd_no_shading --batch_size 4 -c 1 
+
+# 91788 NOSHADING 1e-6
+bin/siatv100 src/20241108/train.py -lr 1e-6 --guidance_scale 1.0 --network_type sd_no_shading --batch_size 4 -c 1 

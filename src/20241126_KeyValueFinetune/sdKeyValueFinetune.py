@@ -327,7 +327,7 @@ class SDKeyValueFinetune(L.LightningModule):
         for target_idx in range(len(batch['target_image'])):
             # generate image from DDIM inversion 
             target_light_features = self.get_light_features(batch, array_index=target_idx, generator=torch.Generator().manual_seed(self.seed))            
-            target_light_embeds =  self.light2token(source_light_features)
+            target_light_embeds =  self.light2token(source_light_features) # WAIT, THIS IS INCORRECT?
             target_embeds = torch.cat([prompt_embeds, target_light_embeds], dim=-2)
             target_negative_prompt_embeds = torch.cat([prompt_embeds, source_light_embeds], dim=-2)
             pipe_args = {
