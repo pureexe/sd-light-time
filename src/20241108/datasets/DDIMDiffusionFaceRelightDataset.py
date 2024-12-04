@@ -48,11 +48,10 @@ class DDIMDiffusionFaceRelightDataset(DiffusionFaceRelightDataset):
         output['target_shading'] = []
 
         for envmap_name in self.envmap_index[idx]:
-            output['target_diffusion_face'].append(self.diffusion_face_features[envmap_name])
 
             diffusion_face = output['source_diffusion_face']
             if self.use_shcoeff2:
-                diffusion_face = torch.cat([output['source_diffusion_face'][-self.light_dimension:],self.diffusion_face_features[envmap_name][:-self.light_dimension]])
+               diffusion_face = torch.cat([output['source_diffusion_face'][:-self.light_dimension],self.diffusion_face_features[envmap_name][-self.light_dimension:]])
             output['target_diffusion_face'].append(diffusion_face)
 
             output['target_background'].append(self.transform['image'](self.get_image(envmap_name,"backgrounds", 512, 512)))

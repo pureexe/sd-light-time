@@ -149,3 +149,6 @@ bin/siatv100 src/20241108/train.py -lr 1e-5 --guidance_scale 1.0 --network_type 
 
 # version_91873 1e-6 clip sd
 bin/siatv100 src/20241108/train.py -lr 1e-6 --guidance_scale 1.0 --network_type sd --batch_size 4 -c 1 --feature_type clip
+
+############################################
+bin/siatv100 src/20241108/train.py -lr 1e-4 --guidance_scale 1.0 --network_type sd_only_adagn --batch_size 4 -c 1 --feature_type diffusion_face_shcoeff
