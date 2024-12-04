@@ -51,13 +51,13 @@ def get_model_class():
         return SDDiffusionFace
     elif args.network_type == 'scrath':
         return ScrathSDDiffusionFace
-    elif args.network_type == 'sd_without_adagn':
+    elif args.network_type == 'sd_without_adagn': # only controlnet part, both shading and background
         return SDWithoutAdagnDiffusionFace
     elif args.network_type == 'sd_only_adagn':
         return SDOnlyAdagnDiffusionFace
     elif args.network_type == 'sd_no_bg':
         return SDDiffusionFaceNoBg
-    elif args.network_type == 'sd_no_shading':
+    elif args.network_type == 'sd_no_shading': # still has controlnet but wihtout shading
         return SDDiffusionFaceNoShading
 
 @notify
@@ -72,9 +72,10 @@ def main():
     )
     train_dir = args.dataset
     val_dir = args.dataset_val 
+    use_shcoeff2 = args.feature_type in ['diffusion_face_shcoeff', 'clip_shcoeff']
     specific_prompt = args.specific_prompt if args.specific_prompt != "" else None
-    train_dataset = DiffusionFaceRelightDataset(root_dir=train_dir, dataset_multiplier=args.dataset_train_multiplier,specific_prompt=specific_prompt)
-    val_dataset = DDIMDiffusionFaceRelightDataset(root_dir=val_dir, index_file=args.dataset_val_split,specific_prompt=specific_prompt)
+    train_dataset = DiffusionFaceRelightDataset(root_dir=train_dir, dataset_multiplier=args.dataset_train_multiplier,specific_prompt=specific_prompt, use_shcoeff2=use_shcoeff2)
+    val_dataset = DDIMDiffusionFaceRelightDataset(root_dir=val_dir, index_file=args.dataset_val_split,specific_prompt=specific_prompt, use_shcoeff2=use_shcoeff2)
     train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, num_workers=8)
     val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=1, shuffle=False)
 

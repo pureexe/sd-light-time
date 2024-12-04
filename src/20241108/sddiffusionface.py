@@ -13,6 +13,7 @@ import torchvision
 
 from constants import *
 from diffusers import StableDiffusionControlNetPipeline, UNet2DConditionModel, ControlNetModel, StableDiffusionPipeline
+from transformers import CLIPImageProcessor, CLIPModel
 from InversionHelper import get_ddim_latents
 from LightEmbedingBlock import set_light_direction, add_light_block
 
@@ -47,9 +48,22 @@ class SDDiffusionFace(L.LightningModule):
         self.seed = 42
         self.is_plot_train_loss = True
         self.setup_sd()
+        self.setup_clip()
         self.setup_light_block()
         self.setup_trainable()
         self.log_dir = ""
+
+    def setup_clip(self, clip_model = "openai/clip-vit-large-patch14"):
+        if self.feature_type not in ['clip_shcoeff', 'clip']:
+            return None 
+        # load clip model
+        with torch.inference_mode():
+            self.clip_features = {
+                'model': CLIPModel.from_pretrained(clip_model, torch_dtype=MASTER_TYPE).to('cuda'),
+                'processor': CLIPImageProcessor.from_pretrained(clip_model)
+            }
+        
+
 
     def setup_trainable(self):
         # register trainable module to pytorch lighting model 
@@ -65,6 +79,12 @@ class SDDiffusionFace(L.LightningModule):
     def setup_light_block(self):
         if self.feature_type == "diffusion_face":
             mlp_in_channel = 616
+        elif self.feature_type == "diffusion_face_shcoeff":
+            mlp_in_channel = 616 + 27
+        elif self.feature_type == "clip_shcoeff":
+            mlp_in_channel = 768 + 27
+        elif self.feature_type == "clip":
+            mlp_in_channel = 768
         else:
             raise ValueError(f"feature_type {self.feature_type} is not supported")
         add_light_block(self.pipe.unet, in_channel=mlp_in_channel)
@@ -104,12 +124,42 @@ class SDDiffusionFace(L.LightningModule):
         self.seed = seed           
         
     def get_light_features(self, batch, array_index=None, generator=None):
-        if self.feature_type in ["diffusion_face"]:
+        if self.feature_type in ["diffusion_face", "diffusion_face_shcoeff"]:
             diffusion_face = batch['diffusion_face']
             if array_index is not None:
                 diffusion_face = diffusion_face[array_index]
             diffusion_face = diffusion_face.view(diffusion_face.size(0), -1) #flatten shcoeff to [B, 616]
             return diffusion_face
+        elif self.feature_type in ['clip_shcoeff', 'clip']:
+            diffusion_face = batch['diffusion_face']
+            if self.feature_type in ['clip_shcoeff']:
+                if array_index is not None:
+                    sh_coeff = diffusion_face[array_index][..., -27:]
+                else:
+                    sh_coeff = diffusion_face[..., -27:]
+            
+            source_image = batch['source_image']
+
+            # Ensure input is in the expected format
+            if source_image.ndim != 4 or source_image.shape[1:] != (3, 512, 512):
+                raise ValueError("Input tensor must have shape [batch, 3, 512, 512].")
+            if source_image.min().item() < -1 or source_image.max().item() > 1:
+                raise ValueError("Input tensor values must be in the range [-1, 1].")
+                        
+            # Convert range [-1, 1] to [0, 1] for CLIP
+            source_image = (source_image + 1) / 2
+            
+            # Process images
+            inputs = self.clip_features['processor'](images=source_image, return_tensors="pt").to('cuda').to(MASTER_TYPE)
+            
+            # Extract image embeddings
+            with torch.no_grad():
+                clip_features = self.clip_features['model'].get_image_features(pixel_values=inputs['pixel_values'])  # Shape [batch, 768]
+            if self.feature_type in ['clip_shcoeff']:
+                features = torch.cat([clip_features, sh_coeff], dim=-1)
+            else:
+                features = clip_features
+            return features
         else:
             raise ValueError(f"feature_type {self.feature_type} is not supported")
 
@@ -232,7 +282,7 @@ class SDDiffusionFace(L.LightningModule):
         return torch.cat([background, shading],dim=1)
             
     def select_batch_keyword(self, batch, keyword):            
-        if self.feature_type in ["diffusion_face"]:
+        if self.feature_type in ["diffusion_face", "diffusion_face_shcoeff", 'clip_shcoeff', 'clip']:
             batch['diffusion_face'] = batch[f'{keyword}_diffusion_face']
             batch['background'] = batch[f'{keyword}_background']
             batch['shading'] = batch[f'{keyword}_shading']
@@ -450,6 +500,8 @@ class ScrathSDDiffusionFace(SDDiffusionFace):
             torch_dtype=MASTER_TYPE
         )
 
+        self.regular_scheduler = self.pipe.scheduler
+
         # load unet from pretrain 
         self.pipe.vae.requires_grad_(False)
         self.pipe.text_encoder.requires_grad_(False)
@@ -482,6 +534,8 @@ class SDOnlyAdagnDiffusionFace(SDDiffusionFace):
             safety_checker=None,
             torch_dtype=MASTER_TYPE
         )
+
+        self.regular_scheduler = self.pipe.scheduler
 
         # load unet from pretrain 
         self.pipe.unet.requires_grad_(False)
@@ -523,6 +577,8 @@ class SDDiffusionFaceNoBg(SDDiffusionFace):
             safety_checker=None,
             torch_dtype=MASTER_TYPE
         )
+
+        self.regular_scheduler = self.pipe.scheduler
 
         # load unet from pretrain 
         self.pipe.unet.requires_grad_(False)

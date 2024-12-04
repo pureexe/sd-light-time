@@ -114,3 +114,38 @@ bin/siatv100 src/20241108/train.py -lr 1e-5 --guidance_scale 1.0 --network_type 
 
 # 91788 NOSHADING 1e-6
 bin/siatv100 src/20241108/train.py -lr 1e-6 --guidance_scale 1.0 --network_type sd_no_shading --batch_size 4 -c 1 
+
+
+###################################################################################
+# Retrain SHCOEFF since found the DDIM Dataset bug
+####################################################################################
+
+# version_91864 adagn1e-4
+bin/siatv100 src/20241108/train.py -lr 1e-4 --guidance_scale 1.0 --network_type sd_only_adagn --batch_size 4 -c 1 --feature_type diffusion_face_shcoeff
+
+# version_91865 adagn1e-5
+bin/siatv100 src/20241108/train.py -lr 1e-5 --guidance_scale 1.0 --network_type sd_only_adagn --batch_size 4 -c 1 --feature_type diffusion_face_shcoeff
+
+# version_91865 adagn1e-6
+bin/siatv100 src/20241108/train.py -lr 1e-6 --guidance_scale 1.0 --network_type sd_only_adagn --batch_size 4 -c 1 --feature_type diffusion_face_shcoeff
+
+
+##############################################
+# version_91869 1e-4 clip adagn
+bin/siatv100 src/20241108/train.py -lr 1e-4 --guidance_scale 1.0 --network_type sd_only_adagn --batch_size 4 -c 1 --feature_type clip_shcoeff
+
+# version_91870 1e-5 clip adagn
+bin/siatv100 src/20241108/train.py -lr 1e-5 --guidance_scale 1.0 --network_type sd_only_adagn --batch_size 4 -c 1 --feature_type clip_shcoeff
+
+# version_91871 1e-6 clip adagn
+bin/siatv100 src/20241108/train.py -lr 1e-6 --guidance_scale 1.0 --network_type sd_only_adagn --batch_size 4 -c 1 --feature_type clip_shcoeff
+
+
+# version_91872 1e-4 clip sd
+bin/siatv100 src/20241108/train.py -lr 1e-4 --guidance_scale 1.0 --network_type sd --batch_size 4 -c 1 --feature_type clip
+
+# version_91873 1e-5 clip sd
+bin/siatv100 src/20241108/train.py -lr 1e-5 --guidance_scale 1.0 --network_type sd --batch_size 4 -c 1 --feature_type clip
+
+# version_91873 1e-6 clip sd
+bin/siatv100 src/20241108/train.py -lr 1e-6 --guidance_scale 1.0 --network_type sd --batch_size 4 -c 1 --feature_type clip

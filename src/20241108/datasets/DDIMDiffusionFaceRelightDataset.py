@@ -2,6 +2,7 @@
 
 import os 
 import json
+import torch
 from datasets.DiffusionFaceRelightDataset import DiffusionFaceRelightDataset
 
 class DDIMDiffusionFaceRelightDataset(DiffusionFaceRelightDataset):
@@ -48,6 +49,12 @@ class DDIMDiffusionFaceRelightDataset(DiffusionFaceRelightDataset):
 
         for envmap_name in self.envmap_index[idx]:
             output['target_diffusion_face'].append(self.diffusion_face_features[envmap_name])
+
+            diffusion_face = output['source_diffusion_face']
+            if self.use_shcoeff2:
+                diffusion_face = torch.cat([output['source_diffusion_face'][-self.light_dimension:],self.diffusion_face_features[envmap_name][:-self.light_dimension]])
+            output['target_diffusion_face'].append(diffusion_face)
+
             output['target_background'].append(self.transform['image'](self.get_image(envmap_name,"backgrounds", 512, 512)))
             output['target_shading'].append(self.transform['image'](self.get_image(envmap_name,"shadings", 512, 512)))
             output['target_image'].append(self.transform['image'](self.get_image(envmap_name,"images", 512, 512)))

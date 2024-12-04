@@ -17,6 +17,7 @@ class DiffusionFaceRelightDataset(torch.utils.data.Dataset):
         specific_prompt=None,
         prompt_file="prompts.json",
         index_file=None,
+        use_shcoeff2=False,
         *args,
         **kwargs
     ) -> None:
@@ -25,6 +26,8 @@ class DiffusionFaceRelightDataset(torch.utils.data.Dataset):
         self.dataset_multiplier = dataset_multiplier
         self.prompt = self.get_prompt_from_file(prompt_file) 
         self.specific_prompt = specific_prompt
+        self.use_shcoeff2 = use_shcoeff2
+        self.light_dimension = 27
         self.setup_transform()
         self.setup_diffusion_face()
         # setup image index
@@ -87,7 +90,7 @@ class DiffusionFaceRelightDataset(torch.utils.data.Dataset):
         return matched_files
 
     def setup_diffusion_face(self):
-        feature_types = ['shape', 'cam', 'faceemb', 'shadow']
+        feature_types = ['shape', 'cam', 'faceemb', 'shadow', 'light']
         output = {}
         for feature_type in feature_types:
             with open(os.path.join(self.root_dir,f"{feature_type}-anno.txt")) as f:
@@ -169,6 +172,9 @@ class DiffusionFaceRelightDataset(torch.utils.data.Dataset):
         background = self.transform['image'](self.get_image(name,"backgrounds", 512, 512))
         shading = self.transform['image'](self.get_image(name,"shadings", 512, 512))
         diffusion_face_features = self.diffusion_face_features[name]
+
+        if not self.use_shcoeff2:
+            diffusion_face_features = diffusion_face_features[:-self.light_dimension]
 
         if self.specific_prompt is not None:
             if type(self.specific_prompt) == list:
