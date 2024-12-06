@@ -83,6 +83,8 @@ class SDDiffusionFace(L.LightningModule):
             mlp_in_channel = 616 + 27
         elif self.feature_type == "clip_shcoeff":
             mlp_in_channel = 768 + 27
+        elif self.feature_type == "shcoeff_order2":
+            mlp_in_channel = 27
         elif self.feature_type == "clip":
             mlp_in_channel = 768
         else:
@@ -124,7 +126,7 @@ class SDDiffusionFace(L.LightningModule):
         self.seed = seed           
         
     def get_light_features(self, batch, array_index=None, generator=None):
-        if self.feature_type in ["diffusion_face", "diffusion_face_shcoeff"]:
+        if self.feature_type in ["diffusion_face", "diffusion_face_shcoeff", "shcoeff_order2"]:
             diffusion_face = batch['diffusion_face']
             if array_index is not None:
                 diffusion_face = diffusion_face[array_index]
@@ -282,7 +284,7 @@ class SDDiffusionFace(L.LightningModule):
         return torch.cat([background, shading],dim=1)
             
     def select_batch_keyword(self, batch, keyword):            
-        if self.feature_type in ["diffusion_face", "diffusion_face_shcoeff", 'clip_shcoeff', 'clip']:
+        if self.feature_type in ["diffusion_face", "diffusion_face_shcoeff", 'clip_shcoeff', 'clip', "shcoeff_order2"]:
             batch['diffusion_face'] = batch[f'{keyword}_diffusion_face']
             batch['background'] = batch[f'{keyword}_background']
             batch['shading'] = batch[f'{keyword}_shading']
@@ -604,3 +606,12 @@ class SDDiffusionFaceNoShading(SDDiffusionFaceNoBg):
             shading = shading[array_index]
         return shading
     
+class SDOnlyShading(SDDiffusionFaceNoBg):
+    
+    def get_light_features(self, *args, **kwargs):
+        # We don't use light feature, we only use controlnet path
+        return None
+    
+    def setup_light_block(self):
+        self.pipe.to('cuda')
+

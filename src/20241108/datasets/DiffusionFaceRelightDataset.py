@@ -18,11 +18,13 @@ class DiffusionFaceRelightDataset(torch.utils.data.Dataset):
         prompt_file="prompts.json",
         index_file=None,
         use_shcoeff2=False,
+        feature_types = ['shape', 'cam', 'faceemb', 'shadow', 'light'],
         *args,
         **kwargs
     ) -> None:
         super().__init__()
         self.root_dir = root_dir
+        self.feature_types = feature_types
         self.dataset_multiplier = dataset_multiplier
         self.prompt = self.get_prompt_from_file(prompt_file) 
         self.specific_prompt = specific_prompt
@@ -90,9 +92,8 @@ class DiffusionFaceRelightDataset(torch.utils.data.Dataset):
         return matched_files
 
     def setup_diffusion_face(self):
-        feature_types = ['shape', 'cam', 'faceemb', 'shadow', 'light']
         output = {}
-        for feature_type in feature_types:
+        for feature_type in self.feature_types:
             with open(os.path.join(self.root_dir,f"{feature_type}-anno.txt")) as f:
                 lines = f.readlines()
                 for line in lines:

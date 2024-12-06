@@ -85,6 +85,18 @@ NAMES = {
     90536: 'adagan_only',
     91539: 'mint_pretrain', #all 1e-4
     91542: 'mint_pretrain', #all 1e-5
+    91864: 'adagan_shcoeff',
+    91865: 'adagan_shcoeff',
+    91866: 'adagan_shcoeff',
+    91869: 'clip_shcoeff', 
+    91870: 'clip_shcoeff',
+    91871: 'clip_shcoeff',
+    91872: 'clip',
+    91875: 'clip',
+    91876: 'clip',
+    92037: 'shcoeff_order2',
+    92047: 'shcoeff_order2',
+    92049: 'shcoeff_order2'
 }
 METHODS = {
     90499: 'default',
@@ -96,7 +108,18 @@ METHODS = {
     90535: 'default',
     90536: 'default',
     91539: 'default',
-    91542: 'default'
+    91542: 'default',
+    91864: 'default',
+    91865: 'default',
+    91869: 'default',
+    91870: 'default',
+    91871: 'default',
+    91872: 'default',
+    91875: 'default',
+    91876: 'default',
+    92037: 'default',
+    92047: 'default',
+    92049: 'default'
 }
 CONDITIONS_CLASS = {
     90499: SDDiffusionFace,
@@ -109,6 +132,18 @@ CONDITIONS_CLASS = {
     90536: SDOnlyAdagnDiffusionFace,
     91539: SDDiffusionFace,
     91542: SDDiffusionFace,
+    91864: SDOnlyAdagnDiffusionFace,
+    91865: SDOnlyAdagnDiffusionFace,
+    91866: SDOnlyAdagnDiffusionFace,
+    91869: SDOnlyAdagnDiffusionFace,
+    91870: SDOnlyAdagnDiffusionFace,
+    91871: SDOnlyAdagnDiffusionFace,    
+    91872: SDDiffusionFace,
+    91875: SDDiffusionFace,
+    91876: SDDiffusionFace,
+    92037: SDOnlyAdagnDiffusionFace,
+    92047: SDOnlyAdagnDiffusionFace,
+    92049: SDOnlyAdagnDiffusionFace
 }
 LRS = {
     90499: '1e-4',
@@ -120,7 +155,19 @@ LRS = {
     90535: '1e-4',
     90536: '1e-5',
     91539: '1e-4',
-    91542: '1e-5'
+    91542: '1e-5',
+    91864: '1e-4',
+    91865: '1e-5',
+    91866: '1e-6',
+    91869: '1e-4',
+    91870: '1e-5',
+    91871: '1e-6',
+    91872: '1e-4',
+    91875: '1e-5',
+    91876: '1e-6',
+    92037: '1e-4',
+    92047: '1e-5',
+    92049: '1e-6'
 }
 DIRNAME = {
     90499: CHECKPOINT_FOLDER_NAME,
@@ -132,7 +179,19 @@ DIRNAME = {
     90535: CHECKPOINT_FOLDER_NAME,
     90536: CHECKPOINT_FOLDER_NAME,
     91539: CHECKPOINT_FOLDER_NAME,
-    91542: CHECKPOINT_FOLDER_NAME
+    91542: CHECKPOINT_FOLDER_NAME,
+    91864: CHECKPOINT_FOLDER_NAME,
+    91865: CHECKPOINT_FOLDER_NAME,
+    91866: CHECKPOINT_FOLDER_NAME,
+    91869: CHECKPOINT_FOLDER_NAME,
+    91870: CHECKPOINT_FOLDER_NAME,
+    91871: CHECKPOINT_FOLDER_NAME,
+    91872: CHECKPOINT_FOLDER_NAME,
+    91875: CHECKPOINT_FOLDER_NAME,
+    91876: CHECKPOINT_FOLDER_NAME,
+    92037: CHECKPOINT_FOLDER_NAME,
+    92047: CHECKPOINT_FOLDER_NAME,
+    92049: CHECKPOINT_FOLDER_NAME
 }
 CHECKPOINTS = {
     90499: 42,
@@ -144,8 +203,23 @@ CHECKPOINTS = {
     90535: 11,
     90536: 10,
     91539: 50,
-    91542: 50
+    91542: 50,
+    91864: 17,
+    91865: 17,
+    91866: 17, 
+    91869: 24,
+    91870: 24,
+    91871: 24, 
+    91872: 18,
+    91875: 18,
+    91876: 18, 
+    92037: 4,
+    92047: 4,
+    92049: 4, 
 }
+
+use_shcoeff2 = [91864, 91865, 91866, 91869, 91870, 91871, 92037, 92047, 92049]
+use_only_light = [92037, 92047, 92049]
 
 
 def get_from_mode(mode):
@@ -233,6 +307,10 @@ def main():
                                 split = slice(0, count_file, 1)
                             else:
                                 split = count_file
+                            if version in use_shcoeff2:
+                                dataset_args['use_shcoeff2'] = True
+                            if version in use_only_light:
+                                dataset_args['feature_types'] = ['light']
                             val_dataset = dataset_class(split=split, root_dir=val_root, specific_prompt=specific_prompt, **dataset_args)
                             val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=1, shuffle=False)
                             trainer.test(model, dataloaders=val_dataloader, ckpt_path=CKPT_PATH)

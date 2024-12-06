@@ -9,7 +9,7 @@ import argparse
 import os
 
 from constants import OUTPUT_MULTI, DATASET_ROOT_DIR, DATASET_VAL_DIR, DATASET_VAL_SPLIT
-from sddiffusionface import SDDiffusionFace, ScrathSDDiffusionFace, SDWithoutAdagnDiffusionFace, SDOnlyAdagnDiffusionFace, SDDiffusionFaceNoBg, SDDiffusionFaceNoShading
+from sddiffusionface import SDDiffusionFace, ScrathSDDiffusionFace, SDWithoutAdagnDiffusionFace, SDOnlyAdagnDiffusionFace, SDDiffusionFaceNoBg, SDDiffusionFaceNoShading, SDOnlyShading
 
 from LineNotify import notify
 
@@ -27,7 +27,7 @@ parser.add_argument(
     '-nt', 
     '--network_type', 
     type=str,
-    choices=['sd','scrath', 'sd_without_adagn', 'sd_only_adagn', 'sd_no_bg', 'sd_no_shading'],  # Restrict the input to the accepted strings
+    choices=['sd','scrath', 'sd_without_adagn', 'sd_only_adagn', 'sd_no_bg', 'sd_no_shading', 'sd_only_shading'],  # Restrict the input to the accepted strings
     help="select control type for the model",
     required=True
 )
@@ -59,7 +59,8 @@ def get_model_class():
         return SDDiffusionFaceNoBg
     elif args.network_type == 'sd_no_shading': # still has controlnet but wihtout shading
         return SDDiffusionFaceNoShading
-
+    elif args.network_type == 'sd_only_shading': # only training the shading controlnet
+        return SDOnlyShading
 @notify
 def main():
     model_class = get_model_class()
@@ -72,10 +73,13 @@ def main():
     )
     train_dir = args.dataset
     val_dir = args.dataset_val 
-    use_shcoeff2 = args.feature_type in ['diffusion_face_shcoeff', 'clip_shcoeff']
+    use_shcoeff2 = args.feature_type in ['diffusion_face_shcoeff', 'clip_shcoeff', 'shcoeff_order2']
+    feature_types = ['shape', 'cam', 'faceemb', 'shadow', 'light']
+    if args.feature_type in ['shcoeff_order2']:
+        feature_types = ['light']
     specific_prompt = args.specific_prompt if args.specific_prompt != "" else None
-    train_dataset = DiffusionFaceRelightDataset(root_dir=train_dir, dataset_multiplier=args.dataset_train_multiplier,specific_prompt=specific_prompt, use_shcoeff2=use_shcoeff2)
-    val_dataset = DDIMDiffusionFaceRelightDataset(root_dir=val_dir, index_file=args.dataset_val_split,specific_prompt=specific_prompt, use_shcoeff2=use_shcoeff2)
+    train_dataset = DiffusionFaceRelightDataset(root_dir=train_dir, dataset_multiplier=args.dataset_train_multiplier,specific_prompt=specific_prompt, use_shcoeff2=use_shcoeff2, feature_types=feature_types)
+    val_dataset = DDIMDiffusionFaceRelightDataset(root_dir=val_dir, index_file=args.dataset_val_split,specific_prompt=specific_prompt, use_shcoeff2=use_shcoeff2, feature_types=feature_types)
     train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, num_workers=8)
     val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=1, shuffle=False)
 

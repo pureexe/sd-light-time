@@ -144,11 +144,48 @@ bin/siatv100 src/20241108/train.py -lr 1e-6 --guidance_scale 1.0 --network_type 
 # version_91872 1e-4 clip sd
 bin/siatv100 src/20241108/train.py -lr 1e-4 --guidance_scale 1.0 --network_type sd --batch_size 4 -c 1 --feature_type clip
 
-# version_91873 1e-5 clip sd
+# version_91875 1e-5 clip sd
 bin/siatv100 src/20241108/train.py -lr 1e-5 --guidance_scale 1.0 --network_type sd --batch_size 4 -c 1 --feature_type clip
 
-# version_91873 1e-6 clip sd
+# version_91876 1e-6 clip sd
 bin/siatv100 src/20241108/train.py -lr 1e-6 --guidance_scale 1.0 --network_type sd --batch_size 4 -c 1 --feature_type clip
 
+##############################################
+#version 92037
+bin/siatv100 src/20241108/train.py -lr 1e-4 --guidance_scale 1.0 --network_type sd_only_adagn --batch_size 4 -c 1 --feature_type shcoeff_order2
+
+#version 92047
+bin/siatv100 src/20241108/train.py -lr 1e-5 --guidance_scale 1.0 --network_type sd_only_adagn --batch_size 4 -c 1 --feature_type shcoeff_order2
+
+# version 92049 teng
+bin/siatv100 src/20241108/train.py -lr 1e-6 --guidance_scale 1.0 --network_type sd_only_adagn --batch_size 4 -c 1 --feature_type shcoeff_order2
+
+
+###################
+bin/siatv100 src/20241108/train.py -lr 1e-4 --guidance_scale 1.0 --network_type sd_only_shading --batch_size 4
+
+bin/siatv100 src/20241108/train.py -lr 1e-5 --guidance_scale 1.0 --network_type sd_only_shading --batch_size 4
+
+bin/siatv100 src/20241108/train.py -lr 1e-6 --guidance_scale 1.0 --network_type sd_only_shading --batch_size 4
+
+
+
 ############################################
-bin/siatv100 src/20241108/train.py -lr 1e-4 --guidance_scale 1.0 --network_type sd_only_adagn --batch_size 4 -c 1 --feature_type diffusion_face_shcoeff
+# after fixing the bug. let run valdiation on the lastest step to see if it change anything (yet)
+
+# validation on 1e-4 
+bin/siatv100 src/20241108/val_ddim.py -i 91864 -m valid2left,valid2right,train2left,train2right
+bin/siatv100 src/20241108/val_ddim.py -i 91865 -m valid2left,valid2right,train2left,train2right
+bin/siatv100 src/20241108/val_ddim.py -i 91866 -m valid2left,valid2right,train2left,train2right
+
+bin/siatv100 src/20241108/val_ddim.py -i 91869 -m valid2left,valid2right,train2left,train2right
+bin/siatv100 src/20241108/val_ddim.py -i 91870 -m valid2left,valid2right,train2left,train2right
+bin/siatv100 src/20241108/val_ddim.py -i 91871 -m valid2left,valid2right,train2left,train2right
+
+bin/siatv100 src/20241108/val_ddim.py -i 91872 -m valid2left,valid2right,train2left,train2right
+bin/siatv100 src/20241108/val_ddim.py -i 91875 -m valid2left,valid2right,train2left,train2right
+bin/siatv100 src/20241108/val_ddim.py -i 91876 -m valid2left,valid2right,train2left,train2right
+
+bin/siatv100 src/20241108/val_ddim.py -i 92037 -m valid2left,valid2right,train2left,train2right
+bin/siatv100 src/20241108/val_ddim.py -i 92047 -m valid2left,valid2right,train2left,train2right
+bin/siatv100 src/20241108/val_ddim.py -i 92049 -m valid2left,valid2right,train2left,train2right

@@ -33,6 +33,12 @@ class LightEmbedBlock(torch.nn.Module):
         self.is_apply_cfg = is_apply_cfg
     
     def set_light_direction(self, direction):
+        # print("PRE-DEFINED: ", self.in_dim)
+        # try:
+        #     print("REQUEST:", direction.shape[-1])
+        # except:
+        #     print("REQUEST: ", direction)
+        # print("=======================================")
         assert direction == None or direction.shape[-1] == self.in_dim
         self.light_direction = direction
 
