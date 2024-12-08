@@ -51,7 +51,7 @@ import argparse
 from constants import FOLDER_NAME
 
 from constants import OUTPUT_MULTI, DATASET_ROOT_DIR, DATASET_VAL_DIR, DATASET_VAL_SPLIT
-from sddiffusionface import SDDiffusionFace, ScrathSDDiffusionFace, SDWithoutAdagnDiffusionFace, SDOnlyAdagnDiffusionFace
+from sddiffusionface import SDDiffusionFace, ScrathSDDiffusionFace, SDWithoutAdagnDiffusionFace, SDOnlyAdagnDiffusionFace, SDOnlyShading
 
 from datasets.DDIMDiffusionFaceRelightDataset import DDIMDiffusionFaceRelightDataset
 
@@ -96,7 +96,10 @@ NAMES = {
     91876: 'clip',
     92037: 'shcoeff_order2',
     92047: 'shcoeff_order2',
-    92049: 'shcoeff_order2'
+    92049: 'shcoeff_order2',
+    92205: 'shading_control_only',
+    92206: 'shading_control_only',
+    92207: 'shading_control_only'
 }
 METHODS = {
     90499: 'default',
@@ -119,7 +122,10 @@ METHODS = {
     91876: 'default',
     92037: 'default',
     92047: 'default',
-    92049: 'default'
+    92049: 'default',
+    92205: 'default',
+    92206: 'default',
+    92207: 'default'
 }
 CONDITIONS_CLASS = {
     90499: SDDiffusionFace,
@@ -143,7 +149,10 @@ CONDITIONS_CLASS = {
     91876: SDDiffusionFace,
     92037: SDOnlyAdagnDiffusionFace,
     92047: SDOnlyAdagnDiffusionFace,
-    92049: SDOnlyAdagnDiffusionFace
+    92049: SDOnlyAdagnDiffusionFace,
+    92205: SDOnlyShading,
+    92206: SDOnlyShading,
+    92207: SDOnlyShading
 }
 LRS = {
     90499: '1e-4',
@@ -167,7 +176,10 @@ LRS = {
     91876: '1e-6',
     92037: '1e-4',
     92047: '1e-5',
-    92049: '1e-6'
+    92049: '1e-6',
+    92205: '1e-4',
+    92206: '1e-5',
+    92207: '1e-6'
 }
 DIRNAME = {
     90499: CHECKPOINT_FOLDER_NAME,
@@ -191,7 +203,10 @@ DIRNAME = {
     91876: CHECKPOINT_FOLDER_NAME,
     92037: CHECKPOINT_FOLDER_NAME,
     92047: CHECKPOINT_FOLDER_NAME,
-    92049: CHECKPOINT_FOLDER_NAME
+    92049: CHECKPOINT_FOLDER_NAME,
+    92205: CHECKPOINT_FOLDER_NAME,
+    92206: CHECKPOINT_FOLDER_NAME,
+    92207: CHECKPOINT_FOLDER_NAME
 }
 CHECKPOINTS = {
     90499: 42,
@@ -213,9 +228,12 @@ CHECKPOINTS = {
     91872: 18,
     91875: 18,
     91876: 18, 
-    92037: 4,
-    92047: 4,
-    92049: 4, 
+    92037: 33,
+    92047: 33,
+    92049: 33, 
+    92205: 9,
+    92206: 9,
+    92207: 9, 
 }
 
 use_shcoeff2 = [91864, 91865, 91866, 91869, 91870, 91871, 92037, 92047, 92049]

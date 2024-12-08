@@ -162,11 +162,37 @@ bin/siatv100 src/20241108/train.py -lr 1e-6 --guidance_scale 1.0 --network_type 
 
 
 ###################
-bin/siatv100 src/20241108/train.py -lr 1e-4 --guidance_scale 1.0 --network_type sd_only_shading --batch_size 4
+# version 92205
+bin/siatv100 src/20241108/train.py -lr 1e-4 --guidance_scale 1.0 --network_type sd_only_shading  -c 1 --batch_size 4
 
-bin/siatv100 src/20241108/train.py -lr 1e-5 --guidance_scale 1.0 --network_type sd_only_shading --batch_size 4
+# version 92206
+bin/siatv100 src/20241108/train.py -lr 1e-5 --guidance_scale 1.0 --network_type sd_only_shading  -c 1 --batch_size 4
 
-bin/siatv100 src/20241108/train.py -lr 1e-6 --guidance_scale 1.0 --network_type sd_only_shading --batch_size 4
+# version 92207
+bin/siatv100 src/20241108/train.py -lr 1e-6 --guidance_scale 1.0 --network_type sd_only_shading  -c 1 --batch_size 4
+
+
+##################################### Continue training with controlnet part only
+#f from version_90532 SD but without agadn
+bin/siatv100 src/20241108/train.py -lr 1e-4 --guidance_scale 1.0 --network_type sd_without_adagn --batch_size 4 -c 1 -ckpt output/20241108/multi_mlp_fit/lightning_logs/version_90532/checkpoints/epoch=000008.ckpt
+
+# version_90533
+bin/siatv100 src/20241108/train.py -lr 1e-5 --guidance_scale 1.0 --network_type sd_without_adagn --batch_size 4 -c 1 -ckpt output/20241108/multi_mlp_fit/lightning_logs/version_90533/checkpoints/epoch=000008.ckpt
+
+##################################### Train with inpainting condition
+# version_92372 shading and masked background 1e-4
+bin/siatv100 src/20241108/train.py -lr 1e-4 --guidance_scale 1.0 --network_type inpaint --batch_size 4 -c 1
+
+# shading and masked background 1e-5
+bin/siatv100 src/20241108/train.py -lr 1e-5 --guidance_scale 1.0 --network_type inpaint --batch_size 4 -c 1
+
+
+### masked background only 1e-4
+bin/siatv100 src/20241108/train.py -lr 1e-4 --guidance_scale 1.0 --network_type inpaint_no_shading --batch_size 4 -c 1
+
+### version_92438 background only 1e-5
+bin/siatv100 src/20241108/train.py -lr 1e-5 --guidance_scale 1.0 --network_type inpaint_no_shading --batch_size 4 -c 1
+
 
 
 
@@ -189,3 +215,15 @@ bin/siatv100 src/20241108/val_ddim.py -i 91876 -m valid2left,valid2right,train2l
 bin/siatv100 src/20241108/val_ddim.py -i 92037 -m valid2left,valid2right,train2left,train2right
 bin/siatv100 src/20241108/val_ddim.py -i 92047 -m valid2left,valid2right,train2left,train2right
 bin/siatv100 src/20241108/val_ddim.py -i 92049 -m valid2left,valid2right,train2left,train2right
+
+
+# predict only shading 
+
+bin/siatv100 src/20241108/val_ddim.py -i 92037 -m valid2left,train2left
+bin/siatv100 src/20241108/val_ddim.py -i 92047 -m valid2left,train2left
+bin/siatv100 src/20241108/val_ddim.py -i 92049 -m valid2left,train2left
+bin/siatv100 src/20241108/val_ddim.py -i 92037 -m valid2right,train2right
+bin/siatv100 src/20241108/val_ddim.py -i 92047 -m valid2right,train2right
+bin/siatv100 src/20241108/val_ddim.py -i 92049 -m valid2right,train2right
+
+

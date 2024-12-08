@@ -4,6 +4,7 @@ import torchvision
 import json
 import ezexr 
 import numpy as np
+import random
 
 ACCEPT_EXTENSION = ['jpg', 'png', 'jpeg', 'exr']
 IMAGE_DIR = "images"
@@ -18,6 +19,7 @@ class DiffusionFaceRelightDataset(torch.utils.data.Dataset):
         prompt_file="prompts.json",
         index_file=None,
         use_shcoeff2=False,
+        random_mask_background_ratio=None,
         feature_types = ['shape', 'cam', 'faceemb', 'shadow', 'light'],
         *args,
         **kwargs
@@ -30,6 +32,7 @@ class DiffusionFaceRelightDataset(torch.utils.data.Dataset):
         self.specific_prompt = specific_prompt
         self.use_shcoeff2 = use_shcoeff2
         self.light_dimension = 27
+        self.random_mask_background_ratio = random_mask_background_ratio
         self.setup_transform()
         self.setup_diffusion_face()
         # setup image index
@@ -164,13 +167,31 @@ class DiffusionFaceRelightDataset(torch.utils.data.Dataset):
         assert 'source_image' in output, "source_image is not in output"
         return True
 
+    def get_background(self, name, height=512, width=512):
+        if self.random_mask_background_ratio is None:
+            background = self.transform['image'](self.get_image(name,"backgrounds", height, width))
+        elif self.random_mask_background_ratio > 0.0 and self.random_mask_background_ratio <= 1.0:
+            background = self.transform['image'](self.get_image(name,"images", height, width))
+            mask = torch.ones((height, width), dtype=torch.float32)
+            num_pixels_to_mask = int(height * width * 0.25)
+            masked_indices = random.sample(range(height * width), num_pixels_to_mask)
+            for idx in masked_indices:
+                row, col = divmod(idx, width)
+                mask[row, col] = 0
+            mask = mask.unsqueeze(0)  # Add channel dimension
+            background = background * mask  # Apply mask to image
+        elif self.random_mask_background_ratio == 0.0: # just use input image as a background when there is no masking ratio
+            background = self.transform['image'](self.get_image(name,"images", height, width))
+        else:
+            raise NotImplementedError()
+        return background 
 
     def get_item(self, idx, batch_idx):
         name = self.files[idx]
         word_name = self.files[idx]
 
         image = self.transform['image'](self.get_image(name,"images", 512, 512))
-        background = self.transform['image'](self.get_image(name,"backgrounds", 512, 512))
+        background = self.get_background(name, 512, 512)
         shading = self.transform['image'](self.get_image(name,"shadings", 512, 512))
         diffusion_face_features = self.diffusion_face_features[name]
 
