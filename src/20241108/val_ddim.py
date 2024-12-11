@@ -51,7 +51,7 @@ import argparse
 from constants import FOLDER_NAME
 
 from constants import OUTPUT_MULTI, DATASET_ROOT_DIR, DATASET_VAL_DIR, DATASET_VAL_SPLIT
-from sddiffusionface import SDDiffusionFace, ScrathSDDiffusionFace, SDWithoutAdagnDiffusionFace, SDOnlyAdagnDiffusionFace, SDOnlyShading
+from sddiffusionface import SDDiffusionFace, ScrathSDDiffusionFace, SDWithoutAdagnDiffusionFace, SDOnlyAdagnDiffusionFace, SDOnlyShading, SDDiffusionFaceNoShading
 
 from datasets.DDIMDiffusionFaceRelightDataset import DDIMDiffusionFaceRelightDataset
 
@@ -75,6 +75,8 @@ args = parser.parse_args()
 
 
 NAMES = {
+    89738: 'mint_pretrain',
+    89740: 'mint_pretrain',
     90499: 'mint_pretrain', #all 1e-4
     90500: 'mint_pretrain', #all 1e-5
     90501: 'mint_scrath',
@@ -99,9 +101,21 @@ NAMES = {
     92049: 'shcoeff_order2',
     92205: 'shading_control_only',
     92206: 'shading_control_only',
-    92207: 'shading_control_only'
+    92207: 'shading_control_only',
+    92372: 'inpaint',
+    92414: 'inpaint',
+    92423: 'inpaint_only_background',
+    92438: 'inpaint_only_background',
+    92829: 'v2_defareli',
+    92830: 'v2_defareli',
+    92824: 'v2_adagn_face_shcoeff',
+    92825: 'v2_adagn_face_shcoeff',
+    92826: 'v2_adagn_only_shcoeff',
+    92833: 'v2_adagn_only_shcoeff',
 }
 METHODS = {
+    89738: 'default',
+    89740: 'default',
     90499: 'default',
     90500: 'default',
     90501: 'default',
@@ -114,6 +128,7 @@ METHODS = {
     91542: 'default',
     91864: 'default',
     91865: 'default',
+    91866: 'default',
     91869: 'default',
     91870: 'default',
     91871: 'default',
@@ -125,9 +140,21 @@ METHODS = {
     92049: 'default',
     92205: 'default',
     92206: 'default',
-    92207: 'default'
+    92207: 'default',
+    92372: 'default',
+    92414: 'default',
+    92423: 'default',
+    92438: 'default',
+    92829: 'default',
+    92830: 'default',
+    92824: 'default',
+    92825: 'default',
+    92826: 'default',
+    92833: 'default',
 }
 CONDITIONS_CLASS = {
+    89738: SDDiffusionFace,
+    89740: SDDiffusionFace,
     90499: SDDiffusionFace,
     90500: SDDiffusionFace,
     90501: ScrathSDDiffusionFace,
@@ -152,9 +179,21 @@ CONDITIONS_CLASS = {
     92049: SDOnlyAdagnDiffusionFace,
     92205: SDOnlyShading,
     92206: SDOnlyShading,
-    92207: SDOnlyShading
+    92207: SDOnlyShading,
+    92372: SDDiffusionFace,
+    92414: SDDiffusionFace,
+    92423: SDDiffusionFaceNoShading,
+    92438: SDDiffusionFaceNoShading,
+    92829: SDDiffusionFace,
+    92830: SDDiffusionFace,
+    92824: SDOnlyAdagnDiffusionFace,
+    92825: SDOnlyAdagnDiffusionFace,
+    92826: SDOnlyAdagnDiffusionFace,
+    92833: SDOnlyAdagnDiffusionFace,
 }
 LRS = {
+    89738: '1e-4',
+    89740: '1e-5',
     90499: '1e-4',
     90500: '1e-5',
     90501: '1e-5',
@@ -179,9 +218,21 @@ LRS = {
     92049: '1e-6',
     92205: '1e-4',
     92206: '1e-5',
-    92207: '1e-6'
+    92207: '1e-6',
+    92372: '1e-4',
+    92414: '1e-5',
+    92423: '1e-4',
+    92438: '1e-5', 
+    92829: '1e-4',
+    92830: '1e-5',
+    92824: '1e-4',
+    92825: '1e-5',
+    92826: '1e-4',
+    92833: '1e-5',
 }
 DIRNAME = {
+    89738: CHECKPOINT_FOLDER_NAME,
+    89740: CHECKPOINT_FOLDER_NAME,
     90499: CHECKPOINT_FOLDER_NAME,
     90500: CHECKPOINT_FOLDER_NAME,
     90501: CHECKPOINT_FOLDER_NAME,
@@ -206,9 +257,15 @@ DIRNAME = {
     92049: CHECKPOINT_FOLDER_NAME,
     92205: CHECKPOINT_FOLDER_NAME,
     92206: CHECKPOINT_FOLDER_NAME,
-    92207: CHECKPOINT_FOLDER_NAME
+    92207: CHECKPOINT_FOLDER_NAME,
+    92372: CHECKPOINT_FOLDER_NAME,
+    92414: CHECKPOINT_FOLDER_NAME,
+    92423: CHECKPOINT_FOLDER_NAME,
+    92438: CHECKPOINT_FOLDER_NAME
 }
 CHECKPOINTS = {
+    89738: 24,
+    89740: 24,
     90499: 42,
     90500: 43,
     90501: 34,
@@ -219,9 +276,9 @@ CHECKPOINTS = {
     90536: 10,
     91539: 50,
     91542: 50,
-    91864: 17,
-    91865: 17,
-    91866: 17, 
+    91864: 33,
+    91865: 33,
+    91866: 33, 
     91869: 24,
     91870: 24,
     91871: 24, 
@@ -233,12 +290,16 @@ CHECKPOINTS = {
     92049: 33, 
     92205: 9,
     92206: 9,
-    92207: 9, 
+    92207: 9,
+    92372: 6,
+    92414: 6,
+    92423: 6,
+    92438: 6
 }
 
 use_shcoeff2 = [91864, 91865, 91866, 91869, 91870, 91871, 92037, 92047, 92049]
 use_only_light = [92037, 92047, 92049]
-
+use_random_mask_background = [92372, 92414, 92423, 92438]
 
 def get_from_mode(mode):
     if mode == "face_left":
@@ -263,6 +324,8 @@ def get_from_mode(mode):
         return "/data/pakkapon/datasets/face/ffhq_defareli/valid2left", 100, DDIMDiffusionFaceRelightDataset,{"index_file":"/data/pakkapon/datasets/face/ffhq_defareli/valid2left/index-array.json"}, "a photorealistic image"
     elif mode == "valid2right":
         return "/data/pakkapon/datasets/face/ffhq_defareli/valid2right", 100, DDIMDiffusionFaceRelightDataset,{"index_file":"/data/pakkapon/datasets/face/ffhq_defareli/valid2right/index-array.json"}, "a photorealistic image"
+    elif mode == "valid_spatial":
+        return "/data/pakkapon/datasets/face/ffhq_defareli/valid_spatial", 100, DDIMDiffusionFaceRelightDataset,{"index_file":"/data/pakkapon/datasets/face/ffhq_defareli/valid_spatial/index-array.json"}, "a photorealistic image"
     else:
         raise Exception("mode not found")
 

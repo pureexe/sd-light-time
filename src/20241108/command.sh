@@ -173,25 +173,66 @@ bin/siatv100 src/20241108/train.py -lr 1e-6 --guidance_scale 1.0 --network_type 
 
 
 ##################################### Continue training with controlnet part only
-#f from version_90532 SD but without agadn
+#version_92313 from version_90532 SD but without agadn
 bin/siatv100 src/20241108/train.py -lr 1e-4 --guidance_scale 1.0 --network_type sd_without_adagn --batch_size 4 -c 1 -ckpt output/20241108/multi_mlp_fit/lightning_logs/version_90532/checkpoints/epoch=000008.ckpt
 
-# version_90533
+# version_92371 version_90533
 bin/siatv100 src/20241108/train.py -lr 1e-5 --guidance_scale 1.0 --network_type sd_without_adagn --batch_size 4 -c 1 -ckpt output/20241108/multi_mlp_fit/lightning_logs/version_90533/checkpoints/epoch=000008.ckpt
 
 ##################################### Train with inpainting condition
 # version_92372 shading and masked background 1e-4
 bin/siatv100 src/20241108/train.py -lr 1e-4 --guidance_scale 1.0 --network_type inpaint --batch_size 4 -c 1
 
-# shading and masked background 1e-5
+# version_92414 shading and masked background 1e-5
 bin/siatv100 src/20241108/train.py -lr 1e-5 --guidance_scale 1.0 --network_type inpaint --batch_size 4 -c 1
 
 
-### masked background only 1e-4
+### version_92423 masked background only 1e-4
 bin/siatv100 src/20241108/train.py -lr 1e-4 --guidance_scale 1.0 --network_type inpaint_no_shading --batch_size 4 -c 1
 
 ### version_92438 background only 1e-5
 bin/siatv100 src/20241108/train.py -lr 1e-5 --guidance_scale 1.0 --network_type inpaint_no_shading --batch_size 4 -c 1
+
+
+################################################################################ RERUN FOR CONTROL EXPERIMENT
+#### DEFARELI
+
+# version 92829
+bin/siatv100 src/20241108/train.py -lr 1e-4 --guidance_scale 1.0 --network_type sd --batch_size 12 -c 1  #batch size 20 is similar to mint setting
+
+# version 92830
+bin/siatv100 src/20241108/train.py -lr 1e-5 --guidance_scale 1.0 --network_type sd --batch_size 12 -c 1
+
+#### ADAPTIVE GROUP NORM ONLY
+# version 92824
+bin/siatv100 src/20241108/train.py -lr 1e-4 --guidance_scale 1.0 --network_type sd_only_adagn --batch_size 12 -c 1 --feature_type diffusion_face_shcoeff
+# version 92825
+bin/siatv100 src/20241108/train.py -lr 1e-5 --guidance_scale 1.0 --network_type sd_only_adagn --batch_size 12 -c 1 --feature_type diffusion_face_shcoeff
+
+##### ORDER 2
+# version 92826
+bin/siatv100 src/20241108/train.py -lr 1e-4 --guidance_scale 1.0 --network_type sd_only_adagn --batch_size 12 -c 1 --feature_type shcoeff_order2
+
+# version 92833
+bin/siatv100 src/20241108/train.py -lr 1e-5 --guidance_scale 1.0 --network_type sd_only_adagn --batch_size 12 -c 1 --feature_type shcoeff_order2
+
+
+
+
+
+
+#### LET TRY FIXED LR 1e-4 and chaning how much it mask out
+bin/siatv100 src/20241108/train.py -lr 1e-4 --guidance_scale 1.0 --network_type inpaint --batch_size 4 -c 1 --bg_mask_ratio 1.0
+bin/siatv100 src/20241108/train.py -lr 1e-4 --guidance_scale 1.0 --network_type inpaint --batch_size 4 -c 1 --bg_mask_ratio 0.9
+bin/siatv100 src/20241108/train.py -lr 1e-4 --guidance_scale 1.0 --network_type inpaint --batch_size 4 -c 1 --bg_mask_ratio 0.8
+bin/siatv100 src/20241108/train.py -lr 1e-4 --guidance_scale 1.0 --network_type inpaint --batch_size 4 -c 1 --bg_mask_ratio 0.7
+bin/siatv100 src/20241108/train.py -lr 1e-4 --guidance_scale 1.0 --network_type inpaint --batch_size 4 -c 1 --bg_mask_ratio 0.6
+bin/siatv100 src/20241108/train.py -lr 1e-4 --guidance_scale 1.0 --network_type inpaint --batch_size 4 -c 1 --bg_mask_ratio 0.5
+bin/siatv100 src/20241108/train.py -lr 1e-4 --guidance_scale 1.0 --network_type inpaint --batch_size 4 -c 1 --bg_mask_ratio 0.4
+bin/siatv100 src/20241108/train.py -lr 1e-4 --guidance_scale 1.0 --network_type inpaint --batch_size 4 -c 1 --bg_mask_ratio 0.3
+
+
+
 
 
 
@@ -225,5 +266,26 @@ bin/siatv100 src/20241108/val_ddim.py -i 92049 -m valid2left,train2left
 bin/siatv100 src/20241108/val_ddim.py -i 92037 -m valid2right,train2right
 bin/siatv100 src/20241108/val_ddim.py -i 92047 -m valid2right,train2right
 bin/siatv100 src/20241108/val_ddim.py -i 92049 -m valid2right,train2right
+
+# Generate 
+
+
+bin/siatv100 src/20241108/val_ddim.py -i 89738 -m valid2left,train2left
+bin/siatv100 src/20241108/val_ddim.py -i 89738 -m valid2right,train2right
+
+bin/siatv100 src/20241108/val_ddim.py -i 89740 -m valid2left,train2left
+bin/siatv100 src/20241108/val_ddim.py -i 89740 -m valid2right,train2right
+
+
+
+
+##################
+
+bin/siatv100 src/20241108/val_ddim.py -i 91864 -m valid2left,train2left
+bin/siatv100 src/20241108/val_ddim.py -i 91865 -m valid2left,train2left
+bin/siatv100 src/20241108/val_ddim.py -i 91866 -m valid2left,train2left
+bin/siatv100 src/20241108/val_ddim.py -i 91864 -m valid2right,train2right
+bin/siatv100 src/20241108/val_ddim.py -i 91865 -m valid2right,train2right
+bin/siatv100 src/20241108/val_ddim.py -i 91866 -m valid2right,train2right
 
 

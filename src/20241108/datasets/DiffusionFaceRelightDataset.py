@@ -21,20 +21,28 @@ class DiffusionFaceRelightDataset(torch.utils.data.Dataset):
         use_shcoeff2=False,
         random_mask_background_ratio=None,
         feature_types = ['shape', 'cam', 'faceemb', 'shadow', 'light'],
+        light_dimension = 27, #light dim
+        shadow_index = -1,
         *args,
         **kwargs
     ) -> None:
         super().__init__()
         self.root_dir = root_dir
         self.feature_types = feature_types
+        print("FEATURE_TYPE: ", feature_types)
         self.dataset_multiplier = dataset_multiplier
         self.prompt = self.get_prompt_from_file(prompt_file) 
         self.specific_prompt = specific_prompt
         self.use_shcoeff2 = use_shcoeff2
-        self.light_dimension = 27
+        self.light_dimension = light_dimension
         self.random_mask_background_ratio = random_mask_background_ratio
+        if 'shadow' in feature_types and 'light' in feature_types and feature_types[-1] == 'light' and shadow_index == -1:
+            shadow_index = -28
+        self.shadow_index = shadow_index # swap light shadow
+
         self.setup_transform()
         self.setup_diffusion_face()
+
         # setup image index
         if index_file != "" and index_file != None:
             self.index_file = kwargs['index_file']
@@ -105,11 +113,15 @@ class DiffusionFaceRelightDataset(torch.utils.data.Dataset):
                         continue
                     contents = contents.split(" ")
                     filename = contents[0]
-                    file_id = int(filename.split(".")[0])
+                    if "_" in filename:
+                        n_file = filename.split(".")[0]
+                    else:
+                        file_id = int(filename.split(".")[0])
+                        dir_id = int(file_id) // 1000 * 1000
+                        n_file = f"{dir_id:05d}/{file_id:05d}"
+
                     contents = contents[1:]
                     contents = [float(c) for c in contents]
-                    dir_id = int(file_id) // 1000 * 1000
-                    n_file = f"{dir_id:05d}/{file_id:05d}"
                     if not n_file in output:
                         output[n_file] = []
                     output[n_file] += contents
@@ -195,8 +207,10 @@ class DiffusionFaceRelightDataset(torch.utils.data.Dataset):
         shading = self.transform['image'](self.get_image(name,"shadings", 512, 512))
         diffusion_face_features = self.diffusion_face_features[name]
 
-        if not self.use_shcoeff2:
+        if 'light' in self.feature_types and not self.use_shcoeff2:
+            # this is for safe-gauard protection in case that accidently pass light feature here
             diffusion_face_features = diffusion_face_features[:-self.light_dimension]
+
 
         if self.specific_prompt is not None:
             if type(self.specific_prompt) == list:

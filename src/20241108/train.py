@@ -22,6 +22,7 @@ parser.add_argument('-c', '--every_n_epochs', type=int, default=5)
 parser.add_argument('--feature_type', type=str, default='diffusion_face')
 parser.add_argument('-gm', '--gate_multipiler', type=float, default=1)
 parser.add_argument('--val_check_interval', type=float, default=1.0)
+parser.add_argument('--bg_mask_ratio', type=float, default=0.25)
 parser.add_argument('--dataset_train_multiplier', type=int, default=1)
 parser.add_argument(
     '-nt', 
@@ -75,12 +76,12 @@ def main():
     val_dir = args.dataset_val 
     use_shcoeff2 = args.feature_type in ['diffusion_face_shcoeff', 'clip_shcoeff', 'shcoeff_order2']
     use_random_mask_background = args.network_type in ['inpaint_no_shading', 'inpaint'] 
-    feature_types = ['shape', 'cam', 'faceemb', 'shadow', 'light']
+    feature_types = ['shape', 'cam', 'faceemb', 'shadow']
     if args.feature_type in ['shcoeff_order2']:
         feature_types = ['light']
     specific_prompt = args.specific_prompt if args.specific_prompt != "" else None
-    train_dataset = DiffusionFaceRelightDataset(root_dir=train_dir, dataset_multiplier=args.dataset_train_multiplier,specific_prompt=specific_prompt, use_shcoeff2=use_shcoeff2, feature_types=feature_types, random_mask_background_ratio= 0.25 if use_random_mask_background else None)
-    val_dataset = DDIMDiffusionFaceRelightDataset(root_dir=val_dir, index_file=args.dataset_val_split,specific_prompt=specific_prompt, use_shcoeff2=use_shcoeff2, feature_types=feature_types, random_mask_background_ratio= 0.0 if use_random_mask_background else None)
+    train_dataset = DiffusionFaceRelightDataset(root_dir=train_dir, dataset_multiplier=args.dataset_train_multiplier,specific_prompt=specific_prompt, use_shcoeff2=use_shcoeff2, feature_types=feature_types, random_mask_background_ratio=args.bg_mask_ratio if use_random_mask_background else None)
+    val_dataset = DDIMDiffusionFaceRelightDataset(root_dir=val_dir, index_file=args.dataset_val_split,specific_prompt=specific_prompt, use_shcoeff2=use_shcoeff2, feature_types=feature_types, random_mask_background_ratio = 0.0 if use_random_mask_background else None)
     train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, num_workers=8)
     val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=1, shuffle=False)
 

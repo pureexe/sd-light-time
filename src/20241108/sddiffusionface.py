@@ -41,8 +41,10 @@ class SDDiffusionFace(L.LightningModule):
         self.feature_type = feature_type
         self.ctrlnet_lr = ctrlnet_lr
 
-        self.num_inversion_steps = num_inversion_steps
-        self.num_inference_steps = num_inference_steps
+        #self.num_inversion_steps = num_inversion_steps
+        #self.num_inference_steps = num_inference_steps
+        self.num_inversion_steps = 999
+        self.num_inference_steps = 999
         self.save_hyperparameters()
 
         self.seed = 42
@@ -349,12 +351,12 @@ class SDDiffusionFace(L.LightningModule):
         mse_output = []
         for target_idx in range(len(batch['target_image'])):
             target_light_features = self.get_light_features(batch, array_index=target_idx, generator=torch.Generator().manual_seed(self.seed))            
-            if target_idx > 0:
-                set_light_direction(
-                    self.pipe.unet,
-                    target_light_features,
-                    is_apply_cfg=is_apply_cfg
-                )
+            # if target_idx > 0:
+            set_light_direction(
+                self.pipe.unet,
+                target_light_features,
+                is_apply_cfg=is_apply_cfg
+            )
             pipe_args = {
                 "prompt_embeds": prompt_embeds,
                 "negative_prompt_embeds": negative_prompt_embeds,
@@ -433,8 +435,12 @@ class SDDiffusionFace(L.LightningModule):
                 with open(f"{log_dir}/{epoch_text}prompt/{filename}.txt", 'w') as f:
                     f.write(batch['text'][0])
                 # save the source_image
-                os.makedirs(f"{log_dir}/{epoch_text}source_image", exist_ok=True)
-                torchvision.utils.save_image(gt_image, f"{log_dir}/{epoch_text}source_image/{filename}.png")
+                os.makedirs(f"{log_dir}/{epoch_text}target_image", exist_ok=True)
+                torchvision.utils.save_image(gt_image, f"{log_dir}/{epoch_text}target_image/{filename}.png")
+                if 'source_image' in batch:
+                    os.makedirs(f"{log_dir}/{epoch_text}source_image", exist_ok=True)
+                    source_image = (batch['source_image'][target_idx] + 1.0) / 2.0 #bump back to range[0-1]
+                    torchvision.utils.save_image(source_image, f"{log_dir}/{epoch_text}source_image/{filename}.png")
             if True:              
                 if self.global_step == 0:
                     self.logger.experiment.add_text(f'text/{batch["word_name"][0]}', batch['text'][0], self.global_step)

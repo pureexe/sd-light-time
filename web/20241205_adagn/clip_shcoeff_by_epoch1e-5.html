@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Diffusion Face Relighting - Reimplmented in SD</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@1.0.2/css/bulma.min.css">
+    <style>
+        .fixed-tabs {
+          position: fixed;
+          top: 0;
+          width: 100%;
+          z-index: 1000;
+        }
+        body {
+          padding-top: 3rem; /* Adjust for the height of the fixed tab */
+        }
+    </style>
+</head>
+<body>
+<div id="app">
+<div class="mx-auto">
+    <h1 class="title has-text-centered"> CLIP SHCOEFF(LR: 1e-5)</h1>
+</div>
+<div class="table-container mx-auto"> 
+<table class="table is-bordered is-striped is-narrow mx-auto">
+    <thead>
+        <tr>
+            <th rowspan="2"></th>
+            <th colspan="3" v-for="image_id in [1,2,3,4,5]">Image {{image_id}}</th>
+        </tr>
+        <tr>
+           <th v-for="col_id in [...Array(15).keys()]">
+            {{ (col_id % 3 == 0) ? "Source" : (col_id % 3 == 1) ? "RIGHT" : "LEFT" }}
+           </th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr v-for="row_id in Array.from({length: 22}, (_, i) => i + 0)">
+            <td>Epoch: {{row_id}}</td>
+            <td v-for="col_id in [...Array(15).keys()]">                
+                <figure class="image is-128x128 mx-auto" >
+                    <img :src="'/output/20241108/multi_mlp_fit/lightning_logs/version_91870/epoch_'+(row_id).toString().padStart(4, '0')+'/crop_image/00000-'+(parseInt(col_id / 3) * 3).toString().padStart(5, '0')+'_00000-'+(col_id).toString().padStart(5, '0')+'.png'" loading="lazy"/>
+                </figure>    
+            </td>
+        </tr>
+    </tbody>
+</table> 
+</div>   
+</div>
+<script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+<script>
+const { createApp, ref } = Vue
+createApp({
+    setup() {
+        return {
+        }
+    },
+    methods: {
+        
+    },
+    mounted() {
+    },
+    beforeDestroy() {
+    }
+}).mount('#app')
+</script>
+</body>
+</html>
