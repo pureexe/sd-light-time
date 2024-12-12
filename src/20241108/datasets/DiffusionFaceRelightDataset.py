@@ -5,6 +5,7 @@ import json
 import ezexr 
 import numpy as np
 import random
+from skimage.color import rgb2lab
 
 ACCEPT_EXTENSION = ['jpg', 'png', 'jpeg', 'exr']
 IMAGE_DIR = "images"
@@ -23,6 +24,9 @@ class DiffusionFaceRelightDataset(torch.utils.data.Dataset):
         feature_types = ['shape', 'cam', 'faceemb', 'shadow', 'light'],
         light_dimension = 27, #light dim
         shadow_index = -1,
+        use_ab_background=False,
+        backgrounds_dir = "backgrounds", 
+        shadings_dir = "shadings",
         *args,
         **kwargs
     ) -> None:
@@ -36,9 +40,12 @@ class DiffusionFaceRelightDataset(torch.utils.data.Dataset):
         self.use_shcoeff2 = use_shcoeff2
         self.light_dimension = light_dimension
         self.random_mask_background_ratio = random_mask_background_ratio
+        self.use_ab_background = use_ab_background
         if 'shadow' in feature_types and 'light' in feature_types and feature_types[-1] == 'light' and shadow_index == -1:
             shadow_index = -28
         self.shadow_index = shadow_index # swap light shadow
+        self.backgrounds_dir = backgrounds_dir #control_shading_from_ldr27coeff
+        self.shadings_dir = shadings_dir
 
         self.setup_transform()
         self.setup_diffusion_face()
@@ -138,6 +145,11 @@ class DiffusionFaceRelightDataset(torch.utils.data.Dataset):
             torchvision.transforms.Resize(512,  antialias=True),  # Resize the image to 512x512
         ])
 
+        self.transform['control'] = torchvision.transforms.Compose([
+            torchvision.transforms.Resize(512,  antialias=True),  # Resize the image to 512x512
+        ])
+
+
     def get_image(self, name:str, directory:str, height =512, width=512,root_dir=None):
         root_dir = self.root_dir if root_dir is None else root_dir
         for ext in ACCEPT_EXTENSION:
@@ -181,7 +193,7 @@ class DiffusionFaceRelightDataset(torch.utils.data.Dataset):
 
     def get_background(self, name, height=512, width=512):
         if self.random_mask_background_ratio is None:
-            background = self.transform['image'](self.get_image(name,"backgrounds", height, width))
+            background = self.transform['image'](self.get_image(name, self.backgrounds_dir, height, width))
         elif self.random_mask_background_ratio > 0.0 and self.random_mask_background_ratio <= 1.0:
             background = self.transform['image'](self.get_image(name,"images", height, width))
             mask = torch.ones((height, width), dtype=torch.float32)
@@ -196,7 +208,34 @@ class DiffusionFaceRelightDataset(torch.utils.data.Dataset):
             background = self.transform['image'](self.get_image(name,"images", height, width))
         else:
             raise NotImplementedError()
+
+        # convert background from RGB space to AB space if enable    
+        if self.use_ab_background: 
+            # convert background from [-1,1] to [0,1]
+            rgb = (background + 1.0) / 2.0
+            assert (rgb >= 0.0).all() and (rgb <=1.0).all() # RGB need to be in format [0,1]
+
+            # convert to numpy format 
+            rgb = rgb.permute(1,2,0).numpy()
+            
+            # convert to rgb image and make sure a and b in range of [-1,1]
+            lab = rgb2lab(rgb)
+            lab = torch.from_numpy(lab)
+            a = lab[...,1] / 128 # convert from [-128,128] to [-1,1]
+            b = lab[...,1] / 128
+
+            background = torch.cat([a[None], b[None]],dim=0) # shape [2,H,W]
+            assert (rgb >= -1.0).all() and (rgb <=1.0).all()# background is currently in -1,1
+
         return background 
+    
+    def get_control_image(self, name:str, directory:str, height=512, width=512):
+        try:
+            control_image = self.get_image(name, directory, height, width)
+        except:
+            control_image = torch.zeros(3, 512, 512)
+        return control_image
+
 
     def get_item(self, idx, batch_idx):
         name = self.files[idx]
@@ -204,8 +243,11 @@ class DiffusionFaceRelightDataset(torch.utils.data.Dataset):
 
         image = self.transform['image'](self.get_image(name,"images", 512, 512))
         background = self.get_background(name, 512, 512)
-        shading = self.transform['image'](self.get_image(name,"shadings", 512, 512))
-        diffusion_face_features = self.diffusion_face_features[name]
+        shading = self.transform['image'] (self.get_control_image(name,self.shadings_dir, 512, 512))
+        if len(self.diffusion_face_features) > 0:
+            diffusion_face_features = self.diffusion_face_features[name]
+        else:
+            diffusion_face_features = []
 
         if 'light' in self.feature_types and not self.use_shcoeff2:
             # this is for safe-gauard protection in case that accidently pass light feature here

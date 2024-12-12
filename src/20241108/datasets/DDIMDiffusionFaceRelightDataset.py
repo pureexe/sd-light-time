@@ -51,16 +51,16 @@ class DDIMDiffusionFaceRelightDataset(DiffusionFaceRelightDataset):
             
             # we will use face feature from source
             diffusion_face = output['source_diffusion_face']
-            if self.use_shcoeff2:
-               diffusion_face = torch.cat([output['source_diffusion_face'][:-self.light_dimension],self.diffusion_face_features[envmap_name][-self.light_dimension:]])
-            # the shadow direction data need to copy from the target instead of from source 
-            diffusion_face[self.shadow_index] = self.diffusion_face_features[envmap_name][self.shadow_index]
-
+            if len(self.diffusion_face_features) > 0:
+                if self.use_shcoeff2:
+                    diffusion_face = torch.cat([output['source_diffusion_face'][:-self.light_dimension],self.diffusion_face_features[envmap_name][-self.light_dimension:]])
+                # the shadow direction data need to copy from the target instead of from source 
+                diffusion_face[self.shadow_index] = self.diffusion_face_features[envmap_name][self.shadow_index]
             
             output['target_diffusion_face'].append(diffusion_face)
 
             output['target_background'].append(self.get_background(envmap_name, 512, 512))
-            output['target_shading'].append(self.transform['image'](self.get_image(envmap_name,"shadings", 512, 512)))
+            output['target_shading'].append(self.transform['image'](self.get_image(envmap_name,self.shadings_dir, 512, 512)))
             output['target_image'].append(self.transform['image'](self.get_image(envmap_name,"images", 512, 512)))
             output['word_name'].append(envmap_name)
 

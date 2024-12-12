@@ -193,7 +193,7 @@ bin/siatv100 src/20241108/train.py -lr 1e-4 --guidance_scale 1.0 --network_type 
 ### version_92438 background only 1e-5
 bin/siatv100 src/20241108/train.py -lr 1e-5 --guidance_scale 1.0 --network_type inpaint_no_shading --batch_size 4 -c 1
 
-
+################################################################################
 ################################################################################ RERUN FOR CONTROL EXPERIMENT
 #### DEFARELI
 
@@ -216,8 +216,28 @@ bin/siatv100 src/20241108/train.py -lr 1e-4 --guidance_scale 1.0 --network_type 
 # version 92833
 bin/siatv100 src/20241108/train.py -lr 1e-5 --guidance_scale 1.0 --network_type sd_only_adagn --batch_size 12 -c 1 --feature_type shcoeff_order2
 
+###### RETRAIN AFTER HDD FULL
+# version continue from 92830 # sd 1e-5
+bin/siatv100 src/20241108/train.py -lr 1e-5 --guidance_scale 1.0 --network_type sd --batch_size 12 -c 1 -ckpt output/20241108/multi_mlp_fit/lightning_logs/version_92830/checkpoints/epoch=000009.ckpt
+
+# version continue from 92833 # order2 1e-5
+bin/siatv100 src/20241108/train.py -lr 1e-5 --guidance_scale 1.0 --network_type sd_only_adagn --batch_size 12 -c 1 --feature_type shcoeff_order2 -ckpt output/20241108/multi_mlp_fit/lightning_logs/version_92833/checkpoints/epoch=000012.ckpt
 
 
+
+
+##### new background condition
+# version 92998
+bin/siatv100 src/20241108/train.py -lr 1e-4 -c 1 --feature_type clip --batch_size 12 --network_type sd5ch -dataset /ist/ist-share/vision/relight/datasets/multi_illumination/spherical/train -dataset_val /ist/ist-share/vision/relight/datasets/multi_illumination/spherical/val -dataset_val_split /ist/ist-share/vision/relight/datasets/multi_illumination/spherical/split-val-relight-light-array.json --shadings_dir control_shading_from_ldr27coeff --backgrounds_dir images
+
+# version 92999
+bin/siatv100 src/20241108/train.py -lr 1e-5 -c 1 --feature_type clip --batch_size 12 --network_type sd5ch -dataset /ist/ist-share/vision/relight/datasets/multi_illumination/spherical/train -dataset_val /ist/ist-share/vision/relight/datasets/multi_illumination/spherical/val -dataset_val_split /ist/ist-share/vision/relight/datasets/multi_illumination/spherical/split-val-relight-light-array.json --shadings_dir control_shading_from_ldr27coeff --backgrounds_dir images
+
+### RUN CLIP AS A CONTROL CONDITION WITH BACKGROND AB incase soemthing went wrong
+
+bin/siatv100 src/20241108/train.py -lr 1e-4 -c 1 --feature_type clip --batch_size 12 --network_type sd5ch --backgrounds_dir images
+
+bin/siatv100 src/20241108/train.py -lr 1e-5 -c 1 --feature_type clip --batch_size 12 --network_type sd5ch --backgrounds_dir images
 
 
 

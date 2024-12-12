@@ -9,7 +9,7 @@ import argparse
 import os
 
 from constants import OUTPUT_MULTI, DATASET_ROOT_DIR, DATASET_VAL_DIR, DATASET_VAL_SPLIT
-from sddiffusionface import SDDiffusionFace, ScrathSDDiffusionFace, SDWithoutAdagnDiffusionFace, SDOnlyAdagnDiffusionFace, SDDiffusionFaceNoBg, SDDiffusionFaceNoShading, SDOnlyShading
+from sddiffusionface import SDDiffusionFace, ScrathSDDiffusionFace, SDWithoutAdagnDiffusionFace, SDOnlyAdagnDiffusionFace, SDDiffusionFaceNoBg, SDDiffusionFaceNoShading, SDOnlyShading, SDDiffusionFace5ch
 
 from LineNotify import notify
 
@@ -18,7 +18,7 @@ parser.add_argument('-lr', '--learning_rate', type=float, default=1e-4)
 parser.add_argument('-clr', '--ctrlnet_lr', type=float, default=1)
 parser.add_argument('-ckpt', '--checkpoint', type=str, default=None)
 parser.add_argument('--batch_size', type=int, default=1)
-parser.add_argument('-c', '--every_n_epochs', type=int, default=5) 
+parser.add_argument('-c', '--every_n_epochs', type=int, default=1) 
 parser.add_argument('--feature_type', type=str, default='diffusion_face')
 parser.add_argument('-gm', '--gate_multipiler', type=float, default=1)
 parser.add_argument('--val_check_interval', type=float, default=1.0)
@@ -28,7 +28,7 @@ parser.add_argument(
     '-nt', 
     '--network_type', 
     type=str,
-    choices=['sd','scrath', 'sd_without_adagn', 'sd_only_adagn', 'sd_no_bg', 'sd_no_shading', 'sd_only_shading', 'inpaint', 'inpaint_no_shading'],  # Restrict the input to the accepted strings
+    choices=['sd','scrath', 'sd_without_adagn', 'sd_only_adagn', 'sd_no_bg', 'sd_no_shading', 'sd_only_shading', 'inpaint', 'inpaint_no_shading', 'sd5ch'],  # Restrict the input to the accepted strings
     help="select control type for the model",
     required=True
 )
@@ -37,6 +37,9 @@ parser.add_argument('-dataset', '--dataset', type=str, default=DATASET_ROOT_DIR)
 parser.add_argument('-dataset_val', '--dataset_val', type=str, default=DATASET_VAL_DIR) 
 parser.add_argument('-dataset_val_split', '--dataset_val_split', type=str, default=DATASET_VAL_SPLIT) 
 parser.add_argument('-specific_prompt', type=str, default="a photorealistic image")  # we use static prompt to make thing same as mint setting
+parser.add_argument('--shadings_dir', type=str, default="shadings")
+parser.add_argument('--backgrounds_dir', type=str, default="backgrounds") 
+
 
 parser.add_argument(
     '-split',  
@@ -62,6 +65,8 @@ def get_model_class():
         return SDDiffusionFaceNoShading
     elif args.network_type == 'sd_only_shading': # only training the shading controlnet
         return SDOnlyShading
+    elif args.network_type == 'sd5ch':
+        return SDDiffusionFace5ch
 @notify
 def main():
     model_class = get_model_class()
@@ -77,11 +82,36 @@ def main():
     use_shcoeff2 = args.feature_type in ['diffusion_face_shcoeff', 'clip_shcoeff', 'shcoeff_order2']
     use_random_mask_background = args.network_type in ['inpaint_no_shading', 'inpaint'] 
     feature_types = ['shape', 'cam', 'faceemb', 'shadow']
+    use_ab_background=args.network_type in ['sd5ch']
+    if use_shcoeff2:
+        feature_types.append('light')
     if args.feature_type in ['shcoeff_order2']:
         feature_types = ['light']
+    if args.feature_type in ['clip']:
+        feature_types = []
     specific_prompt = args.specific_prompt if args.specific_prompt != "" else None
-    train_dataset = DiffusionFaceRelightDataset(root_dir=train_dir, dataset_multiplier=args.dataset_train_multiplier,specific_prompt=specific_prompt, use_shcoeff2=use_shcoeff2, feature_types=feature_types, random_mask_background_ratio=args.bg_mask_ratio if use_random_mask_background else None)
-    val_dataset = DDIMDiffusionFaceRelightDataset(root_dir=val_dir, index_file=args.dataset_val_split,specific_prompt=specific_prompt, use_shcoeff2=use_shcoeff2, feature_types=feature_types, random_mask_background_ratio = 0.0 if use_random_mask_background else None)
+    train_dataset = DiffusionFaceRelightDataset(
+        root_dir=train_dir,
+        dataset_multiplier=args.dataset_train_multiplier,
+        specific_prompt=specific_prompt,
+        use_shcoeff2=use_shcoeff2,
+        feature_types=feature_types,
+        random_mask_background_ratio=args.bg_mask_ratio if use_random_mask_background else None,
+        shadings_dir=args.shadings_dir,
+        backgrounds_dir=args.backgrounds_dir,
+        use_ab_background=use_ab_background
+    )
+    val_dataset = DDIMDiffusionFaceRelightDataset(
+        root_dir=val_dir,
+        index_file=args.dataset_val_split,
+        specific_prompt=specific_prompt,
+        use_shcoeff2=use_shcoeff2,
+        feature_types=feature_types,
+        random_mask_background_ratio = 0.0 if use_random_mask_background else None,
+        shadings_dir=args.shadings_dir,
+        backgrounds_dir=args.backgrounds_dir,
+        use_ab_background=use_ab_background
+    )
     train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, num_workers=8)
     val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=1, shuffle=False)
 

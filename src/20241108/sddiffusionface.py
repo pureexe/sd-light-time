@@ -41,10 +41,10 @@ class SDDiffusionFace(L.LightningModule):
         self.feature_type = feature_type
         self.ctrlnet_lr = ctrlnet_lr
 
-        #self.num_inversion_steps = num_inversion_steps
-        #self.num_inference_steps = num_inference_steps
-        self.num_inversion_steps = 999
-        self.num_inference_steps = 999
+        self.num_inversion_steps = num_inversion_steps
+        self.num_inference_steps = num_inference_steps
+        # self.num_inversion_steps = 999
+        # self.num_inference_steps = 999
         self.save_hyperparameters()
 
         self.seed = 42
@@ -439,7 +439,7 @@ class SDDiffusionFace(L.LightningModule):
                 torchvision.utils.save_image(gt_image, f"{log_dir}/{epoch_text}target_image/{filename}.png")
                 if 'source_image' in batch:
                     os.makedirs(f"{log_dir}/{epoch_text}source_image", exist_ok=True)
-                    source_image = (batch['source_image'][target_idx] + 1.0) / 2.0 #bump back to range[0-1]
+                    source_image = (batch['source_image'][0] + 1.0) / 2.0 #bump back to range[0-1]
                     torchvision.utils.save_image(source_image, f"{log_dir}/{epoch_text}source_image/{filename}.png")
             if True:              
                 if self.global_step == 0:
@@ -621,3 +621,32 @@ class SDOnlyShading(SDDiffusionFaceNoBg):
     def setup_light_block(self):
         self.pipe.to('cuda')
 
+
+class SDDiffusionFace5ch(SDDiffusionFace):
+    def setup_sd(self, sd_path="runwayml/stable-diffusion-v1-5", controlnet_path=None):
+        # load main UNet
+        unet = UNet2DConditionModel.from_pretrained(sd_path, subfolder='unet')
+
+        # create controlnet from unet. Unet take 5 channel input with are 2 channel of background and other 3 channel of shading
+        controlnet = ControlNetModel.from_unet(unet, conditioning_channels=5) 
+
+        # load pipeline
+        self.pipe =  StableDiffusionControlNetPipeline.from_pretrained(
+            sd_path,
+            unet=unet, # We add unet here to prevent it from reloading Unet
+            controlnet=controlnet,
+            safety_checker=None,
+            torch_dtype=MASTER_TYPE
+        )
+
+        self.regular_scheduler = self.pipe.scheduler
+
+        # load unet from pretrain 
+        self.pipe.unet.requires_grad_(False)
+        self.pipe.vae.requires_grad_(False)
+        self.pipe.text_encoder.requires_grad_(False)
+
+        is_save_memory = False
+        if is_save_memory:
+            self.pipe.enable_model_cpu_offload()
+            self.pipe.enable_xformers_memory_efficient_attention()
