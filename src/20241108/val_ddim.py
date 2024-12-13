@@ -112,6 +112,8 @@ NAMES = {
     92825: 'v2_adagn_face_shcoeff',
     92826: 'v2_adagn_only_shcoeff',
     92833: 'v2_adagn_only_shcoeff',
+    93026: 'v2_defareli',
+    93027: 'v2_adagn_only_shcoeff'
 }
 METHODS = {
     89738: 'default',
@@ -151,6 +153,8 @@ METHODS = {
     92825: 'default',
     92826: 'default',
     92833: 'default',
+    93026: 'default',
+    93027: 'default'
 }
 CONDITIONS_CLASS = {
     89738: SDDiffusionFace,
@@ -190,6 +194,8 @@ CONDITIONS_CLASS = {
     92825: SDOnlyAdagnDiffusionFace,
     92826: SDOnlyAdagnDiffusionFace,
     92833: SDOnlyAdagnDiffusionFace,
+    93026: SDDiffusionFace,
+    93027: SDOnlyAdagnDiffusionFace
 }
 LRS = {
     89738: '1e-4',
@@ -229,6 +235,8 @@ LRS = {
     92825: '1e-5',
     92826: '1e-4',
     92833: '1e-5',
+    93026: '1e-5',
+    93027: '1e-5'
 }
 DIRNAME = {
     89738: CHECKPOINT_FOLDER_NAME,
@@ -268,6 +276,8 @@ DIRNAME = {
     92825: CHECKPOINT_FOLDER_NAME,
     92826: CHECKPOINT_FOLDER_NAME,
     92833: CHECKPOINT_FOLDER_NAME,
+    93026: CHECKPOINT_FOLDER_NAME,
+    93027: CHECKPOINT_FOLDER_NAME
 }
 CHECKPOINTS = {
     89738: 24,
@@ -307,10 +317,12 @@ CHECKPOINTS = {
     92825: 9,
     92826: 9,
     92833: 9,
+    93026: 10,
+    93027: 10
 }
 
-use_shcoeff2 = [91864, 91865, 91866, 91869, 91870, 91871, 92037, 92047, 92049, 92824, 92825, 92826, 92833]
-use_only_light = [92037, 92047, 92049, 92826, 92833]
+use_shcoeff2 = [91864, 91865, 91866, 91869, 91870, 91871, 92037, 92047, 92049, 92824, 92825, 92826, 92833, 93027]
+use_only_light = [92037, 92047, 92049, 92826, 92833, 93027]
 use_random_mask_background = [92372, 92414, 92423, 92438]
 
 def get_from_mode(mode):
@@ -338,6 +350,14 @@ def get_from_mode(mode):
         return "/data/pakkapon/datasets/face/ffhq_defareli/valid2right", 100, DDIMDiffusionFaceRelightDataset,{"index_file":"/data/pakkapon/datasets/face/ffhq_defareli/valid2right/index-array.json"}, "a photorealistic image"
     elif mode == "valid_spatial":
         return "/data/pakkapon/datasets/face/ffhq_defareli/valid_spatial", 100, DDIMDiffusionFaceRelightDataset,{"index_file":"/data/pakkapon/datasets/face/ffhq_defareli/valid_spatial/index-array.json"}, "a photorealistic image"
+    elif mode == "valid_spatial_test":
+        return "/data/pakkapon/datasets/face/ffhq_defareli/valid_spatial_test", 100, DDIMDiffusionFaceRelightDataset,{"index_file":"/data/pakkapon/datasets/face/ffhq_defareli/valid_spatial_test/index-array.json"}, "a photorealistic image"
+    elif mode == "valid_spatial_test2":
+        return "/data/pakkapon/datasets/face/ffhq_defareli/valid_spatial_test2", 100, DDIMDiffusionFaceRelightDataset,{"index_file":"/data/pakkapon/datasets/face/ffhq_defareli/valid_spatial_test2/index-array.json"}, "a photorealistic image"
+    elif mode == "valid_spatial_test3":
+        return "/data/pakkapon/datasets/face/ffhq_defareli/valid_spatial_test2", 100, DDIMDiffusionFaceRelightDataset,{"index_file":"/data/pakkapon/datasets/face/ffhq_defareli/valid_spatial_test3/index-array.json"}, "a photorealistic image"
+    elif mode == "valid_spatial_test4":
+        return "/data/pakkapon/datasets/face/ffhq_defareli/valid_spatial_test2", 100, DDIMDiffusionFaceRelightDataset,{"index_file":"/data/pakkapon/datasets/face/ffhq_defareli/valid_spatial_test4/index-array.json"}, "a photorealistic image"
     else:
         raise Exception("mode not found")
 

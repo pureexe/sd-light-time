@@ -217,26 +217,27 @@ bin/siatv100 src/20241108/train.py -lr 1e-4 --guidance_scale 1.0 --network_type 
 bin/siatv100 src/20241108/train.py -lr 1e-5 --guidance_scale 1.0 --network_type sd_only_adagn --batch_size 12 -c 1 --feature_type shcoeff_order2
 
 ###### RETRAIN AFTER HDD FULL
-# version continue from 92830 # sd 1e-5
+# version 93026 continue from 92830 # sd 1e-5
 bin/siatv100 src/20241108/train.py -lr 1e-5 --guidance_scale 1.0 --network_type sd --batch_size 12 -c 1 -ckpt output/20241108/multi_mlp_fit/lightning_logs/version_92830/checkpoints/epoch=000009.ckpt
 
-# version continue from 92833 # order2 1e-5
+# version 93027 continue from 92833 # order2 1e-5
 bin/siatv100 src/20241108/train.py -lr 1e-5 --guidance_scale 1.0 --network_type sd_only_adagn --batch_size 12 -c 1 --feature_type shcoeff_order2 -ckpt output/20241108/multi_mlp_fit/lightning_logs/version_92833/checkpoints/epoch=000012.ckpt
 
 
 
-
 ##### new background condition
-# version 92998
+# version 92998 (DOME 3)
 bin/siatv100 src/20241108/train.py -lr 1e-4 -c 1 --feature_type clip --batch_size 12 --network_type sd5ch -dataset /ist/ist-share/vision/relight/datasets/multi_illumination/spherical/train -dataset_val /ist/ist-share/vision/relight/datasets/multi_illumination/spherical/val -dataset_val_split /ist/ist-share/vision/relight/datasets/multi_illumination/spherical/split-val-relight-light-array.json --shadings_dir control_shading_from_ldr27coeff --backgrounds_dir images
 
-# version 92999
+# version 92999 (DOME 3)
 bin/siatv100 src/20241108/train.py -lr 1e-5 -c 1 --feature_type clip --batch_size 12 --network_type sd5ch -dataset /ist/ist-share/vision/relight/datasets/multi_illumination/spherical/train -dataset_val /ist/ist-share/vision/relight/datasets/multi_illumination/spherical/val -dataset_val_split /ist/ist-share/vision/relight/datasets/multi_illumination/spherical/split-val-relight-light-array.json --shadings_dir control_shading_from_ldr27coeff --backgrounds_dir images
 
 ### RUN CLIP AS A CONTROL CONDITION WITH BACKGROND AB incase soemthing went wrong
 
+# (DOME 3)
 bin/siatv100 src/20241108/train.py -lr 1e-4 -c 1 --feature_type clip --batch_size 12 --network_type sd5ch --backgrounds_dir images
 
+# (DOME 3)
 bin/siatv100 src/20241108/train.py -lr 1e-5 -c 1 --feature_type clip --batch_size 12 --network_type sd5ch --backgrounds_dir images
 
 
@@ -296,6 +297,12 @@ bin/siatv100 src/20241108/val_ddim.py -i 89738 -m valid2right,train2right
 bin/siatv100 src/20241108/val_ddim.py -i 89740 -m valid2left,train2left
 bin/siatv100 src/20241108/val_ddim.py -i 89740 -m valid2right,train2right
 
+# generate
+bin/siatv100 src/20241108/val_ddim.py -i 92829 -m valid_spatial -c 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20
+bin/siatv100 src/20241108/val_ddim.py -i 92830 -m valid_spatial -c 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20
+
+bin/siatv100 src/20241108/val_ddim.py -i 92824 -m valid_spatial -c 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20
+bin/siatv100 src/20241108/val_ddim.py -i 92825 -m valid_spatial -c 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20
 
 
 
