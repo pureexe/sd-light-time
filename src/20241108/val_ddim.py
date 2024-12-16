@@ -51,7 +51,7 @@ import argparse
 from constants import FOLDER_NAME
 
 from constants import OUTPUT_MULTI, DATASET_ROOT_DIR, DATASET_VAL_DIR, DATASET_VAL_SPLIT
-from sddiffusionface import SDDiffusionFace, ScrathSDDiffusionFace, SDWithoutAdagnDiffusionFace, SDOnlyAdagnDiffusionFace, SDOnlyShading, SDDiffusionFaceNoShading
+from sddiffusionface import SDDiffusionFace, ScrathSDDiffusionFace, SDWithoutAdagnDiffusionFace, SDOnlyAdagnDiffusionFace, SDOnlyShading, SDDiffusionFaceNoShading, SDDiffusionFace5ch
 
 from datasets.DDIMDiffusionFaceRelightDataset import DDIMDiffusionFaceRelightDataset
 
@@ -106,14 +106,18 @@ NAMES = {
     92414: 'inpaint',
     92423: 'inpaint_only_background',
     92438: 'inpaint_only_background',
-    92829: 'v2_defareli',
-    92830: 'v2_defareli',
-    92824: 'v2_adagn_face_shcoeff',
-    92825: 'v2_adagn_face_shcoeff',
-    92826: 'v2_adagn_only_shcoeff',
-    92833: 'v2_adagn_only_shcoeff',
-    93026: 'v2_defareli',
-    93027: 'v2_adagn_only_shcoeff'
+    92829: 'v2a_defareli',
+    92830: 'v2a_defareli',
+    92824: 'v2a_adagn_face_shcoeff',
+    92825: 'v2a_adagn_face_shcoeff',
+    92826: 'v2a_adagn_only_shcoeff',
+    92833: 'v2a_adagn_only_shcoeff',
+    93026: 'v2a_defareli',
+    93027: 'v2a_adagn_only_shcoeff',
+    93110: 'v2a_defareli',
+    93111: 'v2a_adagn_face_shcoeff',
+    92998: 'multi_illum_fullclip',
+    92999: 'multi_illum_fullclip',
 }
 METHODS = {
     89738: 'default',
@@ -154,7 +158,11 @@ METHODS = {
     92826: 'default',
     92833: 'default',
     93026: 'default',
-    93027: 'default'
+    93027: 'default',
+    93110: 'default',
+    93111: 'default',
+    92998: 'default',
+    92999: 'default'
 }
 CONDITIONS_CLASS = {
     89738: SDDiffusionFace,
@@ -195,7 +203,11 @@ CONDITIONS_CLASS = {
     92826: SDOnlyAdagnDiffusionFace,
     92833: SDOnlyAdagnDiffusionFace,
     93026: SDDiffusionFace,
-    93027: SDOnlyAdagnDiffusionFace
+    93027: SDOnlyAdagnDiffusionFace,
+    93110: SDDiffusionFace,
+    93111: SDOnlyAdagnDiffusionFace,
+    92998: SDDiffusionFace5ch,
+    92999: SDDiffusionFace5ch
 }
 LRS = {
     89738: '1e-4',
@@ -236,7 +248,11 @@ LRS = {
     92826: '1e-4',
     92833: '1e-5',
     93026: '1e-5',
-    93027: '1e-5'
+    93027: '1e-5',
+    93110: '1e-4',
+    93111: '1e-4',
+    92998: '1e-4',
+    92999: '1e-5',
 }
 DIRNAME = {
     89738: CHECKPOINT_FOLDER_NAME,
@@ -277,7 +293,11 @@ DIRNAME = {
     92826: CHECKPOINT_FOLDER_NAME,
     92833: CHECKPOINT_FOLDER_NAME,
     93026: CHECKPOINT_FOLDER_NAME,
-    93027: CHECKPOINT_FOLDER_NAME
+    93027: CHECKPOINT_FOLDER_NAME,
+    93110: CHECKPOINT_FOLDER_NAME,
+    93111: CHECKPOINT_FOLDER_NAME,
+    92998: CHECKPOINT_FOLDER_NAME,
+    92999: CHECKPOINT_FOLDER_NAME,
 }
 CHECKPOINTS = {
     89738: 24,
@@ -318,9 +338,14 @@ CHECKPOINTS = {
     92826: 9,
     92833: 9,
     93026: 10,
-    93027: 10
+    93027: 10,
+    93110: 29,
+    93111: 29,
+    92998: 48,
+    92999: 48,
 }
 
+use_ab_background = [92998, 92999]
 use_shcoeff2 = [91864, 91865, 91866, 91869, 91870, 91871, 92037, 92047, 92049, 92824, 92825, 92826, 92833, 93027]
 use_only_light = [92037, 92047, 92049, 92826, 92833, 93027]
 use_random_mask_background = [92372, 92414, 92423, 92438]
@@ -355,9 +380,11 @@ def get_from_mode(mode):
     elif mode == "valid_spatial_test2":
         return "/data/pakkapon/datasets/face/ffhq_defareli/valid_spatial_test2", 100, DDIMDiffusionFaceRelightDataset,{"index_file":"/data/pakkapon/datasets/face/ffhq_defareli/valid_spatial_test2/index-array.json"}, "a photorealistic image"
     elif mode == "valid_spatial_test3":
-        return "/data/pakkapon/datasets/face/ffhq_defareli/valid_spatial_test2", 100, DDIMDiffusionFaceRelightDataset,{"index_file":"/data/pakkapon/datasets/face/ffhq_defareli/valid_spatial_test3/index-array.json"}, "a photorealistic image"
+        return "/data/pakkapon/datasets/face/ffhq_defareli/valid_spatial_test3", 100, DDIMDiffusionFaceRelightDataset,{"index_file":"/data/pakkapon/datasets/face/ffhq_defareli/valid_spatial_test3/index-array.json"}, "a photorealistic image"
     elif mode == "valid_spatial_test4":
         return "/data/pakkapon/datasets/face/ffhq_defareli/valid_spatial_test2", 100, DDIMDiffusionFaceRelightDataset,{"index_file":"/data/pakkapon/datasets/face/ffhq_defareli/valid_spatial_test4/index-array.json"}, "a photorealistic image"
+    elif mode == "multi_viz":
+        return "/data/pakkapon/datasets/multi_illumination/spherical/val", 100, DDIMDiffusionFaceRelightDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/split-val-relight-light-array.json", "shadings_dir": "control_shading_from_ldr27coeff", "backgrounds_dir": "images", "use_ab_background": True, "feature_types": []},  "a photorealistic image"
     else:
         raise Exception("mode not found")
 

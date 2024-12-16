@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Diffusion Face Relighting - Reimplmented in SD</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@1.0.2/css/bulma.min.css">
+    <style>
+        .fixed-tabs {
+          position: fixed;
+          top: 0;
+          width: 100%;
+          z-index: 1000;
+        }
+        body {
+          padding-top: 3rem; /* Adjust for the height of the fixed tab */
+        }
+    </style>
+</head>
+<body>
+<div id="app">
+<div class="tabs is-centered fixed-tabs has-background-dark">
+    <div class="select select is-primary">
+        <select v-model="current_splittype">
+            <option 
+                v-for="splittype in avaliable_spittypes"
+                :key="splittype" 
+                :value="splittype"
+            >
+                Split: {{splittype}}
+        </option>
+        </select>
+    </div>
+    <div class="select select is-primary">
+        <select v-model="current_guidance">
+            <option 
+                v-for="guidance in avaliable_guidances"
+                :key="guidance" 
+                :value="guidance"
+            >
+                Guidance: {{guidance}}
+        </option>
+        </select>
+    </div>    
+    <div class="select select is-primary">
+        <select v-model="current_learningrate">
+            <option 
+                v-for="learning_rate in avaliable_learningrate"
+                :key="learning_rate" 
+                :value="learning_rate"
+            >
+                LR: {{learning_rate}}
+        </option>
+        </select>
+    </div>    
+    <div class="select select is-primary">
+        <select v-model="current_image_index">
+            <option 
+                v-for="image_name,index in avaliable_images"
+                :key="index" 
+                :value="index"
+            >
+                LR: {{image_name}}
+        </option>
+        </select>
+    </div>
+</div>     
+<table class="table is-bordered is-striped is-narrow mx-auto">
+    <thead>
+        <tr>
+            <th>
+                Input
+            </th>
+            <th>
+                Ground Truth
+            </th>
+            <th>
+                DiFaReLi
+            </th>
+            <th>
+                Reimplemented
+            </th>
+            <th>
+                Epoch
+            </th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr v-for="epoch_id, row_id in Array.from({length: 30}, (_, i) => i + 1)">
+            <!-- <img :src="'/output/20241108/multi_mlp_fit/lightning_logs/version_92205/epoch_'+(row_id).toString().padStart(4, '0')+'/crop_image/00000-'+(parseInt(col_id / 3) * 3).toString().padStart(5, '0')+'_00000-'+(col_id).toString().padStart(5, '0')+'.png'" loading="lazy"/> -->
+            <td>
+                <figure class="image is-128x128 mx-auto" >
+                    <img :src="'/output/datasets/face/ffhq_defareli/valid_spatial/images/'+source_images[current_image_index]+'.png'" />
+                </figure>  
+            </td>
+            <td class="has-background-primary">
+                <figure class="image is-128x128 mx-auto" >
+                    <img :src="'/output/datasets/face/ffhq_defareli/valid_spatial/images/'+target_images[current_image_index]+'.png'" />
+                </figure>  
+            </td>
+            <td>
+                <figure class="image is-128x128 mx-auto" >
+                    <img :src="'/output/datasets/face/ffhq_defareli/valid_spatial/pred_difareli/'+avaliable_images[current_image_index]+'.png'" />
+                </figure>  
+            </td>
+            <td>
+                <figure class="image is-128x128 mx-auto" >
+                    <img :src="'/output/20241108/val_valid_spatial/default/'+current_guidance+'/v2_defareli/'+current_learningrate+'/chk'+epoch_id+'/lightning_logs/version_'+getVersion(current_learningrate, current_guidance)+'/crop_image/'+avaliable_images[current_image_index]+'.png'" />
+                </figure>  
+            </td>
+            <td>
+                {{epoch_id}}
+            </td>
+        </tr>
+    </tbody>
+</table>
+</div>
+<script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+<script>
+const { createApp, ref } = Vue
+createApp({
+    setup() {
+        const avaliable_images = [
+            '127_03_01_051_00_127_03_01_051_08',
+            '177_03_01_051_00_177_03_01_051_14',
+            '246_03_01_051_10_246_03_01_051_00',
+            '329_03_01_051_11_329_03_01_051_07',
+            '069_03_01_051_14_069_03_01_051_18',
+        ];
+        const source_images = [
+            "127_03_01_051_00",
+            "177_03_01_051_00",
+            "246_03_01_051_10",
+            "329_03_01_051_11",
+            "069_03_01_051_14"
+        ]
+        const target_images = [
+            "127_03_01_051_08",
+            "177_03_01_051_14",
+            "246_03_01_051_00",
+            "329_03_01_051_07",
+            "069_03_01_051_18"
+        ]
+        const current_image_index = ref(0)
+        const avaliable_guidances = ['1.0', '1.1'];
+        const current_guidance = ref(avaliable_guidances[0]);
+        const current_tab = ref(0);
+        const avaliable_spittypes = ['valid', 'train'];
+        const current_splittype = ref(avaliable_spittypes[0])
+        const avaliable_tabs = ref(['Both', 'Input', 'Left', 'Right']);
+        const avaliable_learningrate = ['1e-4','1e-5','1e-6'];
+        const current_learningrate = ref(avaliable_learningrate[0]);
+        return {
+            avaliable_images,
+            source_images,
+            target_images,
+            current_image_index,
+            avaliable_guidances,
+            current_guidance,
+            current_tab, 
+            avaliable_tabs,
+            avaliable_spittypes,
+            current_splittype,
+            avaliable_learningrate,
+            current_learningrate
+        }
+    },
+    methods: {
+        handleKeyPress(event) {
+            const key = event.key; // Get the key pressed
+            if (key === "ArrowLeft") {
+                this.current_tab = this.current_tab == 0 ? this.avaliable_tabs.length - 1: (this.current_tab-1);
+            } else if (key === "ArrowRight") {
+                this.current_tab = (this.current_tab+1) % this.avaliable_tabs.length;
+            } else if (["1", "2", "3", "4"].includes(key)) {
+                this.current_tab = parseInt(key)-1
+            }
+        },
+        getVersion(learning_rate, current_guidance){
+            if(learning_rate == '1e-4') return "93091";
+            if(learning_rate == '1e-5') return "93092";
+            return "";
+        },
+        getFaceSplit(){
+            if(this.current_tab == 1){
+                return ['left']
+            }
+            if(this.current_tab == 2){
+                return ['left'];
+            }
+            if(this.current_tab == 3){
+                return ['right'];
+            }
+            return ['left','right'];
+        }
+    },
+    mounted() {
+        window.addEventListener('keydown', this.handleKeyPress);
+    },
+    beforeDestroy() {
+     window.removeEventListener('keydown', this.handleKeyPress);
+    }
+}).mount('#app')
+</script>
+</body>
+</html>

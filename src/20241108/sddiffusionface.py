@@ -43,8 +43,6 @@ class SDDiffusionFace(L.LightningModule):
 
         self.num_inversion_steps = num_inversion_steps
         self.num_inference_steps = num_inference_steps
-        # self.num_inversion_steps = 999
-        # self.num_inference_steps = 999
         self.save_hyperparameters()
 
         self.seed = 42
@@ -315,7 +313,8 @@ class SDDiffusionFace(L.LightningModule):
         # set direction for inversion        
         source_light_features = self.get_light_features(batch, generator=torch.Generator().manual_seed(self.seed))
         source_light_features = source_light_features if USE_LIGHT_DIRECTION_CONDITION else None
-        set_light_direction(self.pipe.unet, None,  is_apply_cfg=False)
+        #set_light_direction(self.pipe.unet, None,  is_apply_cfg=False)
+        set_light_direction(self.pipe.unet, source_light_features,  is_apply_cfg=False)
 
 
         # Inversion to get z_noise 

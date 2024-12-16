@@ -112,26 +112,39 @@ class DiffusionFaceRelightDataset(torch.utils.data.Dataset):
     def setup_diffusion_face(self):
         output = {}
         for feature_type in self.feature_types:
-            with open(os.path.join(self.root_dir,f"{feature_type}-anno.txt")) as f:
-                lines = f.readlines()
-                for line in lines:
-                    contents = line.strip()
-                    if len(contents) == 0:
-                        continue
-                    contents = contents.split(" ")
-                    filename = contents[0]
-                    if "_" in filename:
-                        n_file = filename.split(".")[0]
-                    else:
-                        file_id = int(filename.split(".")[0])
-                        dir_id = int(file_id) // 1000 * 1000
-                        n_file = f"{dir_id:05d}/{file_id:05d}"
+            if feature_type == 'light' and not os.path.exists(os.path.join(self.root_dir,f"{feature_type}-anno.txt")):
+                scenes = sorted(os.listdir(os.path.join(self.root_dir, "shcoeffs")))
+                for scene in scenes:
+                    files = sorted(os.listdir(os.path.join(self.root_dir, "shcoeffs", scene)))
+                    for filename in files:
+                        if filename.endswith(".npy"):
+                            shcoeff = np.load(os.path.join(self.root_dir, "shcoeffs", scene, filename))
+                            f_name = filename.replace(".npy","")
+                            n_file = f"{scene}/{f_name}"
+                            if not n_file in output:
+                                output[n_file] = []
+                            output[n_file] = shcoeff.tolist()
+            else:
+                with open(os.path.join(self.root_dir,f"{feature_type}-anno.txt")) as f:
+                    lines = f.readlines()
+                    for line in lines:
+                        contents = line.strip()
+                        if len(contents) == 0:
+                            continue
+                        contents = contents.split(" ")
+                        filename = contents[0]
+                        if "_" in filename:
+                            n_file = filename.split(".")[0]
+                        else:
+                            file_id = int(filename.split(".")[0])
+                            dir_id = int(file_id) // 1000 * 1000
+                            n_file = f"{dir_id:05d}/{file_id:05d}"
 
-                    contents = contents[1:]
-                    contents = [float(c) for c in contents]
-                    if not n_file in output:
-                        output[n_file] = []
-                    output[n_file] += contents
+                        contents = contents[1:]
+                        contents = [float(c) for c in contents]
+                        if not n_file in output:
+                            output[n_file] = []
+                        output[n_file] += contents
         # convert to torch tensor 
         for key in output:
             output[key] = torch.from_numpy(np.array(output[key]))
