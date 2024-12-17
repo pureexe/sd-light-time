@@ -435,11 +435,11 @@ class SDDiffusionFace(L.LightningModule):
                     f.write(batch['text'][0])
                 # save the source_image
                 os.makedirs(f"{log_dir}/{epoch_text}target_image", exist_ok=True)
-                torchvision.utils.save_image(gt_image, f"{log_dir}/{epoch_text}target_image/{filename}.png")
+                torchvision.utils.save_image(gt_image, f"{log_dir}/{epoch_text}target_image/{filename}.jpg")
                 if 'source_image' in batch:
                     os.makedirs(f"{log_dir}/{epoch_text}source_image", exist_ok=True)
                     source_image = (batch['source_image'][0] + 1.0) / 2.0 #bump back to range[0-1]
-                    torchvision.utils.save_image(source_image, f"{log_dir}/{epoch_text}source_image/{filename}.png")
+                    torchvision.utils.save_image(source_image, f"{log_dir}/{epoch_text}source_image/{filename}.jpg")
             if True:              
                 if self.global_step == 0:
                     self.logger.experiment.add_text(f'text/{batch["word_name"][0]}', batch['text'][0], self.global_step)

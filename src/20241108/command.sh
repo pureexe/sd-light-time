@@ -237,6 +237,27 @@ bin/siatv100 src/20241108/train.py -lr 1e-5 --guidance_scale 1.0 --network_type 
 # SHCOEFF 1e-4  from 93122 version 92826
 bin/siatv100 src/20241108/train.py -lr 1e-4 --guidance_scale 1.0 --network_type sd_only_adagn --batch_size 12 -c 1 --feature_type shcoeff_order2 -ckpt  /ist/ist-share/vision/pakkapon/relight/sd-light-time/output/20241108/multi_mlp_fit/lightning_logs/version_92826/checkpoints/epoch=000036.ckpt
 
+###### RETRAIN AFTER 3DAY TIMEOUT (2)
+
+# sd1e-4 93110 from  version 93110 from version 92829
+bin/siatv100 src/20241108/train.py -lr 1e-4 --guidance_scale 1.0 --network_type sd --batch_size 12 -c 1 -ckpt output/20241108/multi_mlp_fit/lightning_logs/version_93110/checkpoints/epoch=000043.ckpt
+
+# version 93395 from 93026 continue from 92830 # sd 1e-5
+bin/siatv100 src/20241108/train.py -lr 1e-5 --guidance_scale 1.0 --network_type sd --batch_size 12 -c 1 -ckpt output/20241108/multi_mlp_fit/lightning_logs/version_93026/checkpoints/epoch=000037.ckpt
+
+
+# ADAGAN_FACE 1e-4  93111 from version 93111 from version 92824
+bin/siatv100 src/20241108/train.py -lr 1e-4 --guidance_scale 1.0 --network_type sd_only_adagn --batch_size 12 -c 1 --feature_type diffusion_face_shcoeff -ckpt output/20241108/multi_mlp_fit/lightning_logs/version_93111/checkpoints/epoch=000056.ckpt
+
+# ADAGAN_FACE from 93120 1e-5 version 93120 from version 92825
+bin/siatv100 src/20241108/train.py -lr 1e-5 --guidance_scale 1.0 --network_type sd_only_adagn --batch_size 12 -c 1 --feature_type diffusion_face_shcoeff -ckpt output/20241108/multi_mlp_fit/lightning_logs/version_93120/checkpoints/epoch=000057.ckpt
+
+# SHCOEFF 1e-4 93122  from 93122 version 92826
+bin/siatv100 src/20241108/train.py -lr 1e-4 --guidance_scale 1.0 --network_type sd_only_adagn --batch_size 12 -c 1 --feature_type shcoeff_order2 -ckpt  output/20241108/multi_mlp_fit/lightning_logs/version_93122/checkpoints/epoch=000056.ckpt
+
+# SHCOEFF 1e-5 version 93396 from 93027 continue from 92833 # order2 1e-5
+bin/siatv100 src/20241108/train.py -lr 1e-5 --guidance_scale 1.0 --network_type sd_only_adagn --batch_size 12 -c 1 --feature_type shcoeff_order2 -ckpt output/20241108/multi_mlp_fit/lightning_logs/version_93027/checkpoints/epoch=000049.ckpt
+
 
 ##### new background condition
 # version 92998 (DOME 3)
@@ -256,10 +277,13 @@ bin/siatv100 src/20241108/train.py -lr 1e-5 -c 1 --feature_type clip --batch_siz
 ### RUN CLIP WITH SH_COEFF ONLY
 
 ##### new background condition (shcoeff2_order2_only)
+# version_93148
 bin/siatv100 src/20241108/train.py -lr 1e-4 -c 1 --feature_type shcoeff_order2 --batch_size 12 --network_type sd_only_adagn -dataset /ist/ist-share/vision/relight/datasets/multi_illumination/spherical/train -dataset_val /ist/ist-share/vision/relight/datasets/multi_illumination/spherical/val -dataset_val_split /ist/ist-share/vision/relight/datasets/multi_illumination/spherical/split-val-relight-light-array.json --shadings_dir control_shading_from_ldr27coeff --backgrounds_dir images
 
+# version_93149
 bin/siatv100 src/20241108/train.py -lr 5e-5 -c 1 --feature_type shcoeff_order2 --batch_size 12 --network_type sd_only_adagn -dataset /ist/ist-share/vision/relight/datasets/multi_illumination/spherical/train -dataset_val /ist/ist-share/vision/relight/datasets/multi_illumination/spherical/val -dataset_val_split /ist/ist-share/vision/relight/datasets/multi_illumination/spherical/split-val-relight-light-array.json --shadings_dir control_shading_from_ldr27coeff --backgrounds_dir images
 
+# version_93150
 bin/siatv100 src/20241108/train.py -lr 1e-5 -c 1 --feature_type shcoeff_order2 --batch_size 12 --network_type sd_only_adagn -dataset /ist/ist-share/vision/relight/datasets/multi_illumination/spherical/train -dataset_val /ist/ist-share/vision/relight/datasets/multi_illumination/spherical/val -dataset_val_split /ist/ist-share/vision/relight/datasets/multi_illumination/spherical/split-val-relight-light-array.json --shadings_dir control_shading_from_ldr27coeff --backgrounds_dir images
 
 

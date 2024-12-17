@@ -118,6 +118,11 @@ NAMES = {
     93111: 'v2a_adagn_face_shcoeff',
     92998: 'multi_illum_fullclip',
     92999: 'multi_illum_fullclip',
+    93120: 'v2a_adagn_face_shcoeff',
+    93122: 'v2a_adagn_only_shcoeff',
+    93148: 'multi_only_shcoeff',
+    93149: 'multi_only_shcoeff',
+    93150: 'multi_only_shcoeff',
 }
 METHODS = {
     89738: 'default',
@@ -162,7 +167,12 @@ METHODS = {
     93110: 'default',
     93111: 'default',
     92998: 'default',
-    92999: 'default'
+    92999: 'default',
+    93120: 'default',
+    93122: 'default',
+    93148: 'default',
+    93149: 'default',
+    93150: 'default',
 }
 CONDITIONS_CLASS = {
     89738: SDDiffusionFace,
@@ -207,7 +217,12 @@ CONDITIONS_CLASS = {
     93110: SDDiffusionFace,
     93111: SDOnlyAdagnDiffusionFace,
     92998: SDDiffusionFace5ch,
-    92999: SDDiffusionFace5ch
+    92999: SDDiffusionFace5ch,
+    93120: SDOnlyAdagnDiffusionFace,
+    93122: SDOnlyAdagnDiffusionFace,
+    93148: SDOnlyAdagnDiffusionFace,
+    93149: SDOnlyAdagnDiffusionFace,
+    93150: SDOnlyAdagnDiffusionFace,
 }
 LRS = {
     89738: '1e-4',
@@ -253,6 +268,11 @@ LRS = {
     93111: '1e-4',
     92998: '1e-4',
     92999: '1e-5',
+    93120: '1e-5',
+    93122: '1e-4',
+    93148: '1e-4',
+    93149: '5e-5',
+    93150: '1e-5',
 }
 DIRNAME = {
     89738: CHECKPOINT_FOLDER_NAME,
@@ -298,6 +318,11 @@ DIRNAME = {
     93111: CHECKPOINT_FOLDER_NAME,
     92998: CHECKPOINT_FOLDER_NAME,
     92999: CHECKPOINT_FOLDER_NAME,
+    93120: CHECKPOINT_FOLDER_NAME,
+    93122: CHECKPOINT_FOLDER_NAME,
+    93148: CHECKPOINT_FOLDER_NAME,
+    93149: CHECKPOINT_FOLDER_NAME,
+    93150: CHECKPOINT_FOLDER_NAME,
 }
 CHECKPOINTS = {
     89738: 24,
@@ -343,11 +368,16 @@ CHECKPOINTS = {
     93111: 29,
     92998: 48,
     92999: 48,
+    93120: 56,
+    93122: 49,
+    93148: 27,
+    93149: 27,
+    93150: 27,
 }
 
 use_ab_background = [92998, 92999]
-use_shcoeff2 = [91864, 91865, 91866, 91869, 91870, 91871, 92037, 92047, 92049, 92824, 92825, 92826, 92833, 93027]
-use_only_light = [92037, 92047, 92049, 92826, 92833, 93027]
+use_shcoeff2 = [91864, 91865, 91866, 91869, 91870, 91871, 92037, 92047, 92049, 92824, 92825, 92826, 92833, 93027, 93111, 93120, 93122, 93148, 93149, 93150]
+use_only_light = [92037, 92047, 92049, 92826, 92833, 93027, 93122,  93148, 93149, 93150]
 use_random_mask_background = [92372, 92414, 92423, 92438]
 
 def get_from_mode(mode):
