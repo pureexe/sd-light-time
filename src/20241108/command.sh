@@ -287,6 +287,40 @@ bin/siatv100 src/20241108/train.py -lr 5e-5 -c 1 --feature_type shcoeff_order2 -
 bin/siatv100 src/20241108/train.py -lr 1e-5 -c 1 --feature_type shcoeff_order2 --batch_size 12 --network_type sd_only_adagn -dataset /ist/ist-share/vision/relight/datasets/multi_illumination/spherical/train -dataset_val /ist/ist-share/vision/relight/datasets/multi_illumination/spherical/val -dataset_val_split /ist/ist-share/vision/relight/datasets/multi_illumination/spherical/split-val-relight-light-array.json --shadings_dir control_shading_from_ldr27coeff --backgrounds_dir images
 
 
+##### new background condition (shcoeff2_order2_only, continue running)
+# shcoeff1e-4 version 93588 from version 93148
+bin/siatv100 src/20241108/train.py -lr 1e-4 -c 1 --feature_type shcoeff_order2 --batch_size 12 --network_type sd_only_adagn -dataset /ist/ist-share/vision/relight/datasets/multi_illumination/spherical/train -dataset_val /ist/ist-share/vision/relight/datasets/multi_illumination/spherical/val -dataset_val_split /ist/ist-share/vision/relight/datasets/multi_illumination/spherical/split-val-relight-light-array.json --shadings_dir control_shading_from_ldr27coeff --backgrounds_dir images -ckpt /ist/ist-share/vision/pakkapon/relight/sd-light-time/output/20241108/multi_mlp_fit/lightning_logs/version_93148/checkpoints/epoch=000027.ckpt
+
+# shcoeff5e-5 version 93594  from version_93149
+bin/siatv100 src/20241108/train.py -lr 5e-5 -c 1 --feature_type shcoeff_order2 --batch_size 12 --network_type sd_only_adagn -dataset /ist/ist-share/vision/relight/datasets/multi_illumination/spherical/train -dataset_val /ist/ist-share/vision/relight/datasets/multi_illumination/spherical/val -dataset_val_split /ist/ist-share/vision/relight/datasets/multi_illumination/spherical/split-val-relight-light-array.json --shadings_dir control_shading_from_ldr27coeff --backgrounds_dir images -ckpt output/20241108/multi_mlp_fit/lightning_logs/version_93149/checkpoints/epoch=000027.ckpt
+
+# shcoeff1e-5 version 93595 from version_93150
+bin/siatv100 src/20241108/train.py -lr 1e-5 -c 1 --feature_type shcoeff_order2 --batch_size 12 --network_type sd_only_adagn -dataset /ist/ist-share/vision/relight/datasets/multi_illumination/spherical/train -dataset_val /ist/ist-share/vision/relight/datasets/multi_illumination/spherical/val -dataset_val_split /ist/ist-share/vision/relight/datasets/multi_illumination/spherical/split-val-relight-light-array.json --shadings_dir control_shading_from_ldr27coeff --backgrounds_dir images -ckpt output/20241108/multi_mlp_fit/lightning_logs/version_93150/checkpoints/epoch=000028.ckpt
+
+
+
+##################################################
+# predict score
+bin/siatv100 src/20241108/val_ddim.py -i 93110 -m "valid_face_same" -c 29
+bin/siatv100 src/20241108/val_ddim.py -i 93110 -m "valid_face_different" -c 29 
+
+bin/siatv100 src/20241108/val_ddim.py -i 93026 -m "valid_face_same" -c 29
+bin/siatv100 src/20241108/val_ddim.py -i 93026 -m "valid_face_different" -c 29
+
+bin/siatv100 src/20241108/val_ddim.py -i 92824 -m "valid_face_same" -c 29
+bin/siatv100 src/20241108/val_ddim.py -i 92824 -m "valid_face_different" -c 29
+
+bin/siatv100 src/20241108/val_ddim.py -i 92825 -m "valid_face_same" -c 29
+bin/siatv100 src/20241108/val_ddim.py -i 92825 -m "valid_face_different" -c 29
+
+
+bin/siatv100 src/20241108/val_ddim.py -i 92826 -m "valid_face_same" -c 29
+bin/siatv100 src/20241108/val_ddim.py -i 92826 -m "valid_face_different" -c 29
+
+bin/siatv100 src/20241108/val_ddim.py -i 93122 -m "valid_face_same" -c 29
+bin/siatv100 src/20241108/val_ddim.py -i 93122 -m "valid_face_different" -c 29
+
+
 
 #### LET TRY FIXED LR 1e-4 and chaning how much it mask out
 bin/siatv100 src/20241108/train.py -lr 1e-4 --guidance_scale 1.0 --network_type inpaint --batch_size 4 -c 1 --bg_mask_ratio 1.0

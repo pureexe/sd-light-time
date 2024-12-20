@@ -358,11 +358,11 @@ CHECKPOINTS = {
     92438: 6,
     92829: 9,
     92830: 9,
-    92824: 9,
-    92825: 9,
+    92824: 29,
+    92825: 29,
     92826: 9,
     92833: 9,
-    93026: 10,
+    93026: 29,
     93027: 10,
     93110: 29,
     93111: 29,
@@ -413,6 +413,10 @@ def get_from_mode(mode):
         return "/data/pakkapon/datasets/face/ffhq_defareli/valid_spatial_test3", 100, DDIMDiffusionFaceRelightDataset,{"index_file":"/data/pakkapon/datasets/face/ffhq_defareli/valid_spatial_test3/index-array.json"}, "a photorealistic image"
     elif mode == "valid_spatial_test4":
         return "/data/pakkapon/datasets/face/ffhq_defareli/valid_spatial_test2", 100, DDIMDiffusionFaceRelightDataset,{"index_file":"/data/pakkapon/datasets/face/ffhq_defareli/valid_spatial_test4/index-array.json"}, "a photorealistic image"
+    elif mode == "valid_face_same":
+        return "/data/pakkapon/datasets/face/ffhq_defareli/diffusion-face-relight-testset-same-subject", 862, DDIMDiffusionFaceRelightDataset,{"index_file":"/data/pakkapon/datasets/face/ffhq_defareli/diffusion-face-relight-testset-same-subject/index-array.json"}, "a photorealistic image"
+    elif mode == "valid_face_different":
+        return "/data/pakkapon/datasets/face/ffhq_defareli/diffusion-face-relight-testset-different-subject", 200, DDIMDiffusionFaceRelightDataset,{"index_file":"/data/pakkapon/datasets/face/ffhq_defareli/diffusion-face-relight-testset-different-subject/index-array.json"}, "a photorealistic image"
     elif mode == "multi_viz":
         return "/data/pakkapon/datasets/multi_illumination/spherical/val", 100, DDIMDiffusionFaceRelightDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/split-val-relight-light-array.json", "shadings_dir": "control_shading_from_ldr27coeff", "backgrounds_dir": "images", "use_ab_background": True, "feature_types": []},  "a photorealistic image"
     else:

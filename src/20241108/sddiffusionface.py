@@ -16,6 +16,9 @@ from diffusers import StableDiffusionControlNetPipeline, UNet2DConditionModel, C
 from transformers import CLIPImageProcessor, CLIPModel
 from InversionHelper import get_ddim_latents
 from LightEmbedingBlock import set_light_direction, add_light_block
+import torchmetrics
+
+
 
 MASTER_TYPE = torch.float16
 
@@ -33,6 +36,14 @@ class SDDiffusionFace(L.LightningModule):
             **kwargs
         ) -> None:
         super().__init__()
+        self._lpips_loss = None
+        self._ssim_loss = torchmetrics.image.StructuralSimilarityIndexMeasure(data_range=1.0, kernel_size=11)  
+        USE_LPIPS = True
+        if  self._lpips_loss is USE_LPIPS:
+            import lpips
+            self._lpips_loss = lpips.LPIPS(net='alex') # best forward scores
+
+
         self.condition_scale = 1.0
         self.guidance_scale = guidance_scale
         self.ddim_guidance_scale = 1.0
@@ -411,9 +422,25 @@ class SDDiffusionFace(L.LightningModule):
             mse = torch.nn.functional.mse_loss(gt_image, pt_image, reduction="none").mean()
             mse_output.append(mse[None])
             psnr = -10 * torch.log10(mse)
+
+            ssim = self._ssim_loss(gt_image, pt_image)
+            ddsim = (1.0 - ssim) / 2.0
+
+            lpips = None 
+            if self._lpips_loss is not None:
+                # lpips need to normalize to [-1,1]
+                normalize_pt_image = pt_image * 2.0 - 1.0
+                normalize_gt_image = gt_image * 2.0 - 1.0
+                lpips = self._lpips_loss(normalize_pt_image, normalize_gt_image)
+                self.log('lpips', lpips)
             
             self.logger.experiment.add_image(f'{tb_name}', image, self.global_step)
             self.log('psnr', psnr)
+            self.log('ssim', ssim)
+            self.log('ddsim', ddsim)
+            self.log('mse', mse)
+
+
             if is_save_image:
                 filename = f"{batch['name'][0].replace('/','-')}_{batch['word_name'][target_idx][0].replace('/','-')}"
 
@@ -440,6 +467,21 @@ class SDDiffusionFace(L.LightningModule):
                     os.makedirs(f"{log_dir}/{epoch_text}source_image", exist_ok=True)
                     source_image = (batch['source_image'][0] + 1.0) / 2.0 #bump back to range[0-1]
                     torchvision.utils.save_image(source_image, f"{log_dir}/{epoch_text}source_image/{filename}.jpg")
+                # save all score calcurateion
+                os.makedirs(f"{log_dir}/{epoch_text}mse", exist_ok=True)
+                with open(f"{log_dir}/{epoch_text}mse/{filename}.txt", "w") as f:
+                    f.write(f"{mse.item()}\n")
+                os.makedirs(f"{log_dir}/{epoch_text}ssim", exist_ok=True)
+                with open(f"{log_dir}/{epoch_text}ssim/{filename}.txt", "w") as f:
+                    f.write(f"{ssim.item()}\n")
+                os.makedirs(f"{log_dir}/{epoch_text}ddsim", exist_ok=True)
+                with open(f"{log_dir}/{epoch_text}ddsim/{filename}.txt", "w") as f:
+                    f.write(f"{ddsim.item()}\n")
+                if self._lpips_loss is not None:
+                    os.makedirs(f"{log_dir}/{epoch_text}lpips", exist_ok=True)
+                    with open(f"{log_dir}/{epoch_text}lpips/{filename}.txt", "w") as f:
+                        f.write(f"{ddsim.item()}\n")
+
             if True:              
                 if self.global_step == 0:
                     self.logger.experiment.add_text(f'text/{batch["word_name"][0]}', batch['text'][0], self.global_step)
