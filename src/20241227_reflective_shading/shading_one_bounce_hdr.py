@@ -19,11 +19,12 @@ print("IMPORTING CONTROLNET_UTIL")
 from controlnet_aux.util import HWC3, resize_image
 print("IMPORTING torchvision")
 import torchvision
+import ezexr
 
 
 ROOT_DIR = "/ist/ist-share/vision/relight/datasets/multi_illumination/spherical/train"
 IMAGE_DIR = "images"
-COEFF_DIR = "shcoeffs"
+COEFF_DIR = "shcoeffs_order2_hdr"
 
 
 def unfold_sh_coeff(flatted_coeff, max_sh_level=2):
@@ -157,8 +158,7 @@ def lambertian_render(normal_map, albedo, env_map, light_dir):
 
 def get_queues():
     #scenes = sorted(os.listdir(os.path.join(ROOT_DIR, IMAGE_DIR)))
-    #scenes = ['14n_copyroom10','14n_copyroom8']
-    scenes = ['14n_copyroom8']
+    scenes = ['14n_copyroom1','14n_copyroom10','14n_copyroom8']
     queues  = []
     for scene in scenes:
         for idx in range(25):
@@ -222,11 +222,11 @@ def main():
         albedo = torch.ones_like(normal_map)
 
         rgb_map = lambertian_render(normal_map, albedo, env_map, light_dir)
-
-        image = torchvision.transforms.functional.to_pil_image(rgb_map[0])
-        os.makedirs(os.path.join("output", "ldr", scene),exist_ok=True)
-        output_path = os.path.join("output", "ldr",  scene, f"dir_{idx}_mip2.png")
-        image.save(output_path)
+        image = rgb_map[0]       #image = torchvision.transforms.functional.to_pil_image(rgb_map[0])
+        image = image.permute(1,2,0).numpy()
+        os.makedirs(os.path.join("output", "hdr", scene),exist_ok=True)
+        output_path = os.path.join("output", "hdr",  scene, f"dir_{idx}_mip2.exr")
+        ezexr.imwrite(output_path, image)
     
 
 if __name__ == "__main__":
