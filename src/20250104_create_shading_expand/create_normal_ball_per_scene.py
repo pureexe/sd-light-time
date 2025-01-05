@@ -2,6 +2,8 @@ import pyshtools
 import skimage
 import numpy as np
 import torch
+import os
+
 
 def get_shcoeff(image, Lmax=100):
     """
@@ -93,32 +95,38 @@ def sample_envmap_from_sh(shcoeff, lmax, theta, phi):
     output = np.concatenate(output, axis=-1)
     return output
 
-# def cartesian_to_spherical_grid(xyz_grid):
-#     """
-#     Convert a grid of Cartesian coordinates to spherical coordinates.
+def generate_sphere_map_theta(image_size = 256, offset=np.pi/2):
+    """
+    Generate a tuple of numpy arrays representing the latitude and longitude
+    of a spherical map in a circular shape.
 
-#     Parameters:
-#         xyz_grid (ndarray): Array of shape [H, W, 3] representing Cartesian coordinates.
+    Parameters:
+        image_size (int): The size (width and height) of the square image.
 
-#     Returns:
-#         tuple: Arrays (theta, phi) of shape [H, W], where
-#                theta is the colatitude (0 to pi),
-#                phi is the longitude (-pi to pi).
-#     """
-#     # Extract x, y, z components
-#     x = xyz_grid[..., 0]
-#     y = xyz_grid[..., 1]
-#     z = xyz_grid[..., 2]
+    Returns:
+        tuple: A tuple containing two numpy arrays (latitude, longitude).
+    """
+    # Create linear ranges for latitude and longitude
+    latitude = np.linspace(np.pi / 2, -np.pi / 2, image_size)  # [pi/2, -pi/2]
+    longitude = np.linspace(0 + offset, np.pi + offset, image_size)  # [0, 2*pi]
+    
+    # Create 2D grid for latitude and longitude
+    lat_grid, lon_grid = np.meshgrid(latitude, longitude, indexing="ij")
+    
+    # Create a mask to remove points outside the circle
+    x = np.linspace(-1, 1, image_size)
+    y = np.linspace(-1, 1, image_size)
+    xv, yv = np.meshgrid(x, y)
+    radius = np.sqrt(xv**2 + yv**2)
+    mask = radius <= 1  # Valid points within the circle
+    
+    # Apply the mask
+    lat_grid[~mask] = 0
+    lon_grid[~mask] = 0
+    
+    return lat_grid, lon_grid
 
-#     # Compute the spherical coordinates
-#     r = np.sqrt(x**2 + y**2 + z**2)  # Radius (not returned, but could be useful)
-#     theta = np.arccos(z / np.clip(r, a_min=1e-8, a_max=None))  # Colatitude (0 to pi)
-#     phi = np.arctan2(y, x)  # Longitude (-pi to pi)
-
-#     return theta, phi
-
-
-def cartesian_to_spherical_grid(vectors):
+def cartesian_to_spherical(vectors):
     """
     Converts unit vectors to spherical coordinates (theta, phi).
 
@@ -149,67 +157,49 @@ def cartesian_to_spherical_grid(vectors):
 
     return theta, phi
 
+def unfold_sh_coeff(flatted_coeff, max_sh_level=2):
+    """
+    flatten spherical harmonics coefficient to 3xC matrix
+    #  array format [0_0, 1_-1, 1_0, 1_1, 2_-2, 2_-1, 2_0, 2_1, 2_2]
+    """
+    sh_coeff = np.zeros((3, 2, max_sh_level+1, max_sh_level+1))
+    for i in range(3):
+        c = 0
+        for j in range(max_sh_level+1):
+            for k in range(j, 0, -1):
+                sh_coeff[i, 1, j, k] = flatted_coeff[i, c]
+                c +=1
+            for k in range(j+1):
+                sh_coeff[i, 0, j, k] = flatted_coeff[i, c]
+                c += 1
+    return sh_coeff
 
 
 def main():
-    source = np.array([
-        [0,1,0],
-        [0,0,1],
-        [-1,0,0],
-        [0,0,-1],
-        [1,0,0],
-        [0,-1,0]
-    ])
-    theta, phi = cartesian_to_spherical_grid(source)
-    for i in range(len(source)):
-        print(theta[i] / np.pi, '        ', phi[i] / np.pi)
-    exit()
-    image = skimage.io.imread("coordinates.png")[:,:,:3]
-    image = skimage.img_as_float(image)
-    shcoeffs = get_shcoeff(image)
+    COEFF_DIRS = "/ist/ist-share/vision/relight/datasets/multi_illumination/spherical/train/shcoeffs"
+    SCENES = ["14n_copyroom1"]
+    OUTPUT_DIR = "output/chromeball_ldr_order2"
 
     # get normal ball
     BALL_SIZE = 128
     normal_image, mask = get_ideal_normal_ball(BALL_SIZE)
-    normal_image_flip = normal_image.copy()
-    normal_image_flip[:,:,2] = -normal_image_flip[:,:,2]
-    normal_image = np.concatenate([normal_image,normal_image_flip],axis=1)
-    normal_map = normal_image
-    normal_map = torch.from_numpy(normal_map)
-    normal_map = normal_map.permute(2,0,1)[None]
+    theta, phi = cartesian_to_spherical(normal_image)
 
-    theta, phi = cartesian_to_spherical_grid(normal_map[0].permute(1,2,0).numpy())
-    theta[:BALL_SIZE,:BALL_SIZE] = theta[:BALL_SIZE,:BALL_SIZE] * mask 
-    theta[:BALL_SIZE,BALL_SIZE:] = theta[:BALL_SIZE,BALL_SIZE:] * mask
-    phi[:BALL_SIZE,:BALL_SIZE] = phi[:BALL_SIZE,:BALL_SIZE] * mask 
-    phi[:BALL_SIZE,BALL_SIZE:] = phi[:BALL_SIZE,BALL_SIZE:] * mask
+    #theta, phi = generate_sphere_map_theta(128, np.pi/2)
 
-    THETA_MIN = -np.pi/2
-    THETA_MAX = np.pi/2
-    PHI_MIN = 0
-    PHI_MAX = np.pi*2
-
-    shading = sample_envmap_from_sh(shcoeffs, 100, theta, phi)
-    shading = np.clip(shading, 0, 1)
-
-    normal_map_rgb = normal_map[0].permute(1,2,0).numpy()
-    normal_map_rgb = (normal_map_rgb + 1.0 )/ 2.0
-    normal_map_rgb = skimage.img_as_ubyte(normal_map_rgb)
-    skimage.io.imsave("output/updated_catesian2spherical/output_normal.png", normal_map_rgb)
-
-    n_theta = (theta - THETA_MIN) / (THETA_MAX - THETA_MIN)
-    n_phi = (phi - PHI_MIN) / (PHI_MAX - PHI_MIN)
-    n_ones = np.ones_like(n_phi) / 2.0
-
-    
-    n_theta_phi = np.concatenate([n_theta[...,None], n_phi[...,None], n_ones[...,None]], axis=-1)
-
-    n_theta_phi = skimage.img_as_ubyte(n_theta_phi)
-
-    skimage.io.imsave("output/updated_catesian2spherical/output_theta_phi.png", n_theta_phi)
-
-    output_image = skimage.img_as_ubyte(shading)
-    skimage.io.imsave("output/updated_catesian2spherical/output_generatedchromeball.png", output_image)
+    for scene in SCENES:
+        output_dir = os.path.join(OUTPUT_DIR, scene)
+        coeff_dir = os.path.join(COEFF_DIRS, scene)
+        os.makedirs(output_dir, exist_ok=True)
+        all_images = [f.replace(".npy","")  for f in sorted(os.listdir(coeff_dir))]
+        for fname in all_images:
+            print(coeff_dir, '/', fname+".npy")
+            shcoeffs = np.load(os.path.join(coeff_dir, fname+".npy"))
+            shcoeffs = unfold_sh_coeff(shcoeffs)
+            shading = sample_envmap_from_sh(shcoeffs, 2, theta, phi)
+            shading = np.clip(shading,0,1)
+            shading = skimage.img_as_ubyte(shading)
+            skimage.io.imsave(os.path.join(output_dir,fname+".png"), shading)
 
 if __name__ == "__main__":
     main()
