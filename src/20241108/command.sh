@@ -115,6 +115,7 @@ bin/siatv100 src/20241108/train.py -lr 1e-5 --guidance_scale 1.0 --network_type 
 # 91788 NOSHADING 1e-6
 bin/siatv100 src/20241108/train.py -lr 1e-6 --guidance_scale 1.0 --network_type sd_no_shading --batch_size 4 -c 1 
 
+# LET CLEAR ABOVE TO REDUCE MEMORY USAGE
 
 ###################################################################################
 # Retrain SHCOEFF since found the DDIM Dataset bug

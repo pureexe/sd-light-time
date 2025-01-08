@@ -337,6 +337,8 @@ class SDDiffusionFace(L.LightningModule):
         except:
             log_dir = self.log_dir
 
+        os.chmod(log_dir, 0o777)
+        
         USE_LIGHT_DIRECTION_CONDITION = True
 
         # precompute-variable
@@ -475,40 +477,62 @@ class SDDiffusionFace(L.LightningModule):
                 # save with ground truth
                 os.makedirs(f"{log_dir}/{epoch_text}with_groudtruth", exist_ok=True)
                 torchvision.utils.save_image(image, f"{log_dir}/{epoch_text}with_groudtruth/{filename}.jpg")
+                os.chmod(f"{log_dir}/{epoch_text}with_groudtruth", 0o777)
+                os.chmod(f"{log_dir}/{epoch_text}with_groudtruth/{filename}.jpg", 0o777)
+
 
                 # save image file
                 os.makedirs(f"{log_dir}/{epoch_text}crop_image", exist_ok=True)
                 torchvision.utils.save_image(pt_image, f"{log_dir}/{epoch_text}crop_image/{filename}.png")
+                os.chmod(f"{log_dir}/{epoch_text}crop_image", 0o777)
+                os.chmod(f"{log_dir}/{epoch_text}crop_image/{filename}.png", 0o777)
                 # save psnr to file
                 os.makedirs(f"{log_dir}/{epoch_text}psnr", exist_ok=True)
                 with open(f"{log_dir}/{epoch_text}psnr/{filename}.txt", "w") as f:
                     f.write(f"{psnr.item()}\n")
+                os.chmod(f"{log_dir}/{epoch_text}psnr", 0o777)
+                os.chmod(f"{log_dir}/{epoch_text}psnr/{filename}.txt", 0o777)
 
                 # save prompt
                 os.makedirs(f"{log_dir}/{epoch_text}prompt", exist_ok=True) 
                 with open(f"{log_dir}/{epoch_text}prompt/{filename}.txt", 'w') as f:
                     f.write(batch['text'][0])
+                os.chmod(f"{log_dir}/{epoch_text}prompt", 0o777)
+                os.chmod(f"{log_dir}/{epoch_text}prompt/{filename}.txt", 0o777)
+
                 # save the source_image
                 os.makedirs(f"{log_dir}/{epoch_text}target_image", exist_ok=True)
                 torchvision.utils.save_image(gt_image, f"{log_dir}/{epoch_text}target_image/{filename}.jpg")
+                os.chmod(f"{log_dir}/{epoch_text}target_image", 0o777)
+                os.chmod(f"{log_dir}/{epoch_text}target_image/{filename}.jpg", 0o777)
                 if 'source_image' in batch:
                     os.makedirs(f"{log_dir}/{epoch_text}source_image", exist_ok=True)
                     source_image = (batch['source_image'][0] + 1.0) / 2.0 #bump back to range[0-1]
                     torchvision.utils.save_image(source_image, f"{log_dir}/{epoch_text}source_image/{filename}.jpg")
+                    os.chmod(f"{log_dir}/{epoch_text}source_image", 0o777)
+                    os.chmod(f"{log_dir}/{epoch_text}source_image/{filename}.jpg", 0o777)
                 # save all score calcurateion
                 os.makedirs(f"{log_dir}/{epoch_text}mse", exist_ok=True)
                 with open(f"{log_dir}/{epoch_text}mse/{filename}.txt", "w") as f:
                     f.write(f"{mse.item()}\n")
+                os.chmod(f"{log_dir}/{epoch_text}mse", 0o777)
+                os.chmod(f"{log_dir}/{epoch_text}mse/{filename}.txt", 0o777)
                 os.makedirs(f"{log_dir}/{epoch_text}ssim", exist_ok=True)
                 with open(f"{log_dir}/{epoch_text}ssim/{filename}.txt", "w") as f:
                     f.write(f"{ssim.item()}\n")
+                os.chmod(f"{log_dir}/{epoch_text}ssim", 0o777)
+                os.chmod(f"{log_dir}/{epoch_text}ssim/{filename}.txt", 0o777)
                 os.makedirs(f"{log_dir}/{epoch_text}ddsim", exist_ok=True)
                 with open(f"{log_dir}/{epoch_text}ddsim/{filename}.txt", "w") as f:
                     f.write(f"{ddsim.item()}\n")
+                os.chmod(f"{log_dir}/{epoch_text}ddsim", 0o777)
+                os.chmod(f"{log_dir}/{epoch_text}ddsim/{filename}.txt", 0o777)
                 if self._lpips_loss is not None:
                     os.makedirs(f"{log_dir}/{epoch_text}lpips", exist_ok=True)
                     with open(f"{log_dir}/{epoch_text}lpips/{filename}.txt", "w") as f:
                         f.write(f"{ddsim.item()}\n")
+                    os.chmod(f"{log_dir}/{epoch_text}lpips", 0o777)
+                    os.chmod(f"{log_dir}/{epoch_text}lpips/{filename}.txt", 0o777)
 
             if True:              
                 if self.global_step == 0:

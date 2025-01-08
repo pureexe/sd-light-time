@@ -1,48 +1,10 @@
-# val_grid is a validation at step 
-# bin/siatv100 src/20241108/val_ddim.py -i 90499
-# bin/siatv100 src/20241108/val_ddim.py -i 90500
-# bin/siatv100 src/20241108/val_ddim.py -i 90501
-# bin/siatv100 src/20241108/val_ddim.py -i 90502
-# bin/siatv100 src/20241108/val_ddim.py -i 90532
-# bin/siatv100 src/20241108/val_ddim.py -i 90533
-# bin/siatv100 src/20241108/val_ddim.py -i 90535
-# bin/siatv100 src/20241108/val_ddim.py -i 90536
-# bin/siatv100 src/20241108/val_ddim.py -i 90499 -m train2left,train2right
-# bin/siatv100 src/20241108/val_ddim.py -i 90500 -m train2left,train2right
-# bin/siatv100 src/20241108/val_ddim.py -i 90501 -m train2left,train2right
-# bin/siatv100 src/20241108/val_ddim.py -i 90502 -m train2left,train2right
-# bin/siatv100 src/20241108/val_ddim.py -i 90532 -m train2left,train2right
-# bin/siatv100 src/20241108/val_ddim.py -i 90533 -m train2left,train2right
-# bin/siatv100 src/20241108/val_ddim.py -i 90535 -m train2left,train2right
-# bin/siatv100 src/20241108/val_ddim.py -i 90536 -m train2left,train2right
-# bin/siatv100 src/20241108/val_ddim.py -i 90499 -m viz
-# bin/siatv100 src/20241108/val_ddim.py -i 90500 -m viz
-# bin/siatv100 src/20241108/val_ddim.py -i 90501 -m viz
-# bin/siatv100 src/20241108/val_ddim.py -i 90502 -m viz
-# bin/siatv100 src/20241108/val_ddim.py -i 90532 -m viz
-# bin/siatv100 src/20241108/val_ddim.py -i 90533 -m viz
-# bin/siatv100 src/20241108/val_ddim.py -i 90535 -m viz
-# bin/siatv100 src/20241108/val_ddim.py -i 90536 -m viz
-# validation 
-# bin/siatv100 src/20241108/val_ddim.py -i 91542 -m valid2left
-# bin/siatv100 src/20241108/val_ddim.py -i 91542 -m valid2right
-# bin/siatv100 src/20241108/val_ddim.py -i 91542 -m train2left
-# bin/siatv100 src/20241108/val_ddim.py -i 91542 -m train2right
 
+# bin/siatv100 src/20250104/val_ddim.py -i 95208 -m rotate_copyroom10 -c 40
+# bin/siatv100 src/20250104/val_ddim.py -i 95209 -m rotate_copyroom10 -c 40
+# bin/siatv100 src/20250104/val_ddim.py -i 95211 -m rotate_copyroom10 -c 40
+# bin/siatv100 src/20250104/val_ddim.py -i 95212 -m rotate_copyroom10 -c 40
 
-
-
-# testrun
-# bin/siatv100 src/20241108/val_ddim.py -i 90499 -m train_left_v2
-
-
-# 90532: 'default',
-# 90533: 'default',
-# 90535: 'default',
-# 90536: 'default'
-
-import os 
-
+import os
 import lightning as L
 import torch
 import argparse 
@@ -51,12 +13,12 @@ import argparse
 from constants import FOLDER_NAME
 
 from constants import OUTPUT_MULTI, DATASET_ROOT_DIR, DATASET_VAL_DIR, DATASET_VAL_SPLIT
-from sddiffusionface import SDDiffusionFace, ScrathSDDiffusionFace, SDWithoutAdagnDiffusionFace, SDOnlyAdagnDiffusionFace, SDOnlyShading, SDDiffusionFaceNoShading, SDDiffusionFace5ch
+from sddiffusionface import SDDiffusionFace, ScrathSDDiffusionFace, SDWithoutAdagnDiffusionFace, SDOnlyAdagnDiffusionFace, SDOnlyShading, SDDiffusionFaceNoShading, SDDiffusionFace5ch, SDDiffusionFaceNoBg
 
 from datasets.DDIMDiffusionFaceRelightDataset import DDIMDiffusionFaceRelightDataset
 
 MASTER_TYPE = 16
-CHECKPOINT_FOLDER_NAME = "20241108"
+CHECKPOINT_FOLDER_NAME = "20250104"
 
 
 parser = argparse.ArgumentParser()
@@ -75,350 +37,52 @@ args = parser.parse_args()
 
 
 NAMES = {
-    89738: 'mint_pretrain',
-    89740: 'mint_pretrain',
-    90499: 'mint_pretrain', #all 1e-4
-    90500: 'mint_pretrain', #all 1e-5
-    90501: 'mint_scrath',
-    90502: 'mint_scrath',
-    90532: 'controlnet_only',
-    90533: 'controlnet_only',
-    90535: 'adagan_only',
-    90536: 'adagan_only',
-    91539: 'mint_pretrain', #all 1e-4
-    91542: 'mint_pretrain', #all 1e-5
-    91864: 'adagan_shcoeff',
-    91865: 'adagan_shcoeff',
-    91866: 'adagan_shcoeff',
-    91869: 'clip_shcoeff', 
-    91870: 'clip_shcoeff',
-    91871: 'clip_shcoeff',
-    91872: 'clip',
-    91875: 'clip',
-    91876: 'clip',
-    92037: 'shcoeff_order2',
-    92047: 'shcoeff_order2',
-    92049: 'shcoeff_order2',
-    92205: 'shading_control_only',
-    92206: 'shading_control_only',
-    92207: 'shading_control_only',
-    92372: 'inpaint',
-    92414: 'inpaint',
-    92423: 'inpaint_only_background',
-    92438: 'inpaint_only_background',
-    92829: 'v2a_defareli',
-    92830: 'v2a_defareli',
-    92824: 'v2a_adagn_face_shcoeff',
-    92825: 'v2a_adagn_face_shcoeff',
-    92826: 'v2a_adagn_only_shcoeff',
-    92833: 'v2a_adagn_only_shcoeff',
-    93026: 'v2a_defareli',
-    93027: 'v2a_adagn_only_shcoeff',
-    93110: 'v2a_defareli',
-    93111: 'v2a_adagn_face_shcoeff',
-    92998: 'multi_illum_fullclip',
-    92999: 'multi_illum_fullclip',
-    93120: 'v2a_adagn_face_shcoeff',
-    93122: 'v2a_adagn_only_shcoeff',
-    93148: 'multi_only_shcoeff',
-    93149: 'multi_only_shcoeff',
-    93150: 'multi_only_shcoeff',
+    95208: 'vae_shcoeff',
+    95209: 'vae',
+    95211: 'clip_shcoeff',
+    95212: 'clip'
 }
 METHODS = {
-    89738: 'default',
-    89740: 'default',
-    90499: 'default',
-    90500: 'default',
-    90501: 'default',
-    90502: 'default',
-    90532: 'default',
-    90533: 'default',
-    90535: 'default',
-    90536: 'default',
-    91539: 'default',
-    91542: 'default',
-    91864: 'default',
-    91865: 'default',
-    91866: 'default',
-    91869: 'default',
-    91870: 'default',
-    91871: 'default',
-    91872: 'default',
-    91875: 'default',
-    91876: 'default',
-    92037: 'default',
-    92047: 'default',
-    92049: 'default',
-    92205: 'default',
-    92206: 'default',
-    92207: 'default',
-    92372: 'default',
-    92414: 'default',
-    92423: 'default',
-    92438: 'default',
-    92829: 'default',
-    92830: 'default',
-    92824: 'default',
-    92825: 'default',
-    92826: 'default',
-    92833: 'default',
-    93026: 'default',
-    93027: 'default',
-    93110: 'default',
-    93111: 'default',
-    92998: 'default',
-    92999: 'default',
-    93120: 'default',
-    93122: 'default',
-    93148: 'default',
-    93149: 'default',
-    93150: 'default',
+    95208: 'default',
+    95209: 'default',
+    95211: 'default',
+    95212: 'default'
 }
 CONDITIONS_CLASS = {
-    89738: SDDiffusionFace,
-    89740: SDDiffusionFace,
-    90499: SDDiffusionFace,
-    90500: SDDiffusionFace,
-    90501: ScrathSDDiffusionFace,
-    90502: ScrathSDDiffusionFace,
-    90532: SDWithoutAdagnDiffusionFace,
-    90533: SDWithoutAdagnDiffusionFace,
-    90535: SDOnlyAdagnDiffusionFace,
-    90536: SDOnlyAdagnDiffusionFace,
-    91539: SDDiffusionFace,
-    91542: SDDiffusionFace,
-    91864: SDOnlyAdagnDiffusionFace,
-    91865: SDOnlyAdagnDiffusionFace,
-    91866: SDOnlyAdagnDiffusionFace,
-    91869: SDOnlyAdagnDiffusionFace,
-    91870: SDOnlyAdagnDiffusionFace,
-    91871: SDOnlyAdagnDiffusionFace,    
-    91872: SDDiffusionFace,
-    91875: SDDiffusionFace,
-    91876: SDDiffusionFace,
-    92037: SDOnlyAdagnDiffusionFace,
-    92047: SDOnlyAdagnDiffusionFace,
-    92049: SDOnlyAdagnDiffusionFace,
-    92205: SDOnlyShading,
-    92206: SDOnlyShading,
-    92207: SDOnlyShading,
-    92372: SDDiffusionFace,
-    92414: SDDiffusionFace,
-    92423: SDDiffusionFaceNoShading,
-    92438: SDDiffusionFaceNoShading,
-    92829: SDDiffusionFace,
-    92830: SDDiffusionFace,
-    92824: SDOnlyAdagnDiffusionFace,
-    92825: SDOnlyAdagnDiffusionFace,
-    92826: SDOnlyAdagnDiffusionFace,
-    92833: SDOnlyAdagnDiffusionFace,
-    93026: SDDiffusionFace,
-    93027: SDOnlyAdagnDiffusionFace,
-    93110: SDDiffusionFace,
-    93111: SDOnlyAdagnDiffusionFace,
-    92998: SDDiffusionFace5ch,
-    92999: SDDiffusionFace5ch,
-    93120: SDOnlyAdagnDiffusionFace,
-    93122: SDOnlyAdagnDiffusionFace,
-    93148: SDOnlyAdagnDiffusionFace,
-    93149: SDOnlyAdagnDiffusionFace,
-    93150: SDOnlyAdagnDiffusionFace,
+    95208: SDDiffusionFaceNoBg,
+    95209: SDDiffusionFaceNoBg,
+    95211: SDDiffusionFaceNoBg,
+    95212: SDDiffusionFaceNoBg
 }
 LRS = {
-    89738: '1e-4',
-    89740: '1e-5',
-    90499: '1e-4',
-    90500: '1e-5',
-    90501: '1e-5',
-    90502: '5e-6',
-    90532: '1e-4',
-    90533: '1e-5',
-    90535: '1e-4',
-    90536: '1e-5',
-    91539: '1e-4',
-    91542: '1e-5',
-    91864: '1e-4',
-    91865: '1e-5',
-    91866: '1e-6',
-    91869: '1e-4',
-    91870: '1e-5',
-    91871: '1e-6',
-    91872: '1e-4',
-    91875: '1e-5',
-    91876: '1e-6',
-    92037: '1e-4',
-    92047: '1e-5',
-    92049: '1e-6',
-    92205: '1e-4',
-    92206: '1e-5',
-    92207: '1e-6',
-    92372: '1e-4',
-    92414: '1e-5',
-    92423: '1e-4',
-    92438: '1e-5', 
-    92829: '1e-4',
-    92830: '1e-5',
-    92824: '1e-4',
-    92825: '1e-5',
-    92826: '1e-4',
-    92833: '1e-5',
-    93026: '1e-5',
-    93027: '1e-5',
-    93110: '1e-4',
-    93111: '1e-4',
-    92998: '1e-4',
-    92999: '1e-5',
-    93120: '1e-5',
-    93122: '1e-4',
-    93148: '1e-4',
-    93149: '5e-5',
-    93150: '1e-5',
+    95208: '1e-4',
+    95209: '1e-4',
+    95211: '1e-4',
+    95212: '1e-4'
+
 }
 DIRNAME = {
-    89738: CHECKPOINT_FOLDER_NAME,
-    89740: CHECKPOINT_FOLDER_NAME,
-    90499: CHECKPOINT_FOLDER_NAME,
-    90500: CHECKPOINT_FOLDER_NAME,
-    90501: CHECKPOINT_FOLDER_NAME,
-    90502: CHECKPOINT_FOLDER_NAME,
-    90532: CHECKPOINT_FOLDER_NAME,
-    90533: CHECKPOINT_FOLDER_NAME,
-    90535: CHECKPOINT_FOLDER_NAME,
-    90536: CHECKPOINT_FOLDER_NAME,
-    91539: CHECKPOINT_FOLDER_NAME,
-    91542: CHECKPOINT_FOLDER_NAME,
-    91864: CHECKPOINT_FOLDER_NAME,
-    91865: CHECKPOINT_FOLDER_NAME,
-    91866: CHECKPOINT_FOLDER_NAME,
-    91869: CHECKPOINT_FOLDER_NAME,
-    91870: CHECKPOINT_FOLDER_NAME,
-    91871: CHECKPOINT_FOLDER_NAME,
-    91872: CHECKPOINT_FOLDER_NAME,
-    91875: CHECKPOINT_FOLDER_NAME,
-    91876: CHECKPOINT_FOLDER_NAME,
-    92037: CHECKPOINT_FOLDER_NAME,
-    92047: CHECKPOINT_FOLDER_NAME,
-    92049: CHECKPOINT_FOLDER_NAME,
-    92205: CHECKPOINT_FOLDER_NAME,
-    92206: CHECKPOINT_FOLDER_NAME,
-    92207: CHECKPOINT_FOLDER_NAME,
-    92372: CHECKPOINT_FOLDER_NAME,
-    92414: CHECKPOINT_FOLDER_NAME,
-    92423: CHECKPOINT_FOLDER_NAME,
-    92438: CHECKPOINT_FOLDER_NAME,
-    92829: CHECKPOINT_FOLDER_NAME,
-    92830: CHECKPOINT_FOLDER_NAME,
-    92824: CHECKPOINT_FOLDER_NAME,
-    92825: CHECKPOINT_FOLDER_NAME,
-    92826: CHECKPOINT_FOLDER_NAME,
-    92833: CHECKPOINT_FOLDER_NAME,
-    93026: CHECKPOINT_FOLDER_NAME,
-    93027: CHECKPOINT_FOLDER_NAME,
-    93110: CHECKPOINT_FOLDER_NAME,
-    93111: CHECKPOINT_FOLDER_NAME,
-    92998: CHECKPOINT_FOLDER_NAME,
-    92999: CHECKPOINT_FOLDER_NAME,
-    93120: CHECKPOINT_FOLDER_NAME,
-    93122: CHECKPOINT_FOLDER_NAME,
-    93148: CHECKPOINT_FOLDER_NAME,
-    93149: CHECKPOINT_FOLDER_NAME,
-    93150: CHECKPOINT_FOLDER_NAME,
+    95208: CHECKPOINT_FOLDER_NAME,
+    95209: CHECKPOINT_FOLDER_NAME,
+    95211: CHECKPOINT_FOLDER_NAME,
+    95212: CHECKPOINT_FOLDER_NAME
 }
 CHECKPOINTS = {
-    89738: 24,
-    89740: 24,
-    90499: 42,
-    90500: 43,
-    90501: 34,
-    90502: 34,
-    90532: 8,
-    90533: 8,
-    90535: 11,
-    90536: 10,
-    91539: 50,
-    91542: 50,
-    91864: 33,
-    91865: 33,
-    91866: 33, 
-    91869: 24,
-    91870: 24,
-    91871: 24, 
-    91872: 18,
-    91875: 18,
-    91876: 18, 
-    92037: 33,
-    92047: 33,
-    92049: 33, 
-    92205: 9,
-    92206: 9,
-    92207: 9,
-    92372: 6,
-    92414: 6,
-    92423: 6,
-    92438: 6,
-    92829: 9,
-    92830: 9,
-    92824: 29,
-    92825: 29,
-    92826: 9,
-    92833: 9,
-    93026: 29,
-    93027: 10,
-    93110: 29,
-    93111: 29,
-    92998: 48,
-    92999: 48,
-    93120: 56,
-    93122: 49,
-    93148: 27,
-    93149: 27,
-    93150: 27,
+    95208: 40,
+    95209: 40,
+    95211: 40,
+    95212: 40
 }
 
-use_ab_background = [92998, 92999]
-use_shcoeff2 = [91864, 91865, 91866, 91869, 91870, 91871, 92037, 92047, 92049, 92824, 92825, 92826, 92833, 93027, 93111, 93120, 93122, 93148, 93149, 93150]
-use_only_light = [92037, 92047, 92049, 92826, 92833, 93027, 93122,  93148, 93149, 93150]
-use_random_mask_background = [92372, 92414, 92423, 92438]
+use_ab_background = []
+use_shcoeff2 = [95208, 95211]
+use_only_light = [95208, 95211]
+use_no_light = [95209, 95212]
+use_random_mask_background = []
 
 def get_from_mode(mode):
-    if mode == "face_left":
-        return "/data/pakkapon/datasets/face/ffhq_defareli/valid", 100, DDIMDiffusionFaceRelightDataset,{"index_file":"/data/pakkapon/datasets/face/ffhq_defareli/valid/split-x-minus-array.json"}, "a photorealistic image"
-    elif mode == "face_right":
-        return "/data/pakkapon/datasets/face/ffhq_defareli/valid", 100, DDIMDiffusionFaceRelightDataset,{"index_file":"/data/pakkapon/datasets/face/ffhq_defareli/valid/split-x-plus-array.json"}, "a photorealistic image"
-    elif mode == "viz_v2":
-        return "/data/pakkapon/datasets/face/ffhq_defareli/viz", 100, DDIMDiffusionFaceRelightDataset,{"index_file":"/data/pakkapon/datasets/face/ffhq_defareli/viz/val-viz-array.json"}, "a photorealistic image"
-    elif mode == "train_left":
-        return "/data/pakkapon/datasets/face/ffhq_defareli/train", 100, DDIMDiffusionFaceRelightDataset,{"index_file":"/data/pakkapon/datasets/face/ffhq_defareli/train/split-x-minus-array.json"}, "a photorealistic image"
-    elif mode == "train_right":
-        return "/data/pakkapon/datasets/face/ffhq_defareli/train", 100, DDIMDiffusionFaceRelightDataset,{"index_file":"/data/pakkapon/datasets/face/ffhq_defareli/train/split-x-plus-array.json"}, "a photorealistic image"
-    elif mode == "train_left_v2":
-        return "/data/pakkapon/datasets/face/ffhq_defareli/train", 100, DDIMDiffusionFaceRelightDataset,{"index_file":"/data/pakkapon/datasets/face/ffhq_defareli/train/split-x-minus-array.json"}, "a photorealistic image"
-    elif mode == "train_right_v2":
-        return "/data/pakkapon/datasets/face/ffhq_defareli/train", 100, DDIMDiffusionFaceRelightDataset,{"index_file":"/data/pakkapon/datasets/face/ffhq_defareli/train/split-x-plus-array.json"}, "a photorealistic image"
-    elif mode == "train2left":
-        return "/data/pakkapon/datasets/face/ffhq_defareli/train2left", 100, DDIMDiffusionFaceRelightDataset,{"index_file":"/data/pakkapon/datasets/face/ffhq_defareli/train2left/index-array.json"}, "a photorealistic image"
-    elif mode == "train2right":
-        return "/data/pakkapon/datasets/face/ffhq_defareli/train2right", 100, DDIMDiffusionFaceRelightDataset,{"index_file":"/data/pakkapon/datasets/face/ffhq_defareli/train2right/index-array.json"}, "a photorealistic image"
-    elif mode == "valid2left":
-        return "/data/pakkapon/datasets/face/ffhq_defareli/valid2left", 100, DDIMDiffusionFaceRelightDataset,{"index_file":"/data/pakkapon/datasets/face/ffhq_defareli/valid2left/index-array.json"}, "a photorealistic image"
-    elif mode == "valid2right":
-        return "/data/pakkapon/datasets/face/ffhq_defareli/valid2right", 100, DDIMDiffusionFaceRelightDataset,{"index_file":"/data/pakkapon/datasets/face/ffhq_defareli/valid2right/index-array.json"}, "a photorealistic image"
-    elif mode == "valid_spatial":
-        return "/data/pakkapon/datasets/face/ffhq_defareli/valid_spatial", 100, DDIMDiffusionFaceRelightDataset,{"index_file":"/data/pakkapon/datasets/face/ffhq_defareli/valid_spatial/index-array.json"}, "a photorealistic image"
-    elif mode == "valid_spatial_test":
-        return "/data/pakkapon/datasets/face/ffhq_defareli/valid_spatial_test", 100, DDIMDiffusionFaceRelightDataset,{"index_file":"/data/pakkapon/datasets/face/ffhq_defareli/valid_spatial_test/index-array.json"}, "a photorealistic image"
-    elif mode == "valid_spatial_test2":
-        return "/data/pakkapon/datasets/face/ffhq_defareli/valid_spatial_test2", 100, DDIMDiffusionFaceRelightDataset,{"index_file":"/data/pakkapon/datasets/face/ffhq_defareli/valid_spatial_test2/index-array.json"}, "a photorealistic image"
-    elif mode == "valid_spatial_test3":
-        return "/data/pakkapon/datasets/face/ffhq_defareli/valid_spatial_test3", 100, DDIMDiffusionFaceRelightDataset,{"index_file":"/data/pakkapon/datasets/face/ffhq_defareli/valid_spatial_test3/index-array.json"}, "a photorealistic image"
-    elif mode == "valid_spatial_test4":
-        return "/data/pakkapon/datasets/face/ffhq_defareli/valid_spatial_test2", 100, DDIMDiffusionFaceRelightDataset,{"index_file":"/data/pakkapon/datasets/face/ffhq_defareli/valid_spatial_test4/index-array.json"}, "a photorealistic image"
-    elif mode == "valid_face_same":
-        return "/data/pakkapon/datasets/face/ffhq_defareli/diffusion-face-relight-testset-same-subject", 862, DDIMDiffusionFaceRelightDataset,{"index_file":"/data/pakkapon/datasets/face/ffhq_defareli/diffusion-face-relight-testset-same-subject/index-array.json"}, "a photorealistic image"
-    elif mode == "valid_face_different":
-        return "/data/pakkapon/datasets/face/ffhq_defareli/diffusion-face-relight-testset-different-subject", 200, DDIMDiffusionFaceRelightDataset,{"index_file":"/data/pakkapon/datasets/face/ffhq_defareli/diffusion-face-relight-testset-different-subject/index-array.json"}, "a photorealistic image"
-    elif mode == "multi_viz":
-        return "/data/pakkapon/datasets/multi_illumination/spherical/val", 100, DDIMDiffusionFaceRelightDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/split-val-relight-light-array.json", "shadings_dir": "control_shading_from_ldr27coeff", "backgrounds_dir": "images", "use_ab_background": True, "feature_types": []},  "a photorealistic image"
+    if mode == "rotate_copyroom10":
+        return "/data/pakkapon/datasets/multi_illumination/spherical/val_rotate_copyroom10", 100, DDIMDiffusionFaceRelightDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/index/10n_copyroom10_rotate.json", "shadings_dir": "control_shading_from_ldr27coeff", "backgrounds_dir": "control_shading_from_ldr27coeff", "feature_types": []},  "a photorealistic image"
     else:
         raise Exception("mode not found")
 
@@ -485,6 +149,8 @@ def main():
                                 dataset_args['use_shcoeff2'] = True
                             if version in use_only_light:
                                 dataset_args['feature_types'] = ['light']
+                            if version in use_no_light:
+                                dataset_args['feature_types'] = []
                             val_dataset = dataset_class(split=split, root_dir=val_root, specific_prompt=specific_prompt, **dataset_args)
                             val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=1, shuffle=False)
                             trainer.test(model, dataloaders=val_dataloader, ckpt_path=CKPT_PATH)

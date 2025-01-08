@@ -130,7 +130,7 @@ def unfold_sh_coeff(flatted_coeff, max_sh_level=2):
 def main():
 
 
-    root_dir = "/ist/ist-share/vision/relight/datasets/multi_illumination/spherical/train"
+    root_dir = "/ist/ist-share/vision/relight/datasets/multi_illumination/spherical/val_rotate_copyroom10"
     image_dir = "images"
     coeff_dir = "shcoeffs"
     output_dir = "control_shading_from_ldr27coeff"
@@ -148,11 +148,11 @@ def main():
     #tonemapper = TonemapHDR(gamma=2.4, percentile=90, max_mapping=0.9)
     print("CREATING QUEUES...")
     queues  = []
-    for scene in scenes[7::16]:
-        for idx in range(25):
+    for scene in scenes:
+        for idx in range(60):
             queues.append((scene,idx))
     
-    pbar = tqdm(queues)
+    pbar = tqdm(queues[3::4])
     pbar.set_description(f"")
     for info in pbar:
         

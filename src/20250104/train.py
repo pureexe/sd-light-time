@@ -91,7 +91,8 @@ def main():
     if use_shcoeff2:
         feature_types.append('light')
     
-    specific_prompt = args.specific_prompt if args.specific_prompt != "" else None
+    specific_prompt = args.specific_prompt if args.specific_prompt not in ["","_"] else None
+
     train_dataset = DiffusionFaceRelightDataset(
         root_dir=train_dir,
         index_file=args.dataset_split,
