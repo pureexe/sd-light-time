@@ -25,6 +25,7 @@ from controlnet_aux.util import HWC3, resize_image
 print("IMPOORING EINOPS")
 from einops import rearrange
 from tonemapper import TonemapHDR
+import ezexr
 print("IMPORT DONE")
 
 
@@ -126,14 +127,29 @@ def unfold_sh_coeff(flatted_coeff, max_sh_level=2):
                 c += 1
     return sh_coeff
 
+def apply_integrate_conv(shcoeff):
+    # apply integrate on diffuse surface 
+    # @see https://cseweb.ucsd.edu/~ravir/papers/envmap/envmap.pdf
+    assert shcoeff.shape[0] == 3 and shcoeff.shape[1] == 2
+    A = np.array([
+        np.pi, # 0
+        2*np.pi / 3, # 1
+        np.pi / 4, # 2
+    ])
+    for j in range(2):
+        # check if it still access
+        if j < shcoeff.shape[2]:
+            shcoeff[:,j] = A[j] * shcoeff[:,j]
+    return shcoeff
+
 
 def main():
 
 
-    root_dir = "/ist/ist-share/vision/relight/datasets/multi_illumination/spherical/val_rotate_copyroom10"
+    root_dir = "/ist/ist-share/vision/relight/datasets/multi_illumination/spherical/train"
     image_dir = "images"
-    coeff_dir = "shcoeffs"
-    output_dir = "control_shading_from_ldr27coeff"
+    coeff_dir = "shcoeffs_order2_hdr"
+    output_dir = "control_shading_from_hdr27coeff_conv_map50_0.2"
     mode = 'bae'
     
     print("LOADING PREPROCESSOR")
@@ -148,10 +164,11 @@ def main():
     #tonemapper = TonemapHDR(gamma=2.4, percentile=90, max_mapping=0.9)
     print("CREATING QUEUES...")
     queues  = []
-    for scene in scenes:
-        for idx in range(60):
+    for scene in scenes[:1]:
+        for idx in range(25):
             queues.append((scene,idx))
     
+    tonemapper = TonemapHDR(gamma=2.4, percentile=50, max_mapping=0.2)
     pbar = tqdm(queues)
     pbar.set_description(f"")
     for info in pbar:
@@ -173,13 +190,19 @@ def main():
         shcoeff = np.load(f"{root_dir}/{coeff_dir}/{scene}/dir_{idx}_mip2.npy") # shcoeff shape (3,9)
         shcoeff = unfold_sh_coeff(shcoeff,max_sh_level=2)
         #shcoeff = torch.from_numpy(shcoeff).permute(1,0)[None] # shcoeff [BATCH, 9, 3]
+        shcoeff = apply_integrate_conv(shcoeff)
 
         shading = sample_envmap_from_sh(shcoeff, lmax=2, theta=theta, phi=phi)
-        #shading, _, _ = tonemapper(shading)
-        shading = np.clip(shading, 0, 1)
-        shading = skimage.img_as_ubyte(shading)
+
         os.makedirs(shading_output_dir, exist_ok=True)
         os.chmod(shading_output_dir, 0o777)
+
+        ezexr.imwrite(output_path.replace(".png",".exr"), shading)   
+        
+        shading, _, _ = tonemapper(shading) # tonemap
+        
+        shading = np.clip(shading, 0, 1)
+        shading = skimage.img_as_ubyte(shading)
         
         skimage.io.imsave(output_path,shading)
         os.chmod(output_path, 0o777)

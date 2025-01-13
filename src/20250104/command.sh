@@ -345,3 +345,103 @@ bin/siatv100 src/20250104/train.py \
     -dataset_split "/data/pakkapon/datasets/multi_illumination/spherical/index/14n_copyroom10_train.json" \
     -dataset_val "/data/pakkapon/datasets/multi_illumination/spherical/train" \
     -dataset_val_split "/data/pakkapon/datasets/multi_illumination/spherical/index/14n_copyroom10_test.json"
+
+
+############################
+# Experiment 4: retrain withclip/without clip on single scene (need to restart due to shading is too bard)
+
+# 4.1 with clip version_95937
+bin/siatv100 src/20250104/train.py \
+    -lr 1e-4 \
+    --guidance_scale 1.0 \
+    --network_type sd_no_bg \
+    --batch_size 8 \
+    -c 1 \
+    --feature_type clip \
+    --dataset_train_multiplier 1000 \
+    --shadings_dir "control_shading_from_ldr27coeff_conv"\
+    --backgrounds_dir "control_shading_from_ldr27coeff_conv"\
+    -dataset "/data/pakkapon/datasets/multi_illumination/spherical/train" \
+    -dataset_split "/data/pakkapon/datasets/multi_illumination/spherical/index/14n_copyroom10_train.json" \
+    -dataset_val "/data/pakkapon/datasets/multi_illumination/spherical/train" \
+    -dataset_val_split "/data/pakkapon/datasets/multi_illumination/spherical/index/14n_copyroom10_test.json"
+
+# 4.1 without clip
+bin/siatv100 src/20250104/train.py \
+    -lr 1e-4 \
+    --guidance_scale 1.0 \
+    --network_type sd_only_shading \
+    --dataset_train_multiplier 1000 \
+    --batch_size 8 \
+    -c 1 \
+    --feature_type clip \
+    --shadings_dir "control_shading_from_ldr27coeff_conv"\
+    --backgrounds_dir "control_shading_from_ldr27coeff_conv"\
+    -dataset "/data/pakkapon/datasets/multi_illumination/spherical/train" \
+    -dataset_split "/data/pakkapon/datasets/multi_illumination/spherical/index/14n_copyroom10_train.json" \
+    -dataset_val "/data/pakkapon/datasets/multi_illumination/spherical/train" \
+    -dataset_val_split "/data/pakkapon/datasets/multi_illumination/spherical/index/14n_copyroom10_test.json"
+
+# experiment 4 restart
+# 4.1 with clip version_96023
+bin/siatv100 src/20250104/train.py \
+    -lr 1e-4 \
+    --guidance_scale 1.0 \
+    --network_type sd_no_bg \
+    --batch_size 8 \
+    -c 1 \
+    --feature_type clip \
+    --dataset_train_multiplier 1000 \
+    --shadings_dir "control_shading_from_ldr27coeff_conv_v2"\
+    --backgrounds_dir "control_shading_from_ldr27coeff_conv_v2"\
+    -dataset "/data/pakkapon/datasets/multi_illumination/spherical/train" \
+    -dataset_split "/data/pakkapon/datasets/multi_illumination/spherical/index/14n_copyroom10_train.json" \
+    -dataset_val "/data/pakkapon/datasets/multi_illumination/spherical/train" \
+    -dataset_val_split "/data/pakkapon/datasets/multi_illumination/spherical/index/14n_copyroom10_test.json"
+
+# 4.2 without clip version_96024
+bin/siatv100 src/20250104/train.py \
+    -lr 1e-4 \
+    --guidance_scale 1.0 \
+    --network_type sd_only_shading \
+    --dataset_train_multiplier 1000 \
+    --batch_size 8 \
+    -c 1 \
+    --feature_type clip \
+    --shadings_dir "control_shading_from_ldr27coeff_conv_v2"\
+    --backgrounds_dir "control_shading_from_ldr27coeff_conv_v2"\
+    -dataset "/data/pakkapon/datasets/multi_illumination/spherical/train" \
+    -dataset_split "/data/pakkapon/datasets/multi_illumination/spherical/index/14n_copyroom10_train.json" \
+    -dataset_val "/data/pakkapon/datasets/multi_illumination/spherical/train" \
+    -dataset_val_split "/data/pakkapon/datasets/multi_illumination/spherical/index/14n_copyroom10_test.json"
+
+######
+# Experiment 5: retrain withclip/without clip on multiple scene (need to restart due to shading is too bard)
+
+# experiment 5.1 - multi_clip version_96044
+bin/siatv100 src/20250104/train.py \
+    -lr 1e-4 \
+    --guidance_scale 1.0 \
+    --network_type sd_no_bg \
+    --batch_size 8 \
+    -c 1 \
+    --feature_type clip \
+    --shadings_dir "control_shading_from_ldr27coeff_conv_v2"\
+    --backgrounds_dir "control_shading_from_ldr27coeff_conv_v2"\
+    -dataset "/data/pakkapon/datasets/multi_illumination/spherical/train" \
+    -dataset_val "/data/pakkapon/datasets/multi_illumination/spherical/val" \
+    -dataset_val_split "/data/pakkapon/datasets/multi_illumination/spherical/split-val-relight-light-array.json"
+
+# experiment 5.2 - multi_no_clip version_96045
+bin/siatv100 src/20250104/train.py \
+    -lr 1e-4 \
+    --guidance_scale 1.0 \
+    --network_type sd_only_shading \
+    --batch_size 8 \
+    -c 1 \
+    --feature_type clip \
+    --shadings_dir "control_shading_from_ldr27coeff_conv_v2"\
+    --backgrounds_dir "control_shading_from_ldr27coeff_conv_v2"\
+    -dataset "/data/pakkapon/datasets/multi_illumination/spherical/train" \
+    -dataset_val "/data/pakkapon/datasets/multi_illumination/spherical/val" \
+    -dataset_val_split "/data/pakkapon/datasets/multi_illumination/spherical/split-val-relight-light-array.json"

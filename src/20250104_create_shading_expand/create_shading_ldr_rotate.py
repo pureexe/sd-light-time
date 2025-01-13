@@ -130,7 +130,7 @@ def unfold_sh_coeff(flatted_coeff, max_sh_level=2):
 def main():
 
 
-    root_dir = "/ist/ist-share/vision/relight/datasets/multi_illumination/spherical/val_rotate_copyroom10"
+    root_dir = "/ist/ist-share/vision/relight/datasets/multi_illumination/spherical/val_rotate_everett_kitchen4_right"
     image_dir = "images"
     coeff_dir = "shcoeffs"
     output_dir = "control_shading_from_ldr27coeff"
@@ -141,6 +141,8 @@ def main():
     os.chmod(os.path.join(root_dir, output_dir), 0o777)
 
     scenes = sorted(os.listdir(os.path.join(root_dir, image_dir)))
+    if len(scenes) > 1:
+        raise ValueError("Only one scene is supported")
 
     preprocessor = NormalBaeDetectorPT.from_pretrained("lllyasviel/Annotators")
     preprocessor.to('cuda')
@@ -152,6 +154,10 @@ def main():
         for idx in range(60):
             queues.append((scene,idx))
     
+    image = Image.open(f"{root_dir}/{image_dir}/{scene}/dir_{idx}_mip2.jpg").convert("RGB")
+    normal_map = preprocessor(image, output_type="pt")
+    theta, phi = cartesian_to_spherical(normal_map)
+
     pbar = tqdm(queues)
     pbar.set_description(f"")
     for info in pbar:
@@ -163,14 +169,12 @@ def main():
         shading_output_dir = os.path.join(root_dir,output_dir,scene)
         output_path = os.path.join(shading_output_dir, f"dir_{idx}_mip2.png")
         if os.path.exists(output_path):
+            print(output_path)
             continue
-        image = Image.open(f"{root_dir}/{image_dir}/{scene}/dir_{idx}_mip2.jpg").convert("RGB")
-        normal_map = preprocessor(image, output_type="pt")
-
-        theta, phi = cartesian_to_spherical(normal_map)
-
+        
 
         shcoeff = np.load(f"{root_dir}/{coeff_dir}/{scene}/dir_{idx}_mip2.npy") # shcoeff shape (3,9)
+       
         shcoeff = unfold_sh_coeff(shcoeff,max_sh_level=2)
         #shcoeff = torch.from_numpy(shcoeff).permute(1,0)[None] # shcoeff [BATCH, 9, 3]
 
