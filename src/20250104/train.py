@@ -28,7 +28,7 @@ parser.add_argument(
     '-nt', 
     '--network_type', 
     type=str,
-    choices=['sd','scrath', 'sd_without_adagn', 'sd_only_adagn', 'sd_no_bg', 'sd_no_shading', 'sd_only_shading', 'inpaint', 'inpaint_no_shading', 'sd5ch'],  # Restrict the input to the accepted strings
+    choices=['sd','scrath', 'sd_without_adagn', 'sd_only_adagn', 'sd_no_bg', 'sd_no_shading', 'sd_only_shading', 'inpaint', 'inpaint_no_shading', 'sd5ch', 'sd_color_jitter_defareli', 'sd_color_jitter'],  # Restrict the input to the accepted strings
     help="select control type for the model",
     required=True
 )
@@ -51,11 +51,11 @@ parser.add_argument(
 args = parser.parse_args()
 
 def get_model_class():
-    if args.network_type in ['sd', 'inpaint']:
+    if args.network_type in ['sd', 'inpaint', 'sd_color_jitter_defareli']:
         return SDDiffusionFace
     elif args.network_type == 'scrath':
         return ScrathSDDiffusionFace
-    elif args.network_type == 'sd_without_adagn': # only controlnet part, both shading and background
+    elif args.network_type in ['sd_without_adagn', 'sd_color_jitter']: # only controlnet part, both shading and background
         return SDWithoutAdagnDiffusionFace
     elif args.network_type == 'sd_only_adagn':
         return SDOnlyAdagnDiffusionFace
@@ -103,7 +103,8 @@ def main():
         random_mask_background_ratio=args.bg_mask_ratio if use_random_mask_background else None,
         shadings_dir=args.shadings_dir,
         backgrounds_dir=args.backgrounds_dir,
-        use_ab_background=use_ab_background
+        use_ab_background=use_ab_background,
+        use_background_jitter=args.network_type in ['sd_color_jitter', 'sd_color_jitter_defareli']
     )
     val_dataset = DDIMDiffusionFaceRelightDataset(
         root_dir=val_dir,

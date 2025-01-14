@@ -27,6 +27,7 @@ class DiffusionFaceRelightDataset(torch.utils.data.Dataset):
         use_ab_background=False,
         backgrounds_dir = "backgrounds", 
         shadings_dir = "shadings",
+        use_background_jitter=False,
         *args,
         **kwargs
     ) -> None:
@@ -46,6 +47,7 @@ class DiffusionFaceRelightDataset(torch.utils.data.Dataset):
         self.shadow_index = shadow_index # swap light shadow
         self.backgrounds_dir = backgrounds_dir #control_shading_from_ldr27coeff
         self.shadings_dir = shadings_dir
+        self.use_background_jitter = use_background_jitter
 
         self.setup_transform()
         self.setup_diffusion_face()
@@ -163,6 +165,18 @@ class DiffusionFaceRelightDataset(torch.utils.data.Dataset):
             torchvision.transforms.Resize(512,  antialias=True),  # Resize the image to 512x512
         ])
 
+        if self.use_background_jitter:
+            self.transform['background'] = torchvision.transforms.Compose([
+                torchvision.transforms.ColorJitter(brightness=0.4, contrast=0.2, saturation=0.05, hue=0.0),
+                torchvision.transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5]),  # Normalize to [-1, 1]
+                torchvision.transforms.Resize(512,  antialias=True),  # Resize the image to 512x512
+            ])
+            print("========================")
+            print("Using background jitter")
+            print("========================")
+        else:
+            self.transform['background'] = self.transform['image']
+
 
     def get_image(self, name:str, directory:str, height =512, width=512,root_dir=None):
         root_dir = self.root_dir if root_dir is None else root_dir
@@ -207,9 +221,9 @@ class DiffusionFaceRelightDataset(torch.utils.data.Dataset):
 
     def get_background(self, name, height=512, width=512):
         if self.random_mask_background_ratio is None:
-            background = self.transform['image'](self.get_image(name, self.backgrounds_dir, height, width))
+            background = self.transform['background'](self.get_image(name, self.backgrounds_dir, height, width))
         elif self.random_mask_background_ratio > 0.0 and self.random_mask_background_ratio <= 1.0:
-            background = self.transform['image'](self.get_image(name,"images", height, width))
+            background = self.transform['background'](self.get_image(name,"images", height, width))
             mask = torch.ones((height, width), dtype=torch.float32)
             num_pixels_to_mask = int(height * width * 0.25)
             masked_indices = random.sample(range(height * width), num_pixels_to_mask)
@@ -219,7 +233,7 @@ class DiffusionFaceRelightDataset(torch.utils.data.Dataset):
             mask = mask.unsqueeze(0)  # Add channel dimension
             background = background * mask  # Apply mask to image
         elif self.random_mask_background_ratio == 0.0: # just use input image as a background when there is no masking ratio
-            background = self.transform['image'](self.get_image(name,"images", height, width))
+            background = self.transform['background'](self.get_image(name,"images", height, width))
         else:
             raise NotImplementedError()
 

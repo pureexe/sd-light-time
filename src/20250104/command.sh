@@ -445,3 +445,133 @@ bin/siatv100 src/20250104/train.py \
     -dataset "/data/pakkapon/datasets/multi_illumination/spherical/train" \
     -dataset_val "/data/pakkapon/datasets/multi_illumination/spherical/val" \
     -dataset_val_split "/data/pakkapon/datasets/multi_illumination/spherical/split-val-relight-light-array.json"
+
+
+# Experiment 6: background jitter withclip/without clip on multiple scenes
+# color jitter withclip multiple scene version_96053
+bin/siatv100 src/20250104/train.py \
+    -lr 1e-4 \
+    --guidance_scale 1.0 \
+    --network_type sd_color_jitter_defareli \
+    --batch_size 8 \
+    -c 1 \
+    --feature_type clip \
+    --shadings_dir "control_shading_from_ldr27coeff_conv_v2"\
+    --backgrounds_dir "images"\
+    -dataset "/data/pakkapon/datasets/multi_illumination/spherical/train" \
+    -dataset_val "/data/pakkapon/datasets/multi_illumination/spherical/val" \
+    -dataset_val_split "/data/pakkapon/datasets/multi_illumination/spherical/split-val-relight-light-array.json"
+
+# color jitter noclip multiple scene version_96054
+
+bin/siatv100 src/20250104/train.py \
+    -lr 1e-4 \
+    --guidance_scale 1.0 \
+    --network_type sd_color_jitter \
+    --batch_size 8 \
+    -c 1 \
+    --feature_type clip \
+    --shadings_dir "control_shading_from_ldr27coeff_conv_v2"\
+    --backgrounds_dir "images"\
+    -dataset "/data/pakkapon/datasets/multi_illumination/spherical/train" \
+    -dataset_val "/data/pakkapon/datasets/multi_illumination/spherical/val" \
+    -dataset_val_split "/data/pakkapon/datasets/multi_illumination/spherical/split-val-relight-light-array.json"
+
+# Experiment 6: background jitter withclip/without clip on multiple scenes
+# color jitter withclip multiple scene  version 96058 
+bin/siatv100 src/20250104/train.py \
+    -lr 1e-4 \
+    --guidance_scale 1.0 \
+    --dataset_train_multiplier 1000 \
+    --network_type sd_color_jitter_defareli \
+    --batch_size 8 \
+    -c 1 \
+    --feature_type clip \
+    --shadings_dir "control_shading_from_ldr27coeff_conv_v2"\
+    --backgrounds_dir "images"\
+    -dataset "/data/pakkapon/datasets/multi_illumination/spherical/train" \
+    -dataset_split "/data/pakkapon/datasets/multi_illumination/spherical/index/14n_copyroom10_train.json" \
+    -dataset_val "/data/pakkapon/datasets/multi_illumination/spherical/train" \
+    -dataset_val_split "/data/pakkapon/datasets/multi_illumination/spherical/index/14n_copyroom10_test.json"
+
+# color jitter noclip multiple scene version 96059
+bin/siatv100 src/20250104/train.py \
+    -lr 1e-4 \
+    --guidance_scale 1.0 \
+    --dataset_train_multiplier 1000 \
+    --network_type sd_color_jitter \
+    --batch_size 8 \
+    -c 1 \
+    --feature_type clip \
+    --shadings_dir "control_shading_from_ldr27coeff_conv_v2"\
+    --backgrounds_dir "images"\
+    -dataset "/data/pakkapon/datasets/multi_illumination/spherical/train" \
+    -dataset_split "/data/pakkapon/datasets/multi_illumination/spherical/index/14n_copyroom10_train.json" \
+    -dataset_val "/data/pakkapon/datasets/multi_illumination/spherical/train" \
+    -dataset_val_split "/data/pakkapon/datasets/multi_illumination/spherical/index/14n_copyroom10_test.json"
+
+# EXPERIMENT 7: train single light from per scene
+# version 96072
+bin/siatv100 src/20250104/train.py \
+    -lr 1e-4 \
+    --guidance_scale 1.0 \
+    --dataset_train_multiplier 100 \
+    --network_type sd_no_bg \
+    --batch_size 8 \
+    -c 1 \
+    --feature_type clip \
+    --shadings_dir "control_shading_from_ldr27coeff_conv_v2"\
+    --backgrounds_dir "control_shading_from_ldr27coeff_conv_v2"\
+    -dataset "/data/pakkapon/datasets/multi_illumination/spherical/train" \
+    -dataset_split "/data/pakkapon/datasets/multi_illumination/spherical/index/singlelight_per_scene_train.json" \
+    -dataset_val "/data/pakkapon/datasets/multi_illumination/spherical/val" \
+    -dataset_val_split "/data/pakkapon/datasets/multi_illumination/spherical/split-val-relight-light-array.json"
+
+# 96073
+bin/siatv100 src/20250104/train.py \
+    -lr 1e-4 \
+    --guidance_scale 1.0 \
+    --dataset_train_multiplier 100 \
+    --network_type sd_only_shading \
+    --batch_size 8 \
+    -c 1 \
+    --feature_type clip \
+    --shadings_dir "control_shading_from_ldr27coeff_conv_v2"\
+    --backgrounds_dir "control_shading_from_ldr27coeff_conv_v2"\
+    -dataset "/data/pakkapon/datasets/multi_illumination/spherical/train" \
+    -dataset_split "/data/pakkapon/datasets/multi_illumination/spherical/index/singlelight_per_scene_train.json" \
+    -dataset_val "/data/pakkapon/datasets/multi_illumination/spherical/val" \
+    -dataset_val_split "/data/pakkapon/datasets/multi_illumination/spherical/split-val-relight-light-array.json"
+
+# EXPERIMENT 8: train single light from per scene with jittery
+# version 96074
+bin/siatv100 src/20250104/train.py \
+    -lr 1e-4 \
+    --guidance_scale 1.0 \
+    --dataset_train_multiplier 100 \
+    --network_type sd_color_jitter_defareli \
+    --batch_size 8 \
+    -c 1 \
+    --feature_type clip \
+    --shadings_dir "control_shading_from_ldr27coeff_conv_v2"\
+    --backgrounds_dir "images"\
+    -dataset "/data/pakkapon/datasets/multi_illumination/spherical/train" \
+    -dataset_split "/data/pakkapon/datasets/multi_illumination/spherical/index/singlelight_per_scene_train.json" \
+    -dataset_val "/data/pakkapon/datasets/multi_illumination/spherical/val" \
+    -dataset_val_split "/data/pakkapon/datasets/multi_illumination/spherical/split-val-relight-light-array.json"
+
+# version 96075
+bin/siatv100 src/20250104/train.py \
+    -lr 1e-4 \
+    --guidance_scale 1.0 \
+    --dataset_train_multiplier 100 \
+    --network_type sd_color_jitter \
+    --batch_size 8 \
+    -c 1 \
+    --feature_type clip \
+    --shadings_dir "control_shading_from_ldr27coeff_conv_v2"\
+    --backgrounds_dir "images"\
+    -dataset "/data/pakkapon/datasets/multi_illumination/spherical/train" \
+    -dataset_split "/data/pakkapon/datasets/multi_illumination/spherical/index/singlelight_per_scene_train.json" \
+    -dataset_val "/data/pakkapon/datasets/multi_illumination/spherical/val" \
+    -dataset_val_split "/data/pakkapon/datasets/multi_illumination/spherical/split-val-relight-light-array.json"
