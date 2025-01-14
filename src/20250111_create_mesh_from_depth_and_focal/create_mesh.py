@@ -40,7 +40,6 @@ def depth_to_obj(depth, focal, obj_path, json_path):
     far_plane = np.percentile(Z, 99)
     z_offset = float((far_plane + near_plane) / 2)
 
-    # temporary remove offset
     # Adjust Z values
     Z = Z - z_offset
 

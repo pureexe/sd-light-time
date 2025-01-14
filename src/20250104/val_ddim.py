@@ -21,6 +21,49 @@
 #bin/siatv100 src/20250104/val_ddim.py -i 95352 -m rotate_copyroom10 -c 40
 #bin/siatv100 src/20250104/val_ddim.py -i 95354 -m rotate_copyroom10 -c 40
 
+# rotate coppyroom10 
+#bin/siatv100 src/20250104/val_ddim.py -i 96023 -m rotate_copyroom10_right_conv_v2 -c 20
+#bin/siatv100 src/20250104/val_ddim.py -i 96024 -m rotate_copyroom10_right_conv_v2 -c 20
+#bin/siatv100 src/20250104/val_ddim.py -i 96023 -m rotate_copyroom10_right_conv_v2 -c 10
+#bin/siatv100 src/20250104/val_ddim.py -i 96024 -m rotate_copyroom10_right_conv_v2 -c 10
+#bin/siatv100 src/20250104/val_ddim.py -i 96023 -m rotate_copyroom10_right_conv_v2 -c 5
+#bin/siatv100 src/20250104/val_ddim.py -i 96024 -m rotate_copyroom10_right_conv_v2 -c 5
+#bin/siatv100 src/20250104/val_ddim.py -i 96023 -m rotate_copyroom10_right_conv_v2 -c 1
+#bin/siatv100 src/20250104/val_ddim.py -i 96024 -m rotate_copyroom10_right_conv_v2 -c 1
+
+# render from light 0
+# val_rotate_copyroom10_light0
+# bin/siatv100 src/20250104/val_ddim.py -i 96023 -m rotate_copyroom10_light0_conv_v2 -c 20
+# bin/siatv100 src/20250104/val_ddim.py -i 96024 -m rotate_copyroom10_light0_conv_v2 -c 20
+# bin/siatv100 src/20250104/val_ddim.py -i 96023 -m rotate_copyroom10_light0_conv_v2 -c 10
+# bin/siatv100 src/20250104/val_ddim.py -i 96024 -m rotate_copyroom10_light0_conv_v2 -c 10
+# bin/siatv100 src/20250104/val_ddim.py -i 96023 -m rotate_copyroom10_light0_conv_v2 -c 5
+# bin/siatv100 src/20250104/val_ddim.py -i 96024 -m rotate_copyroom10_light0_conv_v2 -c 5
+# bin/siatv100 src/20250104/val_ddim.py -i 96023 -m rotate_copyroom10_light0_conv_v2 -c 1
+# bin/siatv100 src/20250104/val_ddim.py -i 96024 -m rotate_copyroom10_light0_conv_v2 -c 1
+
+
+# bin/siatv100 src/20250104/val_ddim.py -i 96023 -m interpolate_copyroom10 -c 20
+# bin/siatv100 src/20250104/val_ddim.py -i 96024 -m interpolate_copyroom10 -c 20
+# bin/siatv100 src/20250104/val_ddim.py -i 96023 -m interpolate_copyroom10 -c 10
+# bin/siatv100 src/20250104/val_ddim.py -i 96024 -m interpolate_copyroom10 -c 10
+# bin/siatv100 src/20250104/val_ddim.py -i 96023 -m interpolate_copyroom10 -c 5
+# bin/siatv100 src/20250104/val_ddim.py -i 96024 -m interpolate_copyroom10 -c 5
+# bin/siatv100 src/20250104/val_ddim.py -i 96023 -m interpolate_copyroom10 -c 1
+# bin/siatv100 src/20250104/val_ddim.py -i 96024 -m interpolate_copyroom10 -c 1
+
+# bin/siatv100 src/20250104/val_ddim.py -i 96023 -m all_copyroom10 -c 20
+# bin/siatv100 src/20250104/val_ddim.py -i 96024 -m all_copyroom10 -c 20
+# bin/siatv100 src/20250104/val_ddim.py -i 96023 -m all_copyroom10 -c 10
+# bin/siatv100 src/20250104/val_ddim.py -i 96024 -m all_copyroom10 -c 10
+# bin/siatv100 src/20250104/val_ddim.py -i 96023 -m all_copyroom10 -c 5
+# bin/siatv100 src/20250104/val_ddim.py -i 96024 -m all_copyroom10 -c 5
+# bin/siatv100 src/20250104/val_ddim.py -i 96023 -m all_copyroom10 -c 1
+# bin/siatv100 src/20250104/val_ddim.py -i 96024 -m all_copyroom10 -c 1
+
+
+
+
 
 import os
 import lightning as L
@@ -63,6 +106,8 @@ NAMES = {
     95350: 'vae_multi',
     95352: 'clip_shcoeff_multi',
     95354: 'clip_multi',
+    96023: 'v2_clip',
+    96024: 'v2_noclip'
 }
 METHODS = {
     95208: 'default',
@@ -73,6 +118,8 @@ METHODS = {
     95350: 'default',
     95352: 'default',
     95354: 'default',
+    96023: 'default',
+    96024: 'default',
 }
 CONDITIONS_CLASS = {
     95208: SDDiffusionFaceNoBg,
@@ -83,6 +130,8 @@ CONDITIONS_CLASS = {
     95350: SDDiffusionFaceNoBg,
     95352: SDDiffusionFaceNoBg,
     95354: SDDiffusionFaceNoBg,
+    96023: SDDiffusionFaceNoBg,
+    96024: SDOnlyShading,
 }
 LRS = {
     95208: '1e-4',
@@ -93,7 +142,8 @@ LRS = {
     95350: '1e-4',
     95352: '1e-4',
     95354: '1e-4',
-
+    96023: '1e-4',
+    96024: '1e-4',
 }
 DIRNAME = {
     95208: CHECKPOINT_FOLDER_NAME,
@@ -104,6 +154,8 @@ DIRNAME = {
     95350: CHECKPOINT_FOLDER_NAME,
     95352: CHECKPOINT_FOLDER_NAME,
     95354: CHECKPOINT_FOLDER_NAME,
+    96023: CHECKPOINT_FOLDER_NAME,
+    96024: CHECKPOINT_FOLDER_NAME,
 }
 CHECKPOINTS = {
     95208: 40,
@@ -114,12 +166,14 @@ CHECKPOINTS = {
     95350: 40,
     95352: 40,
     95354: 40,
+    96023: 20,
+    96024: 20,
 }
 
 use_ab_background = []
 use_shcoeff2 = [95208, 95211, 95349, 95352]
 use_only_light = [95208, 95211, 95349, 95352]
-use_no_light = [95209, 95212, 95350, 95354]
+use_no_light = [95209, 95212, 95350, 95354, 96023, 96024]
 use_random_mask_background = []
 
 def get_from_mode(mode):
@@ -135,6 +189,14 @@ def get_from_mode(mode):
         return "/data/pakkapon/datasets/multi_illumination/spherical/val_rotate_everett_kitchen4_left", 100, DDIMDiffusionFaceRelightDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/index/everett_kitchen4_rotate.json", "shadings_dir": "control_shading_from_ldr27coeff", "backgrounds_dir": "control_shading_from_ldr27coeff", "feature_types": []},  "a photorealistic image"
     if mode == "rotate_everett_kitchen4_right":
         return "/data/pakkapon/datasets/multi_illumination/spherical/val_rotate_everett_kitchen4_right", 100, DDIMDiffusionFaceRelightDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/index/everett_kitchen4_rotate.json", "shadings_dir": "control_shading_from_ldr27coeff", "backgrounds_dir": "control_shading_from_ldr27coeff", "feature_types": []},  "a photorealistic image"
+    if mode == "rotate_copyroom10_right_conv_v2":
+        return "/data/pakkapon/datasets/multi_illumination/spherical/val_rotate_copyroom10", 100, DDIMDiffusionFaceRelightDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/index/10n_copyroom10_rotate.json", "shadings_dir": "control_shading_from_ldr27coeff_conv_v2", "backgrounds_dir": "images", "feature_types": []},  "a photorealistic image"
+    if mode == "rotate_copyroom10_light0_conv_v2":
+        return "/data/pakkapon/datasets/multi_illumination/spherical/val_rotate_copyroom10_light0", 100, DDIMDiffusionFaceRelightDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/index/10n_copyroom10_rotate.json", "shadings_dir": "control_shading_from_ldr27coeff_conv_v2", "backgrounds_dir": "images", "feature_types": []},  "a photorealistic image"
+    if mode == "interpolate_copyroom10":
+        return "/data/pakkapon/datasets/multi_illumination/spherical/val_interpolate_copyroom10", 100, DDIMDiffusionFaceRelightDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/index/10n_copyroom10_rotate.json", "shadings_dir": "control_shading_from_ldr27coeff_conv_v2", "backgrounds_dir": "images", "feature_types": []},  "a photorealistic image"
+    if mode == "all_copyroom10":
+        return "/data/pakkapon/datasets/multi_illumination/spherical/train", 100, DDIMDiffusionFaceRelightDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/index/14n_copyroom10_all.json", "shadings_dir": "control_shading_from_ldr27coeff_conv_v2", "backgrounds_dir": "images", "feature_types": []},  "a photorealistic image"
     else:
         raise Exception("mode not found")
 
