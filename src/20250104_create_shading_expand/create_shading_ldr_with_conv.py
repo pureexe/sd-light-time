@@ -149,16 +149,16 @@ def unfold_sh_coeff(flatted_coeff, max_sh_level=2):
 def apply_integrate_conv(shcoeff):
     # apply integrate on diffuse surface 
     # @see https://cseweb.ucsd.edu/~ravir/papers/envmap/envmap.pdf
-    assert shcoeff.shape[0] == 3 and shcoeff.shape[1] == 2
+    assert shcoeff.shape[0] == 3 and shcoeff.shape[1] == 2  # expect shcoeff shape to be [3,2,3,3]
     A = np.array([
         np.pi, # 0
         2*np.pi / 3, # 1
         np.pi / 4, # 2
     ])
-    for j in range(2):
+    for j in range(3):
         # check if it still access
         if j < shcoeff.shape[2]:
-            shcoeff[:,j] = A[j] * shcoeff[:,j]
+            shcoeff[:,:,j] = A[j] * shcoeff[:,:,j]
     return shcoeff
 
 
@@ -168,7 +168,7 @@ def main():
     root_dir = "/ist/ist-share/vision/relight/datasets/multi_illumination/spherical/train"
     image_dir = "images"
     coeff_dir = "shcoeffs"
-    output_dir = "control_shading_from_ldr27coeff_conv_v2"
+    output_dir = "control_shading_from_ldr27coeff_conv_v3"
     mode = 'bae'
     
     print("LOADING PREPROCESSOR")
@@ -180,10 +180,10 @@ def main():
     preprocessor = NormalBaeDetectorPT.from_pretrained("lllyasviel/Annotators")
     preprocessor.to('cuda')
 
-    tonemapper = TonemapHDR(gamma=2.4, percentile=60, max_mapping=0.6)
+    tonemapper = TonemapHDR(gamma=1.0, percentile=90, max_mapping=0.9)
     print("CREATING QUEUES...")
     queues  = []
-    for scene in scenes[args.index::args.total]:
+    for scene in scenes[:1]:
         for idx in range(25):
             queues.append((scene,idx))
     
@@ -208,9 +208,11 @@ def main():
         shcoeff = np.load(f"{root_dir}/{coeff_dir}/{scene}/dir_{idx}_mip2.npy") # shcoeff shape (3,9)
         shcoeff = unfold_sh_coeff(shcoeff,max_sh_level=2)
         #shcoeff = torch.from_numpy(shcoeff).permute(1,0)[None] # shcoeff [BATCH, 9, 3]
-        shcoeff = apply_integrate_conv(shcoeff)
+        #shcoeff = apply_integrate_conv(shcoeff)
 
         shading = sample_envmap_from_sh(shcoeff, lmax=2, theta=theta, phi=phi)
+        print("shading_MAX: ", shading.max())
+
         shading, _, _ = tonemapper(shading)
         shading = np.clip(shading, 0, 1)
         shading = skimage.img_as_ubyte(shading)

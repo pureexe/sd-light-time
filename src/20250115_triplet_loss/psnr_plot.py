@@ -65,4 +65,4 @@ def plot_psnr_from_epochs(base_dir, output_image='psnr_plot.png'):
 # Example usage
 # plot_psnr_from_epochs("/ist/ist-share/vision/pakkapon/relight/sd-light-time/output/20250104/multi_mlp_fit/lightning_logs/version_95350")
 
-plot_psnr_from_epochs("/ist/ist-share/vision/pakkapon/relight/sd-light-time/output/20250104/multi_mlp_fit/lightning_logs/version_96054", "plot_psnr_color_jitter_noclip.png")
+plot_psnr_from_epochs("/ist/ist-share/vision/pakkapon/relight/sd-light-time/output/20250104/multi_mlp_fit/lightning_logs/version_95354")

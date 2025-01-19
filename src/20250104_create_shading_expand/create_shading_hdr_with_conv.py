@@ -27,6 +27,7 @@ from einops import rearrange
 from tonemapper import TonemapHDR
 import ezexr
 print("IMPORT DONE")
+import cv2
 
 
 class NormalBaeDetectorPT(NormalBaeDetector):
@@ -136,10 +137,10 @@ def apply_integrate_conv(shcoeff):
         2*np.pi / 3, # 1
         np.pi / 4, # 2
     ])
-    for j in range(2):
+    for j in range(3):
         # check if it still access
         if j < shcoeff.shape[2]:
-            shcoeff[:,j] = A[j] * shcoeff[:,j]
+            shcoeff[:,:,j] = A[j] * shcoeff[:,:,j]
     return shcoeff
 
 
@@ -148,10 +149,11 @@ def main():
 
     root_dir = "/ist/ist-share/vision/relight/datasets/multi_illumination/spherical/train"
     image_dir = "images"
-    coeff_dir = "shcoeffs_order2_hdr"
-    output_dir = "control_shading_from_hdr27coeff_conv_map50_0.2"
+    coeff_dir = "shcoeffs_order100_hdr"
+    output_dir = "control_shading_from_hdr27coeff_conv_v3_durand"
     mode = 'bae'
-    
+    ORDER = 2
+
     print("LOADING PREPROCESSOR")
     os.makedirs(os.path.join(root_dir, output_dir), exist_ok=True)
     os.chmod(os.path.join(root_dir, output_dir), 0o777)
@@ -161,15 +163,19 @@ def main():
     preprocessor = NormalBaeDetectorPT.from_pretrained("lllyasviel/Annotators")
     preprocessor.to('cuda')
 
-    #tonemapper = TonemapHDR(gamma=2.4, percentile=90, max_mapping=0.9)
     print("CREATING QUEUES...")
     queues  = []
     for scene in scenes[:1]:
         for idx in range(25):
             queues.append((scene,idx))
     
-    tonemapper = TonemapHDR(gamma=2.4, percentile=50, max_mapping=0.2)
-    pbar = tqdm(queues)
+    #tonemapper = TonemapHDR(gamma=2.4, percentile=50, max_mapping=0.5)
+    #tonemapper = cv2.createTonemapReinhard(gamma=2.4, intensity=1.0)
+    tonemapper = cv2.createTonemapDurand(gamma=2.2, contrast=4.0, saturation=1.0)
+
+
+
+    pbar = tqdm(queues[2:3])
     pbar.set_description(f"")
     for info in pbar:
         
@@ -179,8 +185,8 @@ def main():
         scene = info[0]
         shading_output_dir = os.path.join(root_dir,output_dir,scene)
         output_path = os.path.join(shading_output_dir, f"dir_{idx}_mip2.png")
-        if os.path.exists(output_path):
-            continue
+        #if os.path.exists(output_path):
+        #    continue
         image = Image.open(f"{root_dir}/{image_dir}/{scene}/dir_{idx}_mip2.jpg").convert("RGB")
         normal_map = preprocessor(image, output_type="pt")
 
@@ -188,18 +194,21 @@ def main():
 
 
         shcoeff = np.load(f"{root_dir}/{coeff_dir}/{scene}/dir_{idx}_mip2.npy") # shcoeff shape (3,9)
-        shcoeff = unfold_sh_coeff(shcoeff,max_sh_level=2)
-        #shcoeff = torch.from_numpy(shcoeff).permute(1,0)[None] # shcoeff [BATCH, 9, 3]
+        
+        shcoeff = unfold_sh_coeff(shcoeff,max_sh_level=ORDER)
+
         shcoeff = apply_integrate_conv(shcoeff)
 
-        shading = sample_envmap_from_sh(shcoeff, lmax=2, theta=theta, phi=phi)
-
+        shading = sample_envmap_from_sh(shcoeff, lmax=ORDER, theta=theta, phi=phi)
+        
         os.makedirs(shading_output_dir, exist_ok=True)
         os.chmod(shading_output_dir, 0o777)
 
         ezexr.imwrite(output_path.replace(".png",".exr"), shading)   
         
-        shading, _, _ = tonemapper(shading) # tonemap
+        #shading, _, _ = tonemapper(shading) # tonemap
+        shading = np.float32(shading)
+        shading = tonemapper.process(shading)
         
         shading = np.clip(shading, 0, 1)
         shading = skimage.img_as_ubyte(shading)

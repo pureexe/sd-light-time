@@ -169,7 +169,7 @@ def rotate_envmap(shcoeff, angle, lmax=2):
 def main():
 
 
-    root_dir = "/ist/ist-share/vision/relight/datasets/multi_illumination/spherical/val_interpolate_copyroom10"
+    root_dir = "/ist/ist-share/vision/relight/datasets/multi_illumination/spherical/val_interpolate_copyroom10/"
     image_dir = "images"
     coeff_dir = "shcoeffs"
     output_dir = "control_shading_from_ldr27coeff_conv_v2"
@@ -212,6 +212,8 @@ def main():
         
 
         shcoeff = np.load(f"{root_dir}/{coeff_dir}/{scene}/dir_{idx}_mip2.npy") # shcoeff shape (3,9)
+        print(shcoeff.shape)
+        print(shcoeff)
         shcoeff = unfold_sh_coeff(shcoeff,max_sh_level=2)
         #shcoeff = rotate_envmap(shcoeff, 2*np.pi * (idx / TOTAL_FRAME))
         #shcoeff = torch.from_numpy(shcoeff).permute(1,0)[None] # shcoeff [BATCH, 9, 3]

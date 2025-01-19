@@ -1,8 +1,10 @@
-PATH = "/ist/ist-share/vision/relight/datasets/multi_illumination/spherical/train/shcoeffs/14n_copyroom1/dir_5_mip2.npy"
+PATH = "/ist/ist-share/vision/relight/datasets/multi_illumination/spherical/train/shcoeffs_order100_hdr/14n_copyroom1/dir_5_mip2.npy"
 
 import pyshtools
 import numpy as np 
+import os
 import ezexr 
+from tqdm.auto import tqdm 
 
 ORDER = 2
 
@@ -50,13 +52,26 @@ def compute_background(
     return output_image
 
 
-def main():
+def main_old():
     shcoeff = np.load(PATH)
     shcoeff = unfold_sh_coeff(shcoeff, max_sh_level=ORDER)
     print("UNFOLDED SH COEFFICIENTS computed")
     # compute background
     background = compute_background(shcoeff, lmax=ORDER)
-    ezexr.imwrite("background_ldr.exr", background)
+    ezexr.imwrite("background_hdr_dir_5_mip2.exr", background)
+
+def main():
+    DIR = "/ist/ist-share/vision/relight/datasets/multi_illumination/spherical/train/shcoeffs_order100_hdr/14n_copyroom1"
+    OUTPUT_DIR = "/ist/ist-share/vision/pakkapon/relight/sd-light-time/src/20250111_create_mesh_from_depth_and_focal/output/precompute_copyroom01"
+    files = sorted(os.listdir(DIR))
+    files = [f for f in files if f.endswith('npy')]
+    for filename in tqdm(files):
+        shcoeff = np.load(os.path.join(DIR,filename))
+        shcoeff = unfold_sh_coeff(shcoeff, max_sh_level=ORDER)
+        # compute background
+        background = compute_background(shcoeff, lmax=ORDER)
+        ezexr.imwrite(os.path.join(OUTPUT_DIR,filename.replace('.npy','.exr')), background)
+
 
 
 if __name__ == "__main__":
