@@ -189,7 +189,7 @@ def filmic_tone_map(rgb_image, gamma=2.4):
 def main():
 
 
-    root_dir = "/ist/ist-share/vision/relight/datasets/multi_illumination/spherical/train"
+    root_dir = "/ist/ist-share/vision/relight/datasets/multi_illumination/spherical/val_interpolate_copyroom10"
     image_dir = "images"
     coeff_dir = "shcoeffs_order100_hdr"
     output_dir = "control_shading_from_hdr27coeff_conv_v3"
@@ -200,7 +200,10 @@ def main():
     os.makedirs(os.path.join(root_dir, output_dir), exist_ok=True)
     os.chmod(os.path.join(root_dir, output_dir), 0o777)
 
-    scenes = sorted(os.listdir(os.path.join(root_dir, image_dir)))
+    #scenes = sorted(os.listdir(os.path.join(root_dir, image_dir)))
+    scenes = [
+        '14n_copyroom10'
+    ]
 
     preprocessor = NormalBaeDetectorPT.from_pretrained("lllyasviel/Annotators")
     preprocessor.to('cuda')
@@ -208,7 +211,7 @@ def main():
     print("CREATING QUEUES...")
     queues  = []
     for scene in scenes:
-        for idx in range(25):
+        for idx in range(60):
             queues.append((scene,idx))
     
     tonemapper = TonemapHDR(gamma=2.4, percentile=50, max_mapping=0.5)
@@ -216,6 +219,12 @@ def main():
 
     pbar = tqdm(queues[args.index::args.total])
     pbar.set_description(f"")
+
+    idx = 0
+    scene = scenes[0]
+    image = Image.open(f"{root_dir}/{image_dir}/{scene}/dir_{idx}_mip2.png").convert("RGB")
+    normal_map = preprocessor(image, output_type="pt")
+
     for info in pbar:
         
         pbar.set_postfix(item=f"{info[0]}/{info[1]}")
@@ -226,8 +235,7 @@ def main():
         output_path = os.path.join(shading_output_dir, f"dir_{idx}_mip2.png")
         if os.path.exists(output_path):
            continue
-        image = Image.open(f"{root_dir}/{image_dir}/{scene}/dir_{idx}_mip2.jpg").convert("RGB")
-        normal_map = preprocessor(image, output_type="pt")
+        
 
         theta, phi = cartesian_to_spherical(normal_map)
 
