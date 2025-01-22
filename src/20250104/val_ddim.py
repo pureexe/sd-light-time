@@ -62,6 +62,12 @@
 # bin/siatv100 src/20250104/val_ddim.py -i 96024 -m all_copyroom10 -c 1
 
 
+# bin/siatv100 src/20250104/val_ddim.py -i 96023 -m interpolate_copyroom10_static -c 20
+# bin/siatv100 src/20250104/val_ddim.py -i 96023 -m interpolate_copyroom10 -c 20
+# bin/siatv100 src/20250104/val_ddim.py -i 96024 -m all_copyroom10 -c 1,2,3,4,5
+# bin/siatv100 src/20250104/val_ddim.py -i 96024 -m all_copyroom10 -c 6,7,8,9,10
+# bin/siatv100 src/20250104/val_ddim.py -i 96024 -m all_copyroom10 -c 11,12,13,14
+# bin/siatv100 src/20250104/val_ddim.py -i 96024 -m all_copyroom10 -c 15,16,17,18,19,20
 
 
 
@@ -197,6 +203,8 @@ def get_from_mode(mode):
         return "/data/pakkapon/datasets/multi_illumination/spherical/val_interpolate_copyroom10", 100, DDIMDiffusionFaceRelightDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/index/10n_copyroom10_rotate.json", "shadings_dir": "control_shading_from_ldr27coeff_conv_v2", "backgrounds_dir": "images", "feature_types": []},  "a photorealistic image"
     if mode == "all_copyroom10":
         return "/data/pakkapon/datasets/multi_illumination/spherical/train", 100, DDIMDiffusionFaceRelightDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/index/14n_copyroom10_all.json", "shadings_dir": "control_shading_from_ldr27coeff_conv_v2", "backgrounds_dir": "images", "feature_types": []},  "a photorealistic image"
+    if mode == "interpolate_copyroom10_static":
+        return "/data/pakkapon/datasets/multi_illumination/spherical/val_interpolate_copyroom10_static", 100, DDIMDiffusionFaceRelightDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/index/10n_copyroom10_rotate.json", "shadings_dir": "control_shading_from_ldr27coeff_conv_v2", "backgrounds_dir": "images", "feature_types": []},  "a photorealistic image"
     else:
         raise Exception("mode not found")
 

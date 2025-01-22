@@ -51,19 +51,28 @@ def plot_psnr_from_epochs(base_dir, output_image='psnr_plot.png'):
             avg_psnr = sum(psnr_values) / len(psnr_values)
             epochs.append(epoch_num)
             psnr_averages.append(avg_psnr)
+    return epochs, psnr_averages
 
-    # Plot the results
-    plt.figure(figsize=(10, 6))
-    plt.plot(epochs, psnr_averages, marker='o', linestyle='-', color='b')
-    plt.title("Average PSNR by Epoch")
-    plt.xlabel("Epoch")
-    plt.ylabel("Average PSNR")
-    plt.grid(True)
-    plt.savefig(output_image)
-    plt.close()
-    print(f"Plot saved to {output_image}")
-
+# Plot the results
+output_image = "psnr_singlescene_lr_compare.png"
+plt.figure(figsize=(10, 6))
 # Example usage
 # plot_psnr_from_epochs("/ist/ist-share/vision/pakkapon/relight/sd-light-time/output/20250104/multi_mlp_fit/lightning_logs/version_95350")
 
-plot_psnr_from_epochs("/ist/ist-share/vision/pakkapon/relight/sd-light-time/output/20250120_efficient_shading/multi_mlp_fit/lightning_logs/version_96458","psnr_singlescene_1e-4.png")
+epochs, psnr_averages = plot_psnr_from_epochs("/ist/ist-share/vision/pakkapon/relight/sd-light-time/output/20250120_efficient_shading/multi_mlp_fit/lightning_logs/version_96458","psnr_singlescene_1e-4.png")
+plt.plot(epochs, psnr_averages, marker='o', linestyle='-', color='b', label="1-e4")
+epochs, psnr_averages = plot_psnr_from_epochs("/ist/ist-share/vision/pakkapon/relight/sd-light-time/output/20250120_efficient_shading/multi_mlp_fit/lightning_logs/version_96461","psnr_singlescene_1e-4.png")
+plt.plot(epochs, psnr_averages, marker='o', linestyle='-', color='r', label="1-e5")
+epochs, psnr_averages = plot_psnr_from_epochs("/ist/ist-share/vision/pakkapon/relight/sd-light-time/output/20250120_efficient_shading/multi_mlp_fit/lightning_logs/version_96462","psnr_singlescene_1e-4.png")
+plt.plot(epochs, psnr_averages, marker='o', linestyle='-', color='g', label="1-e6")
+
+
+plt.title("Test PSNR by Epoch")
+plt.xlabel("Epoch")
+plt.ylabel("Average PSNR")
+plt.legend()
+plt.grid(True)
+plt.savefig(output_image)
+plt.close()
+print(f"Plot saved to {output_image}")
+

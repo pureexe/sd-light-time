@@ -1,4 +1,4 @@
-# Experiment 1:  Single scnee #version_96433
+# Experiment 1:  Single scnee #version_96433 (This is incorrect, we need feature type clip)
 bin/siatv100 src/20250120_efficient_shading/train.py \
     -lr 1e-4 \
     --guidance_scale 1.0 \
@@ -13,6 +13,55 @@ bin/siatv100 src/20250120_efficient_shading/train.py \
     -dataset_split "/data/pakkapon/datasets/multi_illumination/spherical/index/14n_copyroom10_train.json" \
     -dataset_val "/data/pakkapon/datasets/multi_illumination/spherical/train" \
     -dataset_val_split "/data/pakkapon/datasets/multi_illumination/spherical/index/14n_copyroom10_test.json"
+
+# CLIP LR 1e-4 version 96458
+bin/siatv100 src/20250120_efficient_shading/train.py \
+    -lr 1e-4 \
+    --guidance_scale 1.0 \
+    --network_type sd_no_bg \
+    --batch_size 8 \
+    -c 1 \
+    --feature_type clip \
+    --dataset_train_multiplier 1000 \
+    --shadings_dir "control_shading_from_hdr27coeff_conv_v3"\
+    --backgrounds_dir "control_shading_from_hdr27coeff_conv_v3"\
+    -dataset "/data/pakkapon/datasets/multi_illumination/spherical/train" \
+    -dataset_split "/data/pakkapon/datasets/multi_illumination/spherical/index/14n_copyroom10_train.json" \
+    -dataset_val "/data/pakkapon/datasets/multi_illumination/spherical/train" \
+    -dataset_val_split "/data/pakkapon/datasets/multi_illumination/spherical/index/14n_copyroom10_test.json"
+
+# CLIP LR 1e-5 #96461
+bin/siatv100 src/20250120_efficient_shading/train.py \
+    -lr 1e-5 \
+    --guidance_scale 1.0 \
+    --network_type sd_no_bg \
+    --batch_size 8 \
+    -c 1 \
+    --feature_type clip \
+    --dataset_train_multiplier 1000 \
+    --shadings_dir "control_shading_from_hdr27coeff_conv_v3"\
+    --backgrounds_dir "control_shading_from_hdr27coeff_conv_v3"\
+    -dataset "/data/pakkapon/datasets/multi_illumination/spherical/train" \
+    -dataset_split "/data/pakkapon/datasets/multi_illumination/spherical/index/14n_copyroom10_train.json" \
+    -dataset_val "/data/pakkapon/datasets/multi_illumination/spherical/train" \
+    -dataset_val_split "/data/pakkapon/datasets/multi_illumination/spherical/index/14n_copyroom10_test.json"
+
+# CLIP LR 1e-6 #96462
+bin/siatv100 src/20250120_efficient_shading/train.py \
+    -lr 1e-6 \
+    --guidance_scale 1.0 \
+    --network_type sd_no_bg \
+    --batch_size 8 \
+    -c 1 \
+    --feature_type clip \
+    --dataset_train_multiplier 1000 \
+    --shadings_dir "control_shading_from_hdr27coeff_conv_v3"\
+    --backgrounds_dir "control_shading_from_hdr27coeff_conv_v3"\
+    -dataset "/data/pakkapon/datasets/multi_illumination/spherical/train" \
+    -dataset_split "/data/pakkapon/datasets/multi_illumination/spherical/index/14n_copyroom10_train.json" \
+    -dataset_val "/data/pakkapon/datasets/multi_illumination/spherical/train" \
+    -dataset_val_split "/data/pakkapon/datasets/multi_illumination/spherical/index/14n_copyroom10_test.json"
+
 
 # experiment 2 multiple scene
 
