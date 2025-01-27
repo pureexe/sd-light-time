@@ -2,6 +2,8 @@ import numpy as np
 import pyshtools
 import torch
 
+# module load OpenBLAS/0.3.20-GCC-11.3.0
+
 def get_shcoeff(image, Lmax=100):
     """
     @param image: image in HWC @param 1max: maximum of sh
@@ -79,6 +81,18 @@ def compute_background(sh, lmax=2, image_width=512):
     output_image = np.concatenate(output_image,axis=-1)
     return output_image
 
+def sample_from_sh(shcoeff, lmax, theta, phi):
+    """
+    Sample envmap from sh 
+    """
+    assert shcoeff.shape[0] == 3 # make sure that it a 3 channel input
+    output = []
+    for ch in (range(3)):
+        coeffs = pyshtools.SHCoeffs.from_array(shcoeff[ch], lmax=lmax, normalization='4pi', csphase=1)
+        image = coeffs.expand(grid="GLQ", lat=theta, lon=phi, lmax_calc=lmax, degrees=False)
+        output.append(image[...,None])
+    output = np.concatenate(output, axis=-1)
+    return output
 
 def get_ideal_normal_ball(size, flip_x=True):
     """
@@ -234,3 +248,36 @@ def get_rotation_matrix_from_vectors_single(a, b):
     R = np.eye(3) + vx + np.dot(vx, vx) * (1 - c) / (s ** 2)
     return R    
 
+def apply_integrate_conv(shcoeff):
+    # apply integrate on diffuse surface 
+    # @see https://cseweb.ucsd.edu/~ravir/papers/envmap/envmap.pdf
+    assert shcoeff.shape[0] == 3 and shcoeff.shape[1] == 2
+    A = np.array([
+        np.pi, # 0
+        2*np.pi / 3, # 1
+        np.pi / 4, # 2
+    ])
+    for j in range(3):
+        # check if it still access
+        if j < shcoeff.shape[2]:
+            shcoeff[:,:,j] = A[j] * shcoeff[:,:,j]
+    return shcoeff
+
+# TODO: need unit testing
+def from_x_left_to_z_up(point):
+    """
+    Convert from ControlNet x-left, y-up, z-forward to x-forward, y-right z-up
+    """
+    assert point.shape[-1] == 3 # only support catesian coordinate
+    rotation_matrix = np.array([
+        [0., 0., 1.], # new x-forward  coming  from z-foward
+        [-1., 0., 0.], # new y-right coming from x-left
+        [0., 1., 0.], # new 
+    ])
+    assert point.shape[-1] == 3 # make sure it have 3 channel.
+    # convert to torch to multiply in last 2 dimension.
+    rotation_matrix = torch.from_numpy(rotation_matrix).float()
+    point =  torch.from_numpy(point)[...,None].float()
+    new_point = rotation_matrix @ point 
+    new_point = new_point[...,0].numpy() # shape [H,W,3]
+    return new_point

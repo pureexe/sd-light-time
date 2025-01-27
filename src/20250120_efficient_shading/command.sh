@@ -109,7 +109,7 @@ bin/siatv100 src/20250120_efficient_shading/train.py \
     -dataset_val_split "/data/pakkapon/datasets/multi_illumination/spherical/split-val-relight-light-array.json" 
 
 # Experiment 3 - Train with differnet number of scene to see if it can relighting single scene
-# Experiment 3.1 2 scene #version_96622
+# Experiment 3.1 2 scene #version_96636
 bin/siatv100 src/20250120_efficient_shading/train.py \
     -lr 1e-4 \
     --guidance_scale 1.0 \
@@ -125,7 +125,7 @@ bin/siatv100 src/20250120_efficient_shading/train.py \
     -dataset_val "/data/pakkapon/datasets/multi_illumination/spherical/train" \
     -dataset_val_split "/data/pakkapon/datasets/multi_illumination/spherical/index/14n_copyroom10_all.json"
 
-# Experiment 3.2 5 scene  version_96623
+# Experiment 3.2 5 scene  version_96637
 bin/siatv100 src/20250120_efficient_shading/train.py \
     -lr 1e-4 \
     --guidance_scale 1.0 \
@@ -141,7 +141,7 @@ bin/siatv100 src/20250120_efficient_shading/train.py \
     -dataset_val "/data/pakkapon/datasets/multi_illumination/spherical/train" \
     -dataset_val_split "/data/pakkapon/datasets/multi_illumination/spherical/index/14n_copyroom10_all.json"
 
-# Experiment 3.3 10 scene version_96625
+# Experiment 3.3 10 scene version_96638
 bin/siatv100 src/20250120_efficient_shading/train.py \
     -lr 1e-4 \
     --guidance_scale 1.0 \
@@ -157,7 +157,7 @@ bin/siatv100 src/20250120_efficient_shading/train.py \
     -dataset_val "/data/pakkapon/datasets/multi_illumination/spherical/train" \
     -dataset_val_split "/data/pakkapon/datasets/multi_illumination/spherical/index/14n_copyroom10_all.json"
 
-# experiemnt 3.4 20 scene version_96627
+# experiemnt 3.4 20 scene version_96639
 bin/siatv100 src/20250120_efficient_shading/train.py \
     -lr 1e-4 \
     --guidance_scale 1.0 \
@@ -173,7 +173,7 @@ bin/siatv100 src/20250120_efficient_shading/train.py \
     -dataset_val "/data/pakkapon/datasets/multi_illumination/spherical/train" \
     -dataset_val_split "/data/pakkapon/datasets/multi_illumination/spherical/index/14n_copyroom10_all.json"
 
-# experiemnt 3.5 50scene #version_96629
+# experiemnt 3.5 50scene #version_96640
 bin/siatv100 src/20250120_efficient_shading/train.py \
     -lr 1e-4 \
     --guidance_scale 1.0 \
@@ -189,7 +189,7 @@ bin/siatv100 src/20250120_efficient_shading/train.py \
     -dataset_val "/data/pakkapon/datasets/multi_illumination/spherical/train" \
     -dataset_val_split "/data/pakkapon/datasets/multi_illumination/spherical/index/14n_copyroom10_all.json"
 
-# experiemnt 3.6
+# experiemnt 3.6 96641
 bin/siatv100 src/20250120_efficient_shading/train.py \
     -lr 1e-4 \
     --guidance_scale 1.0 \
@@ -204,3 +204,118 @@ bin/siatv100 src/20250120_efficient_shading/train.py \
     -dataset_split "/data/pakkapon/datasets/multi_illumination/spherical/index/multi_100_scenes_train.json" \
     -dataset_val "/data/pakkapon/datasets/multi_illumination/spherical/train" \
     -dataset_val_split "/data/pakkapon/datasets/multi_illumination/spherical/index/14n_copyroom10_all.json"
+
+
+#######################################################################################
+# Experiment 4 - Restart with coeff version 4 
+
+# 97150
+bin/siatv100 src/20250120_efficient_shading/train.py \
+    -lr 1e-4 \
+    --guidance_scale 1.0 \
+    --network_type sd_no_bg \
+    --batch_size 8 \
+    -c 1 \
+    --feature_type clip \
+    --dataset_train_multiplier 1000 \
+    --shadings_dir "control_shading_from_hdr27coeff_conv_v4"\
+    --backgrounds_dir "control_shading_from_hdr27coeff_conv_v4"\
+    -dataset "/data/pakkapon/datasets/multi_illumination/spherical/train" \
+    -dataset_split "/data/pakkapon/datasets/multi_illumination/spherical/index/14n_copyroom10_train.json" \
+    -dataset_val "/data/pakkapon/datasets/multi_illumination/spherical/train" \
+    -dataset_val_split "/data/pakkapon/datasets/multi_illumination/spherical/index/14n_copyroom10_all.json"
+
+# 97151
+bin/siatv100 src/20250120_efficient_shading/train.py \
+    -lr 1e-4 \
+    --guidance_scale 1.0 \
+    --network_type sd_no_bg \
+    --batch_size 8 \
+    -c 1 \
+    --feature_type clip \
+    --dataset_train_multiplier 200 \
+    --shadings_dir "control_shading_from_hdr27coeff_conv_v4"\
+    --backgrounds_dir "control_shading_from_hdr27coeff_conv_v4"\
+    -dataset "/data/pakkapon/datasets/multi_illumination/spherical/train" \
+    -dataset_split "/data/pakkapon/datasets/multi_illumination/spherical/index/multi_5_scenes_train.json" \
+    -dataset_val "/data/pakkapon/datasets/multi_illumination/spherical/train" \
+    -dataset_val_split "/data/pakkapon/datasets/multi_illumination/spherical/index/14n_copyroom10_all.json"
+
+# 97152
+bin/siatv100 src/20250120_efficient_shading/train.py \
+    -lr 1e-4 \
+    --guidance_scale 1.0 \
+    --network_type sd_no_bg \
+    --batch_size 8 \
+    -c 1 \
+    --feature_type clip \
+    --dataset_train_multiplier 100 \
+    --shadings_dir "control_shading_from_hdr27coeff_conv_v4"\
+    --backgrounds_dir "control_shading_from_hdr27coeff_conv_v4"\
+    -dataset "/data/pakkapon/datasets/multi_illumination/spherical/train" \
+    -dataset_split "/data/pakkapon/datasets/multi_illumination/spherical/index/multi_10_scenes_train.json" \
+    -dataset_val "/data/pakkapon/datasets/multi_illumination/spherical/train" \
+    -dataset_val_split "/data/pakkapon/datasets/multi_illumination/spherical/index/14n_copyroom10_all.json"
+
+# 97153
+bin/siatv100 src/20250120_efficient_shading/train.py \
+    -lr 1e-4 \
+    --guidance_scale 1.0 \
+    --network_type sd_no_bg \
+    --batch_size 8 \
+    -c 1 \
+    --feature_type clip \
+    --dataset_train_multiplier 50 \
+    --shadings_dir "control_shading_from_hdr27coeff_conv_v4"\
+    --backgrounds_dir "control_shading_from_hdr27coeff_conv_v4"\
+    -dataset "/data/pakkapon/datasets/multi_illumination/spherical/train" \
+    -dataset_split "/data/pakkapon/datasets/multi_illumination/spherical/index/multi_20_scenes_train.json" \
+    -dataset_val "/data/pakkapon/datasets/multi_illumination/spherical/train" \
+    -dataset_val_split "/data/pakkapon/datasets/multi_illumination/spherical/index/14n_copyroom10_all.json"
+
+# 97154
+bin/siatv100 src/20250120_efficient_shading/train.py \
+    -lr 1e-4 \
+    --guidance_scale 1.0 \
+    --network_type sd_no_bg \
+    --batch_size 8 \
+    -c 1 \
+    --feature_type clip \
+    --dataset_train_multiplier 20 \
+    --shadings_dir "control_shading_from_hdr27coeff_conv_v4"\
+    --backgrounds_dir "control_shading_from_hdr27coeff_conv_v4"\
+    -dataset "/data/pakkapon/datasets/multi_illumination/spherical/train" \
+    -dataset_split "/data/pakkapon/datasets/multi_illumination/spherical/index/multi_50_scenes_train.json" \
+    -dataset_val "/data/pakkapon/datasets/multi_illumination/spherical/train" \
+    -dataset_val_split "/data/pakkapon/datasets/multi_illumination/spherical/index/14n_copyroom10_all.json"
+
+# 97155
+bin/siatv100 src/20250120_efficient_shading/train.py \
+    -lr 1e-4 \
+    --guidance_scale 1.0 \
+    --network_type sd_no_bg \
+    --batch_size 8 \
+    -c 1 \
+    --feature_type clip \
+    --dataset_train_multiplier 10 \
+    --shadings_dir "control_shading_from_hdr27coeff_conv_v4"\
+    --backgrounds_dir "control_shading_from_hdr27coeff_conv_v4"\
+    -dataset "/data/pakkapon/datasets/multi_illumination/spherical/train" \
+    -dataset_split "/data/pakkapon/datasets/multi_illumination/spherical/index/multi_100_scenes_train.json" \
+    -dataset_val "/data/pakkapon/datasets/multi_illumination/spherical/train" \
+    -dataset_val_split "/data/pakkapon/datasets/multi_illumination/spherical/index/14n_copyroom10_all.json"
+
+
+#  97156
+bin/siatv100 src/20250120_efficient_shading/train.py \
+    -lr 1e-4 \
+    --guidance_scale 1.0 \
+    --network_type sd_no_bg \
+    --batch_size 8 \
+    -c 1 \
+    --feature_type clip \
+    --shadings_dir "control_shading_from_hdr27coeff_conv_v4"\
+    --backgrounds_dir "control_shading_from_hdr27coeff_conv_v4"\
+    -dataset "/data/pakkapon/datasets/multi_illumination/spherical/train" \
+    -dataset_val "/data/pakkapon/datasets/multi_illumination/spherical/val" \
+    -dataset_val_split "/data/pakkapon/datasets/multi_illumination/spherical/split-val-relight-light-array.json" 
