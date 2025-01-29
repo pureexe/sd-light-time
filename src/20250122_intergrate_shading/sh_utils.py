@@ -199,16 +199,16 @@ def spherical_to_cartesian(theta, phi):
     phi = np.asarray(phi)
 
     # Calculate components of the unit vectors
-    x = np.sin(theta) * np.cos(phi)
-    y = np.sin(theta) * np.sin(phi)
-    z = np.cos(theta)
+    x = np.cos(theta) * np.cos(phi)
+    y = np.cos(theta) * np.sin(phi)
+    z = np.sin(theta)
 
     # Stack components into output array
     vectors = np.stack([x, y, z], axis=-1)
 
     return vectors
 
-def get_uniform_rays(H, W, num_rays):
+def get_uniform_rays_dense_top(H, W, num_rays):
     """
     random uniform rays for each pixel 
     Parameters:
@@ -223,6 +223,77 @@ def get_uniform_rays(H, W, num_rays):
     phi = np.random.uniform(0, 2*np.pi, (H, W, num_rays))
     rays = spherical_to_cartesian(theta, phi)   
     return rays
+
+def get_uniform_rays(H, W, num_rays):
+    """
+    random phi angle (azimuth) and random Z then we compute X and Y value
+    AXIS connvetion: y-right z-up
+    """
+    phi = np.random.uniform(0, 2 * np.pi, (H, W, num_rays))  # Azimuth angle
+    z = np.random.uniform(0, 1, (H, W, num_rays))  # Sample z in (0,1) to ensure positive hemisphere
+
+    r = np.sqrt(1 - z**2)  # Radius for the x-y plane to keep unit vector constraint
+
+    x = r * np.cos(phi)
+    y = r * np.sin(phi)
+
+    return np.stack([x, y, z], axis=-1)  # Shape: (H, W, num_rays, 3)
+
+def get_uniform_rays_reject_sample(H, W, num_rays):
+    """
+    random_rejection_method 
+    # https://blog.thomaspoulet.fr/uniform-sampling-on-unit-hemisphere/
+    """
+    finished_sample = False 
+    sample_count = 0
+    expected_num_rays = H * W * num_rays
+    while not finished_sample:
+        if sample_count > 100:
+            raise Exception("There is something wrong with random ray process. please try again")
+        # just random sample x and y
+        x = np.random.uniform(-1, 1, (expected_num_rays * 10))
+        y = np.random.uniform(-1, 1, (expected_num_rays * 10))
+        # filter out z that negative
+        z2 =  1 - x**2 - y**2
+        mask = z2 >= 0
+        x = x[mask]
+        y = y[mask]
+        z2 = z2[mask]
+        if x.shape[0]  < expected_num_rays:
+            sample_count += 1
+            continue 
+        x = x[:expected_num_rays].reshape((H,W,num_rays))
+        y = y[:expected_num_rays].reshape((H,W,num_rays))
+        z2 = z2[:expected_num_rays].reshape((H,W,num_rays))
+        z = np.sqrt(z2)
+        finished_sample = True 
+        break
+    rays = np.stack([x, y, z], axis=-1)
+    return rays
+
+
+
+def get_uniform_rays_normalize_method(H, W, num_rays):
+    # normalize method is not good
+    x = np.random.uniform(-1, 1, (H, W, num_rays)) # we only sample half sphere
+    y = np.random.uniform(-1, 1, (H, W, num_rays))
+    z = np.random.uniform(0, 1, (H, W, num_rays))
+    rays = np.stack([x, y, z], axis=-1)
+    # normalize to unit vector
+    rays = rays / np.linalg.norm(rays, axis=-1, keepdims=True)
+    return rays
+
+
+
+def get_uniform_rays_reject_sampling(H, W, num_rays):
+    """
+    random rays that more uniformly by random x and y, then  we compute z 
+    AXIS connvetion: y-right z-up
+    """
+    x,y = np.random.uniform(-1, 1, (H, W, num_rays * 100))
+
+    return np.stack([x, y, z], axis=-1)  # Shape: (H, W, num_rays, 3)
+
 
 def get_rotation_matrix_from_vectors_single(a, b):
     """
@@ -272,9 +343,8 @@ def from_x_left_to_z_up(point):
     rotation_matrix = np.array([
         [0., 0., 1.], # new x-forward  coming  from z-foward
         [-1., 0., 0.], # new y-right coming from x-left
-        [0., 1., 0.], # new 
+        [0., 1., 0.], # new z-up comfing from y-up
     ])
-    assert point.shape[-1] == 3 # make sure it have 3 channel.
     # convert to torch to multiply in last 2 dimension.
     rotation_matrix = torch.from_numpy(rotation_matrix).float()
     point =  torch.from_numpy(point)[...,None].float()

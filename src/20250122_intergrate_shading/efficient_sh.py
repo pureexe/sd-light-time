@@ -39,7 +39,7 @@ parser.add_argument('-t', '--total', type=int, default=1, help='Total number of 
 
 args = parser.parse_args()
 
-OUTPUT_DIR = "output/efficient_rendering"
+OUTPUT_DIR = "output/efficient_rendering_10k"
 ORDER = 2
 
 
@@ -80,40 +80,6 @@ class NormalBaeDetectorPT(NormalBaeDetector):
 
         return normal
 
-def filmic_tone_map(rgb_image, gamma=2.4):
-    """
-    Applies a Filmic tone mapping curve to an RGB image in linear space,
-    followed by gamma correction for display.
-
-    Parameters:
-        rgb_image (numpy.ndarray): Input HDR image in linear RGB space,
-                                   shape (H, W, 3), values may exceed 1.
-        gamma (float): Gamma value for gamma correction (default is 2.4).
-
-    Returns:
-        numpy.ndarray: Tone-mapped and gamma-corrected RGB image with values [0, 1].
-    """
-    # Constants for the Filmic curve (approximation of Blender's Filmic)
-    a = 2.51
-    b = 0.03
-    c = 2.43
-    d = 0.59
-    e = 0.14
-
-    # Ensure input is a NumPy array
-    rgb_image = np.array(rgb_image, dtype=np.float32)
-
-    # Apply Filmic tone mapping curve
-    tone_mapped = (rgb_image * (a * rgb_image + b)) / (rgb_image * (c * rgb_image + d) + e)
-
-    # Apply gamma correction to map to display-referred space
-    gamma_corrected = np.power(tone_mapped, 1.0 / gamma)
-
-    # Clamp values to [0, 1] range after gamma correction
-    output_image = np.clip(gamma_corrected, 0, 1)
-
-    return output_image
-
 
 def efficient_rendering_chromeball():
     image_width = 512
@@ -153,8 +119,8 @@ def efficeint_rendering():
     print("LOADING PREPROCESSOR")
     root_dir = "/ist/ist-share/vision/relight/datasets/multi_illumination/spherical/test"
     image_dir = "images"
-    coeff_dir = "shcoeffs_order100_hdr"
-    output_dir = "control_shading_from_hdr27coeff_conv_v4"
+    coeff_dir = "shcoeffs_order100_hdr_v2"
+    output_dir = "control_shading_from_hdr27coeff_conv_v5"
     mode = 'bae'
     ORDER = 2
 
@@ -209,7 +175,6 @@ def efficeint_rendering():
         shading, _, _ = tonemapper(shading) # tonemap
         #shading = tonemapper.process(shading)
 
-        #shading = filmic_tone_map(shading, gamma=2.4)
         
         shading = np.clip(shading, 0, 1)
         shading = skimage.img_as_ubyte(shading)
@@ -230,71 +195,7 @@ def inspect_football_normal():
 
 
 
-def old_main():
-    print("LOADING PREPROCESSOR")
-    os.makedirs(os.path.join(root_dir, output_dir), exist_ok=True)
-    os.chmod(os.path.join(root_dir, output_dir), 0o777)
-
-    scenes = sorted(os.listdir(os.path.join(root_dir, image_dir)))
-
-    preprocessor = NormalBaeDetectorPT.from_pretrained("lllyasviel/Annotators")
-    preprocessor.to('cuda')
-
-    print("CREATING QUEUES...")
-    queues  = []
-    for scene in scenes:
-        for idx in range(25):
-            queues.append((scene,idx))
-    
-    tonemapper = TonemapHDR(gamma=2.4, percentile=50, max_mapping=0.5)
-
-
-    pbar = tqdm(queues[args.index::args.total])
-    pbar.set_description(f"")
-    for info in pbar:
-        
-        pbar.set_postfix(item=f"{info[0]}/{info[1]}")
-
-        idx = info[1]
-        scene = info[0]
-        shading_output_dir = os.path.join(root_dir,output_dir,scene)
-        output_path = os.path.join(shading_output_dir, f"dir_{idx}_mip2.png")
-        if os.path.exists(output_path):
-           continue
-        image = Image.open(f"{root_dir}/{image_dir}/{scene}/dir_{idx}_mip2.jpg").convert("RGB")
-        normal_map = preprocessor(image, output_type="pt")
-
-        theta, phi = cartesian_to_spherical(normal_map)
-
-
-        shcoeff = np.load(f"{root_dir}/{coeff_dir}/{scene}/dir_{idx}_mip2.npy") # shcoeff shape (3,9)
-        
-        shcoeff = unfold_sh_coeff(shcoeff,max_sh_level=ORDER)
-
-        shcoeff = apply_integrate_conv(shcoeff)
-
-        shading = sample_envmap_from_sh(shcoeff, lmax=ORDER, theta=theta, phi=phi)
-        
-        os.makedirs(shading_output_dir, exist_ok=True)
-        os.chmod(shading_output_dir, 0o777)
-
-        #ezexr.imwrite(output_path.replace(".png",".exr"), shading)   
-        shading = np.float32(shading)
-        shading, _, _ = tonemapper(shading) # tonemap
-        #shading = tonemapper.process(shading)
-
-        #shading = filmic_tone_map(shading, gamma=2.4)
-        
-        shading = np.clip(shading, 0, 1)
-        shading = skimage.img_as_ubyte(shading)
-        
-        skimage.io.imsave(output_path,shading)
-        os.chmod(output_path, 0o777)
-
-
-
-
-
 
 if __name__ == "__main__":
-    efficeint_rendering()
+    #efficeint_rendering()
+    efficient_rendering_chromeball()

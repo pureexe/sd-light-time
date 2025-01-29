@@ -9,7 +9,7 @@ from tonemapper import TonemapHDR
 
 
 NUM_RAY = 10000
-OUTPUT_DIR = "output/order2"
+OUTPUT_DIR = "output/order2_newsample_10k"
 
 def get_envmap_from_file():
     """

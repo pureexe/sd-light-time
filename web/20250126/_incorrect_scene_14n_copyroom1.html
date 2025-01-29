@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Diffusion Face Relighting - Reimplmented in SD</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@1.0.2/css/bulma.min.css">
+    <style>
+        .fixed-tabs {
+          position: fixed;
+          top: 0;
+          width: 100%;
+          z-index: 1000;
+        }
+        body {
+          padding-top: 3rem; /* Adjust for the height of the fixed tab */
+        }
+        .crop-image {
+            width: 128px;
+            height: 128px;
+            object-fit: cover;
+            object-position: left center; /* Show the left half */
+        }
+    </style>
+</head>
+<body>
+<div id="app">
+<div class="tabs is-centered fixed-tabs has-background-dark">
+    <div class="select select is-primary">
+        <select v-model="current_splittype">
+            <option 
+                v-for="splittype in avaliable_spittypes"
+                :key="splittype" 
+                :value="splittype"
+            >
+                Split: {{splittype}}
+        </option>
+        </select>
+    </div>
+    <div class="select select is-primary">
+        <select v-model="current_guidance">
+            <option 
+                v-for="guidance in avaliable_guidances"
+                :key="guidance" 
+                :value="guidance"
+            >
+                Guidance: {{guidance}}
+        </option>
+        </select>
+    </div> 
+    <div class="select select is-primary">
+        <select v-model="current_learningrate">
+            <option 
+                v-for="learning_rate in avaliable_learningrates"
+                :key="learning_rate" 
+                :value="learning_rate"
+            >
+            learning_rate: {{learning_rate}}
+        </option>
+        </select>
+    </div>    
+</div>     
+<div class="table-container mx-auto">
+    <table class="table is-bordered is-striped is-narrow mx-auto">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Input Image</th>
+                <th>Ball Image dataset</th>
+                <th>LDR chromeball ORDER 100</th>
+                <th>LDR chromeball ORDER 2</th>
+                <th>Before</th>
+                <th>After Z-up</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr v-for="idx in [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24]">
+                <td>
+                    {{idx}}
+                </td>
+                <td>
+                    <figure class="image is-128x128 mx-auto">
+                        <img :src="'/output/datasets/multi_illumination/spherical/train/images/14n_copyroom1/dir_'+idx+'_mip2.jpg'" />
+                    </figure>
+                </td>
+                <td>
+                    <figure class="image is-128x128 mx-auto">
+                        <img :src="'/output/datasets/multi_illumination_train_mip2_jpg/14n_copyroom1/probes/dir_'+idx+'_chrome256.jpg'" />
+                    </figure>
+                </td>
+                <td>
+                    <figure class="image is-128x128 mx-auto">
+                        <img :src="'/src/20250122_intergrate_shading/output/chromeball_order100/14n_copyroom1/dir_'+idx+'_mip2.png'" />
+                    </figure>
+                </td>
+                <td>
+                    <figure class="image is-128x128 mx-auto">
+                        <img :src="'/src/20250122_intergrate_shading/output/chromeball_order2/14n_copyroom1/dir_'+idx+'_mip2.png'" />
+                    </figure>
+                </td>              
+                <td>
+                    <figure class="image is-128x128 mx-auto">
+                        <img :src="'/output/datasets/multi_illumination/spherical/train/control_shading_from_hdr27coeff_conv_v3_map50_0.5/14n_copyroom1/dir_'+idx+'_mip2.png'" />
+                    </figure>
+                </td>
+                <td>
+                    <figure class="image is-128x128 mx-auto">
+                        <img :src="'/output/datasets/multi_illumination/spherical/train/control_shading_from_hdr27coeff_conv_v4/14n_copyroom1/dir_'+idx+'_mip2.png'" />
+                    </figure>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+</div>
+<script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+<script>
+function fetchJson(fileURL, callback) {
+    fetch(fileURL)
+        .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+        return response.json();
+        })
+        .then(jsonData => callback(null, jsonData))
+        .catch(error => callback(error, null));
+    }
+      
+const { createApp, ref } = Vue
+createApp({
+    setup() {
+        const scenes = ref([])
+        return {
+            scenes
+        }
+    },
+    methods: {
+        handleKeyPress(event) {
+            const key = event.key; // Get the key pressed
+            if (key === "ArrowLeft") {
+                this.current_tab = this.current_tab == 0 ? this.avaliable_tabs.length - 1: (this.current_tab-1);
+            } else if (key === "ArrowRight") {
+                this.current_tab = (this.current_tab+1) % this.avaliable_tabs.length;
+            } else if (["1", "2", "3", "4"].includes(key)) {
+                this.current_tab = parseInt(key)-1
+            }
+        },
+        getVersion(splittype, direction, learning_rate,  guidance){
+            if(splittype == 'valid' && guidance=='1.0' && direction == 'left' && learning_rate == '1e-4') return '93258';
+            if(splittype == 'valid' && guidance=='1.0' && direction == 'right' && learning_rate == '1e-4') return '93262';
+            if(splittype == 'train' && guidance=='1.0' && direction == 'left' && learning_rate == '1e-4') return '93256';
+            if(splittype == 'train' && guidance=='1.0' && direction == 'right' && learning_rate == '1e-4') return '93257';
+            if(splittype == 'valid' && guidance=='1.0' && direction == 'left' && learning_rate == '1e-5') return '93254';
+            if(splittype == 'valid' && guidance=='1.0' && direction == 'right' && learning_rate == '1e-5') return '93255';
+            if(splittype == 'train' && guidance=='1.0' && direction == 'left' && learning_rate == '1e-5') return '93256';
+            if(splittype == 'train' && guidance=='1.0' && direction == 'right' && learning_rate == '1e-5') return '93257';
+            return "";
+        },
+        getFaceSplit(){
+            if(this.current_tab == 1){
+                return ['left']
+            }
+            if(this.current_tab == 2){
+                return ['left'];
+            }
+            if(this.current_tab == 3){
+                return ['right'];
+            }
+            return ['left','right'];
+        }
+    },
+    mounted() {
+        let self = this;
+        fetchJson("/output/datasets/face/ffhq_defareli/diffusion-face-relight-testset-different-subject/multipie_testset2.json",function(err, data){
+            if(data){
+                let scenes = [];
+                let pairs = data.pair;
+                for (let key in pairs) {
+                    console.log(key);
+                    scenes.push({
+                        'src': pairs[key]['src'].split('.')[0],
+                        'gt': pairs[key]['gt'].split('.')[0],
+                        'dst': pairs[key]['dst'].split('.')[0],
+                    })
+                }
+                self.scenes = scenes    
+            }
+            
+        })
+    },
+    beforeDestroy() {
+    }
+}).mount('#app')
+</script>
+</body>
+</html>
