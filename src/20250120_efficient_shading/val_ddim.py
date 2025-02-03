@@ -38,8 +38,11 @@
 # bin/siatv100 src/20250120_efficient_shading/val_ddim.py -i 96434 -m all_everett_dining1 -c 11,12,13,14,15
 # bin/siatv100 src/20250120_efficient_shading/val_ddim.py -i 96434 -m all_everett_dining1 -c 16,17,18,19
 
+#bin/siatv100 src/20250120_efficient_shading/val_ddim.py -i 97227 -m all_copyroom10 -c 38
+#bin/siatv100 src/20250120_efficient_shading/val_ddim.py -i 97227 -m all_copyroom10_light3 -c 38
+#bin/siatv100 src/20250120_efficient_shading/val_ddim.py -i 97226 -m all_copyroom10_light3 -c 38
 
-
+# version_97638
 
 import os
 import lightning as L
@@ -80,6 +83,14 @@ NAMES = {
     96458: 'clip_1scene',
     96461: 'clip_1scene',
     96462: 'clip_1scene',
+    97227: 'v5_clip_multiscene',
+    97226: 'v5_clip_100scene',
+    97225: 'v5_clip_50scene',
+    97224: 'v5_clip_20scene',
+    97223: 'v5_clip_10scene',
+    97222: 'v5_clip_5scene',
+    97221: 'v5_clip_1scene',
+    97638: 'offshelf_onlyshading'
 }
 METHODS = {
     96433: 'default',
@@ -88,6 +99,13 @@ METHODS = {
     96458: 'default',
     96461: 'default',
     96462: 'default',
+    97227: 'default',
+    97226: 'default',
+    97225: 'default',
+    97224: 'default',
+    97223: 'default',
+    97222: 'default',
+    97221: 'default',
 }
 CONDITIONS_CLASS = {
     96433: SDDiffusionFaceNoBg,
@@ -95,7 +113,14 @@ CONDITIONS_CLASS = {
     96453: SDDiffusionFaceNoBg,
     96458: SDDiffusionFaceNoBg,
     96461: SDDiffusionFaceNoBg,
-    96462: SDDiffusionFaceNoBg
+    96462: SDDiffusionFaceNoBg,
+    97227: SDDiffusionFaceNoBg,
+    97226: SDDiffusionFaceNoBg,
+    97225: SDDiffusionFaceNoBg,
+    97224: SDDiffusionFaceNoBg,
+    97223: SDDiffusionFaceNoBg,
+    97222: SDDiffusionFaceNoBg,
+    97221: SDDiffusionFaceNoBg,
 }
 LRS = {
     96433: '1e-4',
@@ -103,7 +128,14 @@ LRS = {
     96453: '1e-4',
     96458: '1e-4',
     96461: '1e-5',
-    96462: '1e-6'
+    96462: '1e-6',
+    97227: '1e-4',
+    97226: '1e-4',
+    97225: '1e-4',
+    97224: '1e-4',
+    97223: '1e-4',
+    97222: '1e-4',
+    97221: '1e-4'
 }
 DIRNAME = {
     96433: CHECKPOINT_FOLDER_NAME,
@@ -111,7 +143,14 @@ DIRNAME = {
     96453: CHECKPOINT_FOLDER_NAME,
     96458: CHECKPOINT_FOLDER_NAME,
     96461: CHECKPOINT_FOLDER_NAME,
-    96462: CHECKPOINT_FOLDER_NAME
+    96462: CHECKPOINT_FOLDER_NAME,
+    97227: CHECKPOINT_FOLDER_NAME,
+    97226: CHECKPOINT_FOLDER_NAME,
+    97225: CHECKPOINT_FOLDER_NAME,
+    97224: CHECKPOINT_FOLDER_NAME,
+    97223: CHECKPOINT_FOLDER_NAME,
+    97222: CHECKPOINT_FOLDER_NAME,
+    97221: CHECKPOINT_FOLDER_NAME,
 }
 CHECKPOINTS = {
     96433: 10,
@@ -119,40 +158,49 @@ CHECKPOINTS = {
     96453: 10,
     96458: 0,
     96461: 10,
-    96462: 10
+    96462: 10,
+    97227: 38,
+    97226: 38,
+    97225: 38,
+    97224: 38,
+    97223: 38,
+    97222: 38,
+    97221: 38,
 }
 
 use_ab_background = []
 use_shcoeff2 = [96433]
 use_only_light = [96433]
-use_no_light = [96458, 96461, 96462, 96434, 96453]
+use_no_light = [96458, 96461, 96462, 96434, 96453, 97227]
 use_random_mask_background = []
 
 def get_from_mode(mode):
     if mode == "rotate_copyroom10":
-        return "/data/pakkapon/datasets/multi_illumination/spherical/val_rotate_copyroom10", 100, DDIMDiffusionFaceRelightDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/index/10n_copyroom10_rotate.json", "shadings_dir": "control_shading_from_hdr27coeff_conv_v3", "backgrounds_dir": "control_shading_from_ldr27coeff", "feature_types": []},  "a photorealistic image"
+        return "/data/pakkapon/datasets/multi_illumination/spherical/val_rotate_copyroom10", 100, DDIMDiffusionFaceRelightDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/index/10n_copyroom10_rotate.json", "shadings_dir": "control_shading_from_hdr27coeff_conv_v5", "backgrounds_dir": "control_shading_from_ldr27coeff", "feature_types": []},  "a photorealistic image"
     if mode == "rotate_copyroom10_balance":
-        return "/data/pakkapon/datasets/multi_illumination/spherical/val_rotate_copyroom10", 100, DDIMDiffusionFaceRelightDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/index/10n_copyroom10_rotate.json", "shadings_dir": "control_shading_from_hdr27coeff_conv_v3", "backgrounds_dir": "control_shading_from_ldr27coeff_balance", "feature_types": []},  "a photorealistic image"
+        return "/data/pakkapon/datasets/multi_illumination/spherical/val_rotate_copyroom10", 100, DDIMDiffusionFaceRelightDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/index/10n_copyroom10_rotate.json", "shadings_dir": "control_shading_from_hdr27coeff_conv_v5", "backgrounds_dir": "control_shading_from_ldr27coeff_balance", "feature_types": []},  "a photorealistic image"
     if mode == "rotate_copyroom10_left_balance":
-        return "/data/pakkapon/datasets/multi_illumination/spherical/val_rotate_copyroom10_left", 100, DDIMDiffusionFaceRelightDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/index/10n_copyroom10_rotate.json", "shadings_dir": "control_shading_from_hdr27coeff_conv_v3", "backgrounds_dir": "control_shading_from_ldr27coeff_balance", "feature_types": []},  "a photorealistic image"
+        return "/data/pakkapon/datasets/multi_illumination/spherical/val_rotate_copyroom10_left", 100, DDIMDiffusionFaceRelightDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/index/10n_copyroom10_rotate.json", "shadings_dir": "control_shading_from_hdr27coeff_conv_v5", "backgrounds_dir": "control_shading_from_ldr27coeff_balance", "feature_types": []},  "a photorealistic image"
     if mode == "rotate_copyroom10_left":
-        return "/data/pakkapon/datasets/multi_illumination/spherical/val_rotate_copyroom10_left", 100, DDIMDiffusionFaceRelightDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/index/10n_copyroom10_rotate.json", "shadings_dir": "control_shading_from_hdr27coeff_conv_v3", "backgrounds_dir": "control_shading_from_ldr27coeff", "feature_types": []},  "a photorealistic image"
+        return "/data/pakkapon/datasets/multi_illumination/spherical/val_rotate_copyroom10_left", 100, DDIMDiffusionFaceRelightDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/index/10n_copyroom10_rotate.json", "shadings_dir": "control_shading_from_hdr27coeff_conv_v5", "backgrounds_dir": "control_shading_from_ldr27coeff", "feature_types": []},  "a photorealistic image"
     if mode == "rotate_everett_kitchen4_left":
-        return "/data/pakkapon/datasets/multi_illumination/spherical/val_rotate_everett_kitchen4_left", 100, DDIMDiffusionFaceRelightDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/index/everett_kitchen4_rotate.json", "shadings_dir": "control_shading_from_hdr27coeff_conv_v3", "backgrounds_dir": "control_shading_from_ldr27coeff", "feature_types": []},  "a photorealistic image"
+        return "/data/pakkapon/datasets/multi_illumination/spherical/val_rotate_everett_kitchen4_left", 100, DDIMDiffusionFaceRelightDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/index/everett_kitchen4_rotate.json", "shadings_dir": "control_shading_from_hdr27coeff_conv_v5", "backgrounds_dir": "control_shading_from_ldr27coeff", "feature_types": []},  "a photorealistic image"
     if mode == "rotate_everett_kitchen4_right":
-        return "/data/pakkapon/datasets/multi_illumination/spherical/val_rotate_everett_kitchen4_right", 100, DDIMDiffusionFaceRelightDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/index/everett_kitchen4_rotate.json", "shadings_dir": "control_shading_from_hdr27coeff_conv_v3", "backgrounds_dir": "control_shading_from_ldr27coeff", "feature_types": []},  "a photorealistic image"
+        return "/data/pakkapon/datasets/multi_illumination/spherical/val_rotate_everett_kitchen4_right", 100, DDIMDiffusionFaceRelightDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/index/everett_kitchen4_rotate.json", "shadings_dir": "control_shading_from_hdr27coeff_conv_v5", "backgrounds_dir": "control_shading_from_ldr27coeff", "feature_types": []},  "a photorealistic image"
     if mode == "rotate_copyroom10_right_conv_v2":
-        return "/data/pakkapon/datasets/multi_illumination/spherical/val_rotate_copyroom10", 100, DDIMDiffusionFaceRelightDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/index/10n_copyroom10_rotate.json", "shadings_dir": "control_shading_from_hdr27coeff_conv_v3", "backgrounds_dir": "images", "feature_types": []},  "a photorealistic image"
+        return "/data/pakkapon/datasets/multi_illumination/spherical/val_rotate_copyroom10", 100, DDIMDiffusionFaceRelightDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/index/10n_copyroom10_rotate.json", "shadings_dir": "control_shading_from_hdr27coeff_conv_v5", "backgrounds_dir": "images", "feature_types": []},  "a photorealistic image"
     if mode == "rotate_copyroom10_light0_conv_v2":
-        return "/data/pakkapon/datasets/multi_illumination/spherical/val_rotate_copyroom10_light0", 100, DDIMDiffusionFaceRelightDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/index/10n_copyroom10_rotate.json", "shadings_dir": "control_shading_from_hdr27coeff_conv_v3", "backgrounds_dir": "images", "feature_types": []},  "a photorealistic image"
+        return "/data/pakkapon/datasets/multi_illumination/spherical/val_rotate_copyroom10_light0", 100, DDIMDiffusionFaceRelightDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/index/10n_copyroom10_rotate.json", "shadings_dir": "control_shading_from_hdr27coeff_conv_v5", "backgrounds_dir": "images", "feature_types": []},  "a photorealistic image"
     if mode == "interpolate_copyroom10":
-        return "/data/pakkapon/datasets/multi_illumination/spherical/val_interpolate_copyroom10", 100, DDIMDiffusionFaceRelightDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/index/10n_copyroom10_rotate.json", "shadings_dir": "control_shading_from_hdr27coeff_conv_v3", "backgrounds_dir": "images", "feature_types": []},  "a photorealistic image"
+        return "/data/pakkapon/datasets/multi_illumination/spherical/val_interpolate_copyroom10", 100, DDIMDiffusionFaceRelightDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/index/10n_copyroom10_rotate.json", "shadings_dir": "control_shading_from_hdr27coeff_conv_v5", "backgrounds_dir": "images", "feature_types": []},  "a photorealistic image"
     if mode == "interpolate_copyroom10_static":
-        return "/data/pakkapon/datasets/multi_illumination/spherical/val_interpolate_copyroom10_static", 100, DDIMDiffusionFaceRelightDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/index/10n_copyroom10_rotate.json", "shadings_dir": "control_shading_from_hdr27coeff_conv_v3", "backgrounds_dir": "images", "feature_types": []},  "a photorealistic image"
+        return "/data/pakkapon/datasets/multi_illumination/spherical/val_interpolate_copyroom10_static", 100, DDIMDiffusionFaceRelightDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/index/10n_copyroom10_rotate.json", "shadings_dir": "control_shading_from_hdr27coeff_conv_v5", "backgrounds_dir": "images", "feature_types": []},  "a photorealistic image"
     if mode == "all_copyroom10":
-        return "/data/pakkapon/datasets/multi_illumination/spherical/train", 100, DDIMDiffusionFaceRelightDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/index/14n_copyroom10_all.json", "shadings_dir": "control_shading_from_hdr27coeff_conv_v3", "backgrounds_dir": "images", "feature_types": []},  "a photorealistic image"
+        return "/data/pakkapon/datasets/multi_illumination/spherical/train", 100, DDIMDiffusionFaceRelightDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/index/14n_copyroom10_all.json", "shadings_dir": "control_shading_from_hdr27coeff_conv_v5", "backgrounds_dir": "images", "feature_types": []},  "a photorealistic image"
+    if mode == "all_copyroom10_light3":
+        return "/data/pakkapon/datasets/multi_illumination/spherical/train", 100, DDIMDiffusionFaceRelightDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/index/14n_copyroom10_all_light3.json", "shadings_dir": "control_shading_from_hdr27coeff_conv_v5", "backgrounds_dir": "images", "feature_types": []},  "a photorealistic image"
     if mode == "all_everett_dining1":
-        return "/data/pakkapon/datasets/multi_illumination/spherical/test", 100, DDIMDiffusionFaceRelightDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/index/everett_dining1_all.json", "shadings_dir": "control_shading_from_hdr27coeff_conv_v3", "backgrounds_dir": "images", "feature_types": []},  "a photorealistic image"
+        return "/data/pakkapon/datasets/multi_illumination/spherical/test", 100, DDIMDiffusionFaceRelightDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/index/everett_dining1_all.json", "shadings_dir": "control_shading_from_hdr27coeff_conv_v5", "backgrounds_dir": "images", "feature_types": []},  "a photorealistic image"
     else:
         raise Exception("mode not found")
 

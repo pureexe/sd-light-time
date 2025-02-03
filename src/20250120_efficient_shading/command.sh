@@ -441,3 +441,210 @@ bin/siatv100 src/20250120_efficient_shading/train.py \
     -dataset "/data/pakkapon/datasets/multi_illumination/spherical/train" \
     -dataset_val "/data/pakkapon/datasets/multi_illumination/spherical/val" \
     -dataset_val_split "/data/pakkapon/datasets/multi_illumination/spherical/split-val-relight-light-array.json" 
+
+##############################################################
+
+# version_97357 (All back. too much learning rate) # THIS IS NAN
+bin/siatv100 src/20250120_efficient_shading/train.py \
+    -lr 5e-4 \
+    --guidance_scale 1.0 \
+    --network_type sd_no_bg \
+    --batch_size 8 \
+    -c 1 \
+    --feature_type clip \
+    --shadings_dir "control_shading_from_hdr27coeff_conv_v5"\
+    --backgrounds_dir "control_shading_from_hdr27coeff_conv_v5"\
+    -dataset "/data/pakkapon/datasets/multi_illumination/spherical/train" \
+    -dataset_val "/data/pakkapon/datasets/multi_illumination/spherical/train" \
+    -dataset_val_split "/data/pakkapon/datasets/multi_illumination/spherical/index/14n_copyroom10_all.json"  
+
+#version_97358
+bin/siatv100 src/20250120_efficient_shading/train.py \
+    -lr 5e-5 \
+    --guidance_scale 1.0 \
+    --network_type sd_no_bg \
+    --batch_size 8 \
+    -c 1 \
+    --feature_type clip \
+    --shadings_dir "control_shading_from_hdr27coeff_conv_v5"\
+    --backgrounds_dir "control_shading_from_hdr27coeff_conv_v5"\
+    -dataset "/data/pakkapon/datasets/multi_illumination/spherical/train" \
+    -dataset_val "/data/pakkapon/datasets/multi_illumination/spherical/train" \
+    -dataset_val_split "/data/pakkapon/datasets/multi_illumination/spherical/index/14n_copyroom10_all.json"  
+#version_97359
+bin/siatv100 src/20250120_efficient_shading/train.py \
+    -lr 1e-5 \
+    --guidance_scale 1.0 \
+    --network_type sd_no_bg \
+    --batch_size 8 \
+    -c 1 \
+    --feature_type clip \
+    --shadings_dir "control_shading_from_hdr27coeff_conv_v5"\
+    --backgrounds_dir "control_shading_from_hdr27coeff_conv_v5"\
+    -dataset "/data/pakkapon/datasets/multi_illumination/spherical/train" \
+    -dataset_val "/data/pakkapon/datasets/multi_illumination/spherical/train" \
+    -dataset_val_split "/data/pakkapon/datasets/multi_illumination/spherical/index/14n_copyroom10_all.json"  
+
+#version_97360
+bin/siatv100 src/20250120_efficient_shading/train.py \
+    -lr 5e-6 \
+    --guidance_scale 1.0 \
+    --network_type sd_no_bg \
+    --batch_size 8 \
+    -c 1 \
+    --feature_type clip \
+    --shadings_dir "control_shading_from_hdr27coeff_conv_v5"\
+    --backgrounds_dir "control_shading_from_hdr27coeff_conv_v5"\
+    -dataset "/data/pakkapon/datasets/multi_illumination/spherical/train" \
+    -dataset_val "/data/pakkapon/datasets/multi_illumination/spherical/train" \
+    -dataset_val_split "/data/pakkapon/datasets/multi_illumination/spherical/index/14n_copyroom10_all.json"
+
+#version_97361
+bin/siatv100 src/20250120_efficient_shading/train.py \
+    -lr 1e-6 \
+    --guidance_scale 1.0 \
+    --network_type sd_no_bg \
+    --batch_size 8 \
+    -c 1 \
+    --feature_type clip \
+    --shadings_dir "control_shading_from_hdr27coeff_conv_v5"\
+    --backgrounds_dir "control_shading_from_hdr27coeff_conv_v5"\
+    -dataset "/data/pakkapon/datasets/multi_illumination/spherical/train" \
+    -dataset_val "/data/pakkapon/datasets/multi_illumination/spherical/train" \
+    -dataset_val_split "/data/pakkapon/datasets/multi_illumination/spherical/index/14n_copyroom10_all.json"  
+
+# version 97386 (continue from 97227) 
+bin/siatv100 src/20250120_efficient_shading/train.py \
+    -lr 1e-4 \
+    --guidance_scale 1.0 \
+    --network_type sd_no_bg \
+    --batch_size 8 \
+    -c 1 \
+    --feature_type clip \
+    --shadings_dir "control_shading_from_hdr27coeff_conv_v5"\
+    --backgrounds_dir "control_shading_from_hdr27coeff_conv_v5"\
+    -dataset "/data/pakkapon/datasets/multi_illumination/spherical/train" \
+    -dataset_val "/data/pakkapon/datasets/multi_illumination/spherical/train" \
+    -dataset_val_split "/data/pakkapon/datasets/multi_illumination/spherical/index/14n_copyroom10_all.json" \
+    -ckpt output/20250120_efficient_shading/multi_mlp_fit/lightning_logs/version_97227/checkpoints/epoch=000049.ckpt
+
+# version 97622 (continue from 97386/97227) 
+bin/siatv100 src/20250120_efficient_shading/train.py \
+    -lr 1e-4 \
+    --guidance_scale 1.0 \
+    --network_type sd_no_bg \
+    --batch_size 8 \
+    -c 1 \
+    --feature_type clip \
+    --shadings_dir "control_shading_from_hdr27coeff_conv_v5"\
+    --backgrounds_dir "control_shading_from_hdr27coeff_conv_v5"\
+    -dataset "/data/pakkapon/datasets/multi_illumination/spherical/train" \
+    -dataset_val "/data/pakkapon/datasets/multi_illumination/spherical/train" \
+    -dataset_val_split "/data/pakkapon/datasets/multi_illumination/spherical/index/14n_copyroom10_all.json" \
+    -ckpt /ist/ist-share/vision/pakkapon/relight/sd-light-time/output/20250120_efficient_shading/multi_mlp_fit/lightning_logs/version_97622/checkpoints/epoch=000073.ckpt
+
+## CONTINUE VERSION
+# 97623 (from version_97358)
+bin/siatv100 src/20250120_efficient_shading/train.py \
+    -lr 5e-5 \
+    --guidance_scale 1.0 \
+    --network_type sd_no_bg \
+    --batch_size 8 \
+    -c 1 \
+    --feature_type clip \
+    --shadings_dir "control_shading_from_hdr27coeff_conv_v5"\
+    --backgrounds_dir "control_shading_from_hdr27coeff_conv_v5"\
+    -dataset "/data/pakkapon/datasets/multi_illumination/spherical/train" \
+    -dataset_val "/data/pakkapon/datasets/multi_illumination/spherical/train" \
+    -dataset_val_split "/data/pakkapon/datasets/multi_illumination/spherical/index/14n_copyroom10_all.json" \
+    -ckpt /ist/ist-share/vision/pakkapon/relight/sd-light-time/output/20250120_efficient_shading/multi_mlp_fit/lightning_logs/version_97623/checkpoints/epoch=000035.ckpt
+
+# 97624 (version_97359)
+bin/siatv100 src/20250120_efficient_shading/train.py \
+    -lr 1e-5 \
+    --guidance_scale 1.0 \
+    --network_type sd_no_bg \
+    --batch_size 8 \
+    -c 1 \
+    --feature_type clip \
+    --shadings_dir "control_shading_from_hdr27coeff_conv_v5"\
+    --backgrounds_dir "control_shading_from_hdr27coeff_conv_v5"\
+    -dataset "/data/pakkapon/datasets/multi_illumination/spherical/train" \
+    -dataset_val "/data/pakkapon/datasets/multi_illumination/spherical/train" \
+    -dataset_val_split "/data/pakkapon/datasets/multi_illumination/spherical/index/14n_copyroom10_all.json" \
+    -ckpt /ist/ist-share/vision/pakkapon/relight/sd-light-time/output/20250120_efficient_shading/multi_mlp_fit/lightning_logs/version_97624/checkpoints/epoch=000035.ckpt
+
+# 97625 (version_97360)
+bin/siatv100 src/20250120_efficient_shading/train.py \
+    -lr 5e-6 \
+    --guidance_scale 1.0 \
+    --network_type sd_no_bg \
+    --batch_size 8 \
+    -c 1 \
+    --feature_type clip \
+    --shadings_dir "control_shading_from_hdr27coeff_conv_v5"\
+    --backgrounds_dir "control_shading_from_hdr27coeff_conv_v5"\
+    -dataset "/data/pakkapon/datasets/multi_illumination/spherical/train" \
+    -dataset_val "/data/pakkapon/datasets/multi_illumination/spherical/train" \
+    -dataset_val_split "/data/pakkapon/datasets/multi_illumination/spherical/index/14n_copyroom10_all.json" \
+    -ckpt /ist/ist-share/vision/pakkapon/relight/sd-light-time/output/20250120_efficient_shading/multi_mlp_fit/lightning_logs/version_97625/checkpoints/epoch=000036.ckpt
+
+#97626 (version_97361)
+bin/siatv100 src/20250120_efficient_shading/train.py \
+    -lr 1e-6 \
+    --guidance_scale 1.0 \
+    --network_type sd_no_bg \
+    --batch_size 8 \
+    -c 1 \
+    --feature_type clip \
+    --shadings_dir "control_shading_from_hdr27coeff_conv_v5"\
+    --backgrounds_dir "control_shading_from_hdr27coeff_conv_v5"\
+    -dataset "/data/pakkapon/datasets/multi_illumination/spherical/train" \
+    -dataset_val "/data/pakkapon/datasets/multi_illumination/spherical/train" \
+    -dataset_val_split "/data/pakkapon/datasets/multi_illumination/spherical/index/14n_copyroom10_all.json"  \
+    -ckpt /ist/ist-share/vision/pakkapon/relight/sd-light-time/output/20250120_efficient_shading/multi_mlp_fit/lightning_logs/version_97626/checkpoints/epoch=000035.ckpt
+
+
+# experiment 
+# 3.1 new shading / new albedo version_97636
+bin/siatv100 src/20250120_efficient_shading/train.py \
+    -lr 1e-4 \
+    --guidance_scale 1.0 \
+    --network_type sd \
+    --batch_size 8 \
+    -c 1 \
+    --feature_type clip \
+    --shadings_dir "control_intrinsic_shading_diffuse"\
+    --backgrounds_dir "control_intrinsic_albedo_shared"\
+    -dataset "/data/pakkapon/datasets/multi_illumination/spherical/train" \
+    -dataset_val "/data/pakkapon/datasets/multi_illumination/spherical/train" \
+    -dataset_val_split "/data/pakkapon/datasets/multi_illumination/spherical/index/14n_copyroom10_all.json" \
+    -ckpt /ist/ist-share/vision/pakkapon/relight/sd-light-time/output/20250120_efficient_shading/multi_mlp_fit/lightning_logs/version_97636/checkpoints/epoch=000002.ckpt
+# 3.2 old shading / new albedo version_97637
+bin/siatv100 src/20250120_efficient_shading/train.py \
+    -lr 1e-4 \
+    --guidance_scale 1.0 \
+    --network_type sd \
+    --batch_size 8 \
+    -c 1 \
+    --feature_type clip \
+    --shadings_dir "control_shading_from_hdr27coeff_conv_v5"\
+    --backgrounds_dir "control_intrinsic_albedo_shared"\
+    -dataset "/data/pakkapon/datasets/multi_illumination/spherical/train" \
+    -dataset_val "/data/pakkapon/datasets/multi_illumination/spherical/train" \
+    -dataset_val_split "/data/pakkapon/datasets/multi_illumination/spherical/index/14n_copyroom10_all.json" \
+    -ckpt /ist/ist-share/vision/pakkapon/relight/sd-light-time/output/20250120_efficient_shading/multi_mlp_fit/lightning_logs/version_97637/checkpoints/epoch=000002.ckpt
+# 3.3 new shading
+bin/siatv100 src/20250120_efficient_shading/train.py \
+    -lr 1e-4 \
+    --guidance_scale 1.0 \
+    --network_type sd_no_bg \
+    --batch_size 8 \
+    -c 1 \
+    --feature_type clip \
+    --shadings_dir "control_intrinsic_shading_diffuse"\
+    --backgrounds_dir "control_intrinsic_albedo_shared"\
+    -dataset "/data/pakkapon/datasets/multi_illumination/spherical/train" \
+    -dataset_val "/data/pakkapon/datasets/multi_illumination/spherical/train" \
+    -dataset_val_split "/data/pakkapon/datasets/multi_illumination/spherical/index/14n_copyroom10_all.json" \
+    -ckpt /ist/ist-share/vision/pakkapon/relight/sd-light-time/output/20250120_efficient_shading/multi_mlp_fit/lightning_logs/version_97638/checkpoints/epoch=000002.ckpt
