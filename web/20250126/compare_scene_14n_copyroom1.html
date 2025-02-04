@@ -71,6 +71,8 @@
                 <th>LDR chromeball ORDER 2</th>
                 <th>Before</th>
                 <th>After Z-up</th>
+                <th>Blender Render</th>
+                <th>Predicted Shading</th>
             </tr>
         </thead>
         <tbody>
@@ -107,6 +109,16 @@
                 <td>
                     <figure class="image is-128x128 mx-auto">
                         <img :src="'/output/datasets/multi_illumination/spherical/train/control_shading_from_hdr27coeff_conv_v5/14n_copyroom1/dir_'+idx+'_mip2.png'" />
+                    </figure>
+                </td>
+                <td>
+                    <figure class="image is-128x128 mx-auto">
+                        <img :src="'http://10.204.100.117/pakkapon/datasets/multi_illumination/spherical/train/control_shading_blender_mesh/14n_copyroom1/dir_'+idx+'_mip2.png'" />
+                    </figure>
+                </td>
+                <td>
+                    <figure class="image is-128x128 mx-auto">
+                        <img :src="'/output/datasets/multi_illumination/spherical/train/control_intrinsic_shading_diffuse/14n_copyroom1/dir_'+idx+'_mip2.png'" />
                     </figure>
                 </td>
             </tr>

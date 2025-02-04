@@ -38,9 +38,25 @@
 # bin/siatv100 src/20250120_efficient_shading/val_ddim.py -i 96434 -m all_everett_dining1 -c 11,12,13,14,15
 # bin/siatv100 src/20250120_efficient_shading/val_ddim.py -i 96434 -m all_everett_dining1 -c 16,17,18,19
 
-#bin/siatv100 src/20250120_efficient_shading/val_ddim.py -i 97227 -m all_copyroom10 -c 38
+#bin/siatv100 src/20250120_efficient_shading/val_ddim.py -i 97227 -m all_copyroom10 -c 45
 #bin/siatv100 src/20250120_efficient_shading/val_ddim.py -i 97227 -m all_copyroom10_light3 -c 38
 #bin/siatv100 src/20250120_efficient_shading/val_ddim.py -i 97226 -m all_copyroom10_light3 -c 38
+
+# bin/siatv100 src/20250120_efficient_shading/val_ddim.py -i 97636 -m interpolate_copyroom10_ordinal_shading -c 12 
+# bin/siatv100 src/20250120_efficient_shading/val_ddim.py -i 97637 -m interpolate_copyroom10_ordinal_shading -c 12 
+# bin/siatv100 src/20250120_efficient_shading/val_ddim.py -i 97638 -m interpolate_copyroom10_ordinal_shading -c 12 
+
+# bin/siatv100 src/20250120_efficient_shading/val_ddim.py -i 97636 -m all_everett_dining1 -c 12,11,10,9,8,7,6,5,4,3,2,1
+# bin/siatv100 src/20250120_efficient_shading/val_ddim.py -i 97637 -m all_everett_dining1 -c 12,11,10,9,8,7,6,5,4,3,2,1 
+# bin/siatv100 src/20250120_efficient_shading/val_ddim.py -i 97638 -m all_everett_dining1 -c 12,11,10,9,8,7,6,5,4,3,2,1 
+
+# bin/siatv100 src/20250120_efficient_shading/val_ddim.py -i 97227 -m all_everett_dining1,interpolate_copyroom10 -c 45
+# bin/siatv100 src/20250120_efficient_shading/val_ddim.py -i 97623 -m all_everett_dining1,interpolate_copyroom10 -c 45
+# bin/siatv100 src/20250120_efficient_shading/val_ddim.py -i 97624 -m all_everett_dining1,interpolate_copyroom10 -c 45
+# bin/siatv100 src/20250120_efficient_shading/val_ddim.py -i 97625 -m all_everett_dining1,interpolate_copyroom10 -c 45
+# bin/siatv100 src/20250120_efficient_shading/val_ddim.py -i 97626 -m all_everett_dining1,interpolate_copyroom10 -c 45
+# bin/siatv100 src/20250120_efficient_shading/val_ddim.py -i 97622 -m all_everett_dining1,interpolate_copyroom10 -c 83
+
 
 # version_97638
 
@@ -90,7 +106,14 @@ NAMES = {
     97223: 'v5_clip_10scene',
     97222: 'v5_clip_5scene',
     97221: 'v5_clip_1scene',
-    97638: 'offshelf_onlyshading'
+    97622: 'v5_clip_multiscene',
+    97623: 'v5_clip_multiscene',
+    97624: 'v5_clip_multiscene',
+    97625: 'v5_clip_multiscene',
+    97626: 'v5_clip_multiscene',
+    97636: 'ordinal_shading',
+    97637: 'oldshading_with_albedo',
+    97638: 'offshelf_onlyshading',
 }
 METHODS = {
     96433: 'default',
@@ -106,6 +129,14 @@ METHODS = {
     97223: 'default',
     97222: 'default',
     97221: 'default',
+    97622: 'default',
+    97623: 'default',
+    97624: 'default',
+    97625: 'default',
+    97626: 'default',
+    97636: 'default',
+    97637: 'default',
+    97638: 'default',
 }
 CONDITIONS_CLASS = {
     96433: SDDiffusionFaceNoBg,
@@ -121,6 +152,14 @@ CONDITIONS_CLASS = {
     97223: SDDiffusionFaceNoBg,
     97222: SDDiffusionFaceNoBg,
     97221: SDDiffusionFaceNoBg,
+    97622: SDDiffusionFaceNoBg,
+    97623: SDDiffusionFaceNoBg,
+    97624: SDDiffusionFaceNoBg,
+    97625: SDDiffusionFaceNoBg,
+    97626: SDDiffusionFaceNoBg,
+    97636: SDDiffusionFace,
+    97637: SDDiffusionFace,
+    97638: SDDiffusionFaceNoBg,
 }
 LRS = {
     96433: '1e-4',
@@ -135,7 +174,15 @@ LRS = {
     97224: '1e-4',
     97223: '1e-4',
     97222: '1e-4',
-    97221: '1e-4'
+    97221: '1e-4',
+    97622: '1e-4',
+    97623: '5e-5',
+    97624: '1e-5',
+    97625: '5e-6',
+    97626: '1e-6',   
+    97636: '1e-4',
+    97637: '1e-4',
+    97638: '1e-4',
 }
 DIRNAME = {
     96433: CHECKPOINT_FOLDER_NAME,
@@ -151,6 +198,14 @@ DIRNAME = {
     97223: CHECKPOINT_FOLDER_NAME,
     97222: CHECKPOINT_FOLDER_NAME,
     97221: CHECKPOINT_FOLDER_NAME,
+    97622: CHECKPOINT_FOLDER_NAME,
+    97623: CHECKPOINT_FOLDER_NAME,
+    97624: CHECKPOINT_FOLDER_NAME,
+    97625: CHECKPOINT_FOLDER_NAME,
+    97626: CHECKPOINT_FOLDER_NAME,
+    97636: CHECKPOINT_FOLDER_NAME,
+    97637: CHECKPOINT_FOLDER_NAME,
+    97638: CHECKPOINT_FOLDER_NAME,
 }
 CHECKPOINTS = {
     96433: 10,
@@ -166,12 +221,20 @@ CHECKPOINTS = {
     97223: 38,
     97222: 38,
     97221: 38,
+    97622: 83,
+    97623: 45,
+    97624: 45,
+    97625: 45,
+    97626: 45,
+    97636: 13,
+    97637: 13,
+    97638: 13,
 }
 
 use_ab_background = []
 use_shcoeff2 = [96433]
 use_only_light = [96433]
-use_no_light = [96458, 96461, 96462, 96434, 96453, 97227]
+use_no_light = [96458, 96461, 96462, 96434, 96453, 97227, 97636, 97637, 97638, 97221, 97222, 97223, 97224, 97225, 97226, 97622, 97623, 97624, 97625, 97626]
 use_random_mask_background = []
 
 def get_from_mode(mode):
@@ -195,6 +258,8 @@ def get_from_mode(mode):
         return "/data/pakkapon/datasets/multi_illumination/spherical/val_interpolate_copyroom10", 100, DDIMDiffusionFaceRelightDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/index/10n_copyroom10_rotate.json", "shadings_dir": "control_shading_from_hdr27coeff_conv_v5", "backgrounds_dir": "images", "feature_types": []},  "a photorealistic image"
     if mode == "interpolate_copyroom10_static":
         return "/data/pakkapon/datasets/multi_illumination/spherical/val_interpolate_copyroom10_static", 100, DDIMDiffusionFaceRelightDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/index/10n_copyroom10_rotate.json", "shadings_dir": "control_shading_from_hdr27coeff_conv_v5", "backgrounds_dir": "images", "feature_types": []},  "a photorealistic image"
+    if mode == "interpolate_copyroom10_ordinal_shading":
+        return "/data/pakkapon/datasets/multi_illumination/spherical/val_interpolate_copyroom10", 100, DDIMDiffusionFaceRelightDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/index/10n_copyroom10_rotate.json", "shadings_dir": "control_intrinsic_shading_diffuse", "backgrounds_dir": "control_intrinsic_albedo_shared", "feature_types": []},  "a photorealistic image"
     if mode == "all_copyroom10":
         return "/data/pakkapon/datasets/multi_illumination/spherical/train", 100, DDIMDiffusionFaceRelightDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/index/14n_copyroom10_all.json", "shadings_dir": "control_shading_from_hdr27coeff_conv_v5", "backgrounds_dir": "images", "feature_types": []},  "a photorealistic image"
     if mode == "all_copyroom10_light3":
