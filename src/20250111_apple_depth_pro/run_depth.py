@@ -5,7 +5,7 @@ import depth_pro
 from tqdm.auto import tqdm
 import os
 
-ROOT_DIR = "/ist/ist-share/vision/relight/datasets/multi_illumination/spherical/test"
+ROOT_DIR = "/ist/ist-share/vision/relight/datasets/multi_illumination/spherical/train"
 
 def convert_filename_to_npy(filename):
     return filename.replace(".jpg", ".npy").replace(".png", ".npy")

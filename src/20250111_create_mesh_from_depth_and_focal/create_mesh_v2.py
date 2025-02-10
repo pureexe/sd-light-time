@@ -74,27 +74,27 @@ def depth_to_obj(depth, focal, obj_path, json_path):
 
 
 # Example usage
-if __name__ == "__main__":
-    depth = np.load("/ist/ist-share/vision/relight/datasets/multi_illumination/spherical/train/metric_depth/14n_copyroom1/dir_0_mip2.npy")
-    focal = np.load("/ist/ist-share/vision/relight/datasets/multi_illumination/spherical/train/metric_focallength/14n_copyroom1/dir_0_mip2.npy")
-    obj_path = "output/14n_copyroom1_dir_0.obj"
-    json_path = "output/14n_copyroom1_dir_0.json"
-    depth_to_obj(depth, focal, obj_path, json_path)
-
-
-
 # if __name__ == "__main__":
-#     DEPTH_DIR = "/ist/ist-share/vision/relight/datasets/multi_illumination/spherical/train/metric_depth"
-#     FOCAL_DIR = "/ist/ist-share/vision/relight/datasets/multi_illumination/spherical/train/metric_focallength"
-#     OUT_MESH_DIR = "/data/pakkapon/datasets/multi_illumination/spherical/train/mesh"
-#     OUT_JSON_DIR = "/data/pakkapon/datasets/multi_illumination/spherical/train/focal_json"
-#     os.makedirs(OUT_JSON_DIR, exist_ok=True)
-#     os.makedirs(OUT_MESH_DIR, exist_ok=True)
-#     scenes = sorted(os.listdir(DEPTH_DIR))
-#     for scene in tqdm(scenes):
-#         obj_path = f"{OUT_MESH_DIR}/{scene}.obj"
-#         json_path = f"{OUT_JSON_DIR}/{scene}.json"
-#         depth = np.load(f"{DEPTH_DIR}/{scene}/dir_0_mip2.npy")
-#         focal = np.load(f"{FOCAL_DIR}/{scene}/dir_0_mip2.npy")
-#         depth_to_obj(depth, focal, obj_path, json_path)
+#     depth = np.load("/ist/ist-share/vision/relight/datasets/multi_illumination/spherical/train/metric_depth/14n_copyroom1/dir_0_mip2.npy")
+#     focal = np.load("/ist/ist-share/vision/relight/datasets/multi_illumination/spherical/train/metric_focallength/14n_copyroom1/dir_0_mip2.npy")
+#     obj_path = "output/14n_copyroom1_dir_0.obj"
+#     json_path = "output/14n_copyroom1_dir_0.json"
+#     depth_to_obj(depth, focal, obj_path, json_path)
+
+
+
+if __name__ == "__main__":
+    DEPTH_DIR = "/ist/ist-share/vision/relight/datasets/multi_illumination/spherical/test/metric_depth"
+    FOCAL_DIR = "/ist/ist-share/vision/relight/datasets/multi_illumination/spherical/test/metric_focallength"
+    OUT_MESH_DIR = "/data/pakkapon/datasets/multi_illumination/spherical/test/mesh"
+    OUT_JSON_DIR = "/data/pakkapon/datasets/multi_illumination/spherical/test/focal_json"
+    os.makedirs(OUT_JSON_DIR, exist_ok=True)
+    os.makedirs(OUT_MESH_DIR, exist_ok=True)
+    scenes = sorted(os.listdir(DEPTH_DIR))
+    for scene in tqdm(scenes):
+        obj_path = f"{OUT_MESH_DIR}/{scene}.obj"
+        json_path = f"{OUT_JSON_DIR}/{scene}.json"
+        depth = np.load(f"{DEPTH_DIR}/{scene}/dir_0_mip2.npy")
+        focal = np.load(f"{FOCAL_DIR}/{scene}/dir_0_mip2.npy")
+        depth_to_obj(depth, focal, obj_path, json_path)
 

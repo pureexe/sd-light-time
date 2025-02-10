@@ -18,10 +18,10 @@ def main():
     root_dir = "/ist/ist-share/vision/relight/datasets/multi_illumination/spherical/train"
     image_dir = "images"
     diffuse_dir = "control_intrinsic_shading_diffuse"
-    albedo_dir = "control_intrinsic_albedo"
+    albedo_dir = "control_intrinsic_albedo_v2"
     mode = 'bae'
     ORDER = 2
-
+    print("BEFORE LOAD MODEL")
     models = load_models('v2')
  
     scenes = sorted(os.listdir(os.path.join(root_dir, image_dir)))
@@ -35,7 +35,7 @@ def main():
  
     print("CREATING QUEUES...")
     queues  = []
-    for scene in scenes:
+    for scene in scenes[:1]:
         for idx in range(25):
             queues.append((scene,idx))
 

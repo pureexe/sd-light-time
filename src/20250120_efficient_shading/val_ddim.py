@@ -58,6 +58,15 @@
 # bin/siatv100 src/20250120_efficient_shading/val_ddim.py -i 97622 -m all_everett_dining1,interpolate_copyroom10 -c 83
 
 
+# bin/siatv100 src/20250120_efficient_shading/val_ddim.py -i 97638 -m all_everett_dining1_ordinal_shading -c 13,12,11,10,9,8,7,6,5,4,3,2,1 
+# bin/siatv100 src/20250120_efficient_shading/val_ddim.py -i 97638 -m all_everett_dining1_ordinal_shading -c 1,2,3,4,5,6,7,8,9,10
+
+
+# bin/siatv100 src/20250120_efficient_shading/val_ddim.py -i 98316 -m all_everett_dining1_ordinal_shading -c 28,27,26,25,24,23,22,21,20,19,18,17,16,15,14
+# bin/siatv100 src/20250120_efficient_shading/val_ddim.py -i 98316 -m interpolate_copyroom10_ordinal_shading -c 28,27,26,25,24,23,22,21,20,19,18,17,16,15,14
+
+
+
 # version_97638
 
 import os
@@ -114,6 +123,7 @@ NAMES = {
     97636: 'ordinal_shading',
     97637: 'oldshading_with_albedo',
     97638: 'offshelf_onlyshading',
+    98316: 'offshelf_onlyshading'
 }
 METHODS = {
     96433: 'default',
@@ -137,6 +147,7 @@ METHODS = {
     97636: 'default',
     97637: 'default',
     97638: 'default',
+    98316: 'default',
 }
 CONDITIONS_CLASS = {
     96433: SDDiffusionFaceNoBg,
@@ -160,6 +171,7 @@ CONDITIONS_CLASS = {
     97636: SDDiffusionFace,
     97637: SDDiffusionFace,
     97638: SDDiffusionFaceNoBg,
+    98316: SDDiffusionFaceNoBg,
 }
 LRS = {
     96433: '1e-4',
@@ -183,6 +195,7 @@ LRS = {
     97636: '1e-4',
     97637: '1e-4',
     97638: '1e-4',
+    98316: '1e-4',
 }
 DIRNAME = {
     96433: CHECKPOINT_FOLDER_NAME,
@@ -206,6 +219,7 @@ DIRNAME = {
     97636: CHECKPOINT_FOLDER_NAME,
     97637: CHECKPOINT_FOLDER_NAME,
     97638: CHECKPOINT_FOLDER_NAME,
+    98316: CHECKPOINT_FOLDER_NAME,
 }
 CHECKPOINTS = {
     96433: 10,
@@ -229,6 +243,7 @@ CHECKPOINTS = {
     97636: 13,
     97637: 13,
     97638: 13,
+    98316: 13,
 }
 
 use_ab_background = []
@@ -266,6 +281,8 @@ def get_from_mode(mode):
         return "/data/pakkapon/datasets/multi_illumination/spherical/train", 100, DDIMDiffusionFaceRelightDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/index/14n_copyroom10_all_light3.json", "shadings_dir": "control_shading_from_hdr27coeff_conv_v5", "backgrounds_dir": "images", "feature_types": []},  "a photorealistic image"
     if mode == "all_everett_dining1":
         return "/data/pakkapon/datasets/multi_illumination/spherical/test", 100, DDIMDiffusionFaceRelightDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/index/everett_dining1_all.json", "shadings_dir": "control_shading_from_hdr27coeff_conv_v5", "backgrounds_dir": "images", "feature_types": []},  "a photorealistic image"
+    if mode == "all_everett_dining1_ordinal_shading":
+        return "/data/pakkapon/datasets/multi_illumination/spherical/test", 100, DDIMDiffusionFaceRelightDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/index/everett_dining1_all.json", "shadings_dir": "control_intrinsic_shading_diffuse", "backgrounds_dir": "images", "feature_types": []},  "a photorealistic image"
     else:
         raise Exception("mode not found")
 
