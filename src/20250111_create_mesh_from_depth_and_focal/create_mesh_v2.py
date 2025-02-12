@@ -2,6 +2,7 @@ import numpy as np
 import json
 import os 
 from tqdm.auto import tqdm
+from multiprocessing import Pool
 
 def depth_to_obj(depth, focal, obj_path, json_path):
     """
@@ -83,18 +84,52 @@ def depth_to_obj(depth, focal, obj_path, json_path):
 
 
 
+# if __name__ == "__main__":
+#     DEPTH_DIR = "/ist/ist-share/vision/relight/datasets/multi_illumination/spherical/test/metric_depth"
+#     FOCAL_DIR = "/ist/ist-share/vision/relight/datasets/multi_illumination/spherical/test/metric_focallength"
+#     OUT_MESH_DIR = "/data/pakkapon/datasets/multi_illumination/spherical/test/mesh"
+#     OUT_JSON_DIR = "/data/pakkapon/datasets/multi_illumination/spherical/test/focal_json"
+#     os.makedirs(OUT_JSON_DIR, exist_ok=True)
+#     os.makedirs(OUT_MESH_DIR, exist_ok=True)
+#     scenes = sorted(os.listdir(DEPTH_DIR))
+#     for scene in tqdm(scenes):
+#         obj_path = f"{OUT_MESH_DIR}/{scene}.obj"
+#         json_path = f"{OUT_JSON_DIR}/{scene}.json"
+#         depth = np.load(f"{DEPTH_DIR}/{scene}/dir_0_mip2.npy")
+#         focal = np.load(f"{FOCAL_DIR}/{scene}/dir_0_mip2.npy")
+#         depth_to_obj(depth, focal, obj_path, json_path)
+
+
+DEPTH_DIR = "/ist/ist-share/vision/relight/datasets/unsplash-lite/train/metric_depth"
+FOCAL_DIR = "/ist/ist-share/vision/relight/datasets/unsplash-lite/train/metric_focallength"
+OUT_MESH_DIR = "/ist/ist-share/vision/relight/datasets/unsplash-lite/train/mesh"
+OUT_JSON_DIR = "/ist/ist-share/vision/relight/datasets/unsplash-lite/train/focal_json"
+    
+
+def process(scene):
+    obj_path = f"{OUT_MESH_DIR}/{scene}.obj"
+    json_path = f"{OUT_JSON_DIR}/{scene}.json"
+    if os.path.exists(obj_path) and os.path.exists(json_path):
+        return None
+    depth = np.load(f"{DEPTH_DIR}/{scene}")
+    focal = np.load(f"{FOCAL_DIR}/{scene}")
+    depth_to_obj(depth, focal, obj_path, json_path)
+
 if __name__ == "__main__":
-    DEPTH_DIR = "/ist/ist-share/vision/relight/datasets/multi_illumination/spherical/test/metric_depth"
-    FOCAL_DIR = "/ist/ist-share/vision/relight/datasets/multi_illumination/spherical/test/metric_focallength"
-    OUT_MESH_DIR = "/data/pakkapon/datasets/multi_illumination/spherical/test/mesh"
-    OUT_JSON_DIR = "/data/pakkapon/datasets/multi_illumination/spherical/test/focal_json"
     os.makedirs(OUT_JSON_DIR, exist_ok=True)
     os.makedirs(OUT_MESH_DIR, exist_ok=True)
     scenes = sorted(os.listdir(DEPTH_DIR))
-    for scene in tqdm(scenes):
-        obj_path = f"{OUT_MESH_DIR}/{scene}.obj"
-        json_path = f"{OUT_JSON_DIR}/{scene}.json"
-        depth = np.load(f"{DEPTH_DIR}/{scene}/dir_0_mip2.npy")
-        focal = np.load(f"{FOCAL_DIR}/{scene}/dir_0_mip2.npy")
-        depth_to_obj(depth, focal, obj_path, json_path)
+    with Pool(40) as p:
+        r = list(tqdm(p.imap(process, scenes), total=len(scenes)))
+  
 
+# if __name__ == "__main__":
+#     os.makedirs(OUT_JSON_DIR, exist_ok=True)
+#     os.makedirs(OUT_MESH_DIR, exist_ok=True)
+#     scenes = sorted(os.listdir(DEPTH_DIR))
+#     for scene in tqdm(scenes):
+#         obj_path = f"{OUT_MESH_DIR}/{scene}.obj"
+#         json_path = f"{OUT_JSON_DIR}/{scene}.json"
+#         depth = np.load(f"{DEPTH_DIR}/{scene}")
+#         focal = np.load(f"{FOCAL_DIR}/{scene}")
+#         depth_to_obj(depth, focal, obj_path, json_path)

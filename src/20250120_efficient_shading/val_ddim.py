@@ -65,9 +65,19 @@
 # bin/siatv100 src/20250120_efficient_shading/val_ddim.py -i 98316 -m all_everett_dining1_ordinal_shading -c 28,27,26,25,24,23,22,21,20,19,18,17,16,15,14
 # bin/siatv100 src/20250120_efficient_shading/val_ddim.py -i 98316 -m interpolate_copyroom10_ordinal_shading -c 28,27,26,25,24,23,22,21,20,19,18,17,16,15,14
 
+# bin/siatv100 src/20250120_efficient_shading/val_ddim.py -i 98472 -m all_everett_dining1_blender_orthographic_shading -c 50,49,48,47,46,45
+# bin/siatv100 src/20250120_efficient_shading/val_ddim.py -i 98472 -m all_everett_dining1_blender_orthographic_shading -c 44,43,42,41,40,39
+# bin/siatv100 src/20250120_efficient_shading/val_ddim.py -i 98472 -m all_everett_dining1_blender_orthographic_shading -c 38,37,36,35,34,33
+# bin/siatv100 src/20250120_efficient_shading/val_ddim.py -i 98472 -m all_everett_dining1_blender_orthographic_shading -c 32,31,30,29,28,27
+# bin/siatv100 src/20250120_efficient_shading/val_ddim.py -i 98472 -m all_everett_dining1_blender_orthographic_shading -c 26,25,24,23,22,21
+# bin/siatv100 src/20250120_efficient_shading/val_ddim.py -i 98472 -m all_everett_dining1_blender_orthographic_shading -c 20,19,18,17,16,15
+# bin/siatv100 src/20250120_efficient_shading/val_ddim.py -i 98472 -m all_everett_dining1_blender_orthographic_shading -c 14,13,12,11,10,9
+# bin/siatv100 src/20250120_efficient_shading/val_ddim.py -i 98472 -m all_everett_dining1_blender_orthographic_shading -c 8,7,6,5,4,3,2,1,0 
 
+# bin/siatv100 src/20250120_efficient_shading/val_ddim.py -i 98581 -m all_everett_dining1_blender_persepective_shading -c 5,4,3,2,1,0 
+# bin/siatv100 src/20250120_efficient_shading/val_ddim.py -i 98581 -m all_everett_dining1_blender_persepective_shading -c 10,9,8,7,6
 
-# version_97638
+# 98581
 
 import os
 import lightning as L
@@ -123,7 +133,9 @@ NAMES = {
     97636: 'ordinal_shading',
     97637: 'oldshading_with_albedo',
     97638: 'offshelf_onlyshading',
-    98316: 'offshelf_onlyshading'
+    98316: 'offshelf_onlyshading',
+    98472: 'blender_orthographic',
+    98581: 'blender_perspective'
 }
 METHODS = {
     96433: 'default',
@@ -148,6 +160,8 @@ METHODS = {
     97637: 'default',
     97638: 'default',
     98316: 'default',
+    98472: 'default',
+    98581: 'default'
 }
 CONDITIONS_CLASS = {
     96433: SDDiffusionFaceNoBg,
@@ -172,6 +186,8 @@ CONDITIONS_CLASS = {
     97637: SDDiffusionFace,
     97638: SDDiffusionFaceNoBg,
     98316: SDDiffusionFaceNoBg,
+    98472: SDDiffusionFaceNoBg,
+    98581: SDDiffusionFaceNoBg
 }
 LRS = {
     96433: '1e-4',
@@ -196,6 +212,8 @@ LRS = {
     97637: '1e-4',
     97638: '1e-4',
     98316: '1e-4',
+    98472: '1e-4',
+    98581: '1e-4'
 }
 DIRNAME = {
     96433: CHECKPOINT_FOLDER_NAME,
@@ -220,6 +238,8 @@ DIRNAME = {
     97637: CHECKPOINT_FOLDER_NAME,
     97638: CHECKPOINT_FOLDER_NAME,
     98316: CHECKPOINT_FOLDER_NAME,
+    98472: CHECKPOINT_FOLDER_NAME,
+    98581: CHECKPOINT_FOLDER_NAME
 }
 CHECKPOINTS = {
     96433: 10,
@@ -244,12 +264,14 @@ CHECKPOINTS = {
     97637: 13,
     97638: 13,
     98316: 13,
+    98472: 50,
+    98581: 10
 }
 
 use_ab_background = []
 use_shcoeff2 = [96433]
 use_only_light = [96433]
-use_no_light = [96458, 96461, 96462, 96434, 96453, 97227, 97636, 97637, 97638, 97221, 97222, 97223, 97224, 97225, 97226, 97622, 97623, 97624, 97625, 97626]
+use_no_light = [96458, 96461, 96462, 96434, 96453, 97227, 97636, 97637, 97638, 97221, 97222, 97223, 97224, 97225, 97226, 97622, 97623, 97624, 97625, 97626, 98472]
 use_random_mask_background = []
 
 def get_from_mode(mode):
@@ -283,6 +305,10 @@ def get_from_mode(mode):
         return "/data/pakkapon/datasets/multi_illumination/spherical/test", 100, DDIMDiffusionFaceRelightDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/index/everett_dining1_all.json", "shadings_dir": "control_shading_from_hdr27coeff_conv_v5", "backgrounds_dir": "images", "feature_types": []},  "a photorealistic image"
     if mode == "all_everett_dining1_ordinal_shading":
         return "/data/pakkapon/datasets/multi_illumination/spherical/test", 100, DDIMDiffusionFaceRelightDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/index/everett_dining1_all.json", "shadings_dir": "control_intrinsic_shading_diffuse", "backgrounds_dir": "images", "feature_types": []},  "a photorealistic image"
+    if mode == "all_everett_dining1_blender_orthographic_shading":
+        return "/data/pakkapon/datasets/multi_illumination/spherical/test", 100, DDIMDiffusionFaceRelightDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/index/everett_dining1_all.json", "shadings_dir": "control_shading_blender_mesh_othographic", "backgrounds_dir": "images", "feature_types": []},  "a photorealistic image"
+    if mode == "all_everett_dining1_blender_persepective_shading":
+        return "/data/pakkapon/datasets/multi_illumination/spherical/test", 100, DDIMDiffusionFaceRelightDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/index/everett_dining1_all.json", "shadings_dir": "control_shading_blender_mesh_perspective_v2", "backgrounds_dir": "images", "feature_types": []},  "a photorealistic image"
     else:
         raise Exception("mode not found")
 
@@ -329,7 +355,9 @@ def main():
                         model.eval() # disable randomness, dropout, etc...
                         model.disable_plot_train_loss()
                         for guidance_scale in guidance_scales:
-                            model.set_guidance_scale(guidance_scale)                        
+                            #model.set_guidance_scale(guidance_scale)
+                            #model.set_ddim_strength(guidance_scale) #temporary hack to feed the guidance ratio                        
+                            model.set_gaussain_strength(guidance_scale)  #temporary hack to feed the guidance ratio
                             output_dir = f"output/{FOLDER_NAME}/val_{mode}/{METHODS[version]}/{guidance_scale}/{NAMES[version]}/{LRS[version]}/chk{checkpoint}/"
                             # skip if output dir exist 
                             if os.path.exists(output_dir):

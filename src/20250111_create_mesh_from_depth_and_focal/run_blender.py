@@ -5,6 +5,14 @@ import numpy as np
 import math
 import argparse
 
+# BLENDER_PATH = "/home/pakkapon/mnt_tl_vision23/home/vll/software/blender-3.6.5-linux-x64/blender"
+# ENVMAP_PATH = "/ist/ist-share/vision/relight/datasets/multi_illumination/unused/exr_envmap_test_mip2_exr_v3"
+# OUTPUT_DIR = "/home/pakkapon/mnt_tl_vision23/data/pakkapon/datasets/multi_illumination/spherical/test/control_shading_blender_mesh_perspective_v2"
+# #OBJ_PATH = "/home/pakkapon/mnt_tl_vision23/data/pakkapon/datasets/multi_illumination/spherical/test/mesh/"
+# #JSON_PATH = "/home/pakkapon/mnt_tl_vision23/data/pakkapon/datasets/multi_illumination/spherical/test/focal_json/"
+# OBJ_PATH = "/ist/ist-share/vision/relight/datasets/multi_illumination/spherical/test/mesh/"
+# JSON_PATH = "/ist/ist-share/vision/relight/datasets/multi_illumination/spherical/test/focal_json/"
+
 BLENDER_PATH = "/home/pakkapon/mnt_tl_vision23/home/vll/software/blender-3.6.5-linux-x64/blender"
 ENVMAP_PATH = "/ist/ist-share/vision/relight/datasets/multi_illumination/unused/exr_envmap_test_mip2_exr_v3"
 OUTPUT_DIR = "/home/pakkapon/mnt_tl_vision23/data/pakkapon/datasets/multi_illumination/spherical/test/control_shading_blender_mesh_perspective_v2"
@@ -12,6 +20,7 @@ OUTPUT_DIR = "/home/pakkapon/mnt_tl_vision23/data/pakkapon/datasets/multi_illumi
 #JSON_PATH = "/home/pakkapon/mnt_tl_vision23/data/pakkapon/datasets/multi_illumination/spherical/test/focal_json/"
 OBJ_PATH = "/ist/ist-share/vision/relight/datasets/multi_illumination/spherical/test/mesh/"
 JSON_PATH = "/ist/ist-share/vision/relight/datasets/multi_illumination/spherical/test/focal_json/"
+
 IMAGE_WIDTH = 512
 
 parser = argparse.ArgumentParser()

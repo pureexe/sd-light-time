@@ -712,7 +712,7 @@ bin/siatv100 src/20250120_efficient_shading/train.py \
     -dataset_val_split "/data/pakkapon/datasets/multi_illumination/spherical/index/14n_copyroom10_all.json" \
     -ckpt /ist/ist-share/vision/pakkapon/relight/sd-light-time/output/20250120_efficient_shading/multi_mlp_fit/lightning_logs/version_98472/checkpoints/epoch=000050.ckpt
 
-# version 
+# version 98581
 bin/siatv100 src/20250120_efficient_shading/train.py \
     -lr 1e-4 \
     --guidance_scale 1.0 \

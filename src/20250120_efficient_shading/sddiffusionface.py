@@ -12,15 +12,21 @@ import numpy as np
 import torchvision
 
 from constants import *
-from diffusers import StableDiffusionControlNetPipeline, UNet2DConditionModel, ControlNetModel, StableDiffusionPipeline, DDPMScheduler
+from diffusers import StableDiffusionControlNetPipeline, UNet2DConditionModel, ControlNetModel, StableDiffusionPipeline, DDPMScheduler, StableDiffusionImg2ImgPipeline, StableDiffusionControlNetImg2ImgPipeline
 from transformers import CLIPImageProcessor, CLIPModel
 from InversionHelper import get_ddim_latents
 from LightEmbedingBlock import set_light_direction, add_light_block
 import torchmetrics
 
-
-
 MASTER_TYPE = torch.float16
+
+class StableDiffusionImg2ImgNoPrepLatentsPipeline(StableDiffusionImg2ImgPipeline):
+    def prepare_latents(self, image, timestep, batch_size, num_images_per_prompt, dtype, device, generator=None):
+        return image
+    
+class StableDiffusionControlNetNoPrepLatentsPipeline(StableDiffusionControlNetImg2ImgPipeline):
+    def prepare_latents(self, image, timestep, batch_size, num_images_per_prompt, dtype, device, generator=None):
+        return image
 
 class SDDiffusionFace(L.LightningModule):
 
@@ -49,6 +55,8 @@ class SDDiffusionFace(L.LightningModule):
         self.condition_scale = 1.0
         self.guidance_scale = guidance_scale
         self.ddim_guidance_scale = 1.0
+        self.ddim_strength = 0.0
+        self.gaussain_strength = 0.0
         self.use_set_guidance_scale = False
         self.learning_rate = learning_rate
         self.feature_type = feature_type
@@ -60,6 +68,8 @@ class SDDiffusionFace(L.LightningModule):
         self.use_triplet_background = use_triplet_background
 
         self.save_hyperparameters()
+
+        self.already_load_img2img = False
 
         self.seed = 42
         self.is_plot_train_loss = True
@@ -75,7 +85,34 @@ class SDDiffusionFace(L.LightningModule):
             self.scheduler_ddpm.set_timesteps(1000)
             self.scheduler_ddpm.alphas_cumprod = self.pipe.scheduler.alphas_cumprod.to('cuda')
 
-
+    def setup_ddim_img2img(self):
+        if self.already_load_img2img:
+            return
+        
+        if hasattr(self.pipe,'controlnet'):
+            self.pipe_img2img = StableDiffusionControlNetNoPrepLatentsPipeline(
+                vae = self.pipe.vae,
+                text_encoder = self.pipe.text_encoder,
+                tokenizer = self.pipe.tokenizer,
+                unet = self.pipe.unet,
+                controlnet=self.pipe.controlnet,
+                scheduler = self.pipe.scheduler,
+                safety_checker = self.pipe.safety_checker,
+                feature_extractor = self.pipe.feature_extractor,
+                image_encoder = self.pipe.image_encoder
+            )
+        else:
+            self.pipe_img2img = StableDiffusionImg2ImgNoPrepLatentsPipeline(
+                vae = self.pipe.vae,
+                text_encoder = self.pipe.text_encoder,
+                tokenizer = self.pipe.tokenizer,
+                unet = self.pipe.unet,
+                scheduler = self.pipe.scheduler,
+                safety_checker = self.pipe.safety_checker,
+                feature_extractor = self.pipe.feature_extractor,
+                image_encoder = self.pipe.image_encoder
+            )
+        self.already_load_img2img = True
 
     def setup_clip(self, clip_model = "openai/clip-vit-large-patch14"):
         if self.feature_type not in ['clip_shcoeff', 'clip']:
@@ -448,6 +485,7 @@ class SDDiffusionFace(L.LightningModule):
             negative_prompt = [""] * len(batch['text'])
         )
         
+        interrupt_index = int(self.num_inversion_steps * self.ddim_strength) if self.ddim_strength > 0 else None
         # get DDIM inversion  
         ddim_latents, ddim_timesteps = get_ddim_latents(
                 pipe=self.pipe,
@@ -457,6 +495,7 @@ class SDDiffusionFace(L.LightningModule):
                 generator=torch.Generator().manual_seed(self.seed),
                 controlnet_image=self.get_control_image(batch) if hasattr(self.pipe, "controlnet") else None,
                 guidance_scale=self.ddim_guidance_scale,
+                interrupt_index = interrupt_index
             )
 
         # if dataset is not list, convert to list
@@ -470,6 +509,7 @@ class SDDiffusionFace(L.LightningModule):
 
         # compute inpaint from nozie
         mse_output = []
+        noise = self.get_noise_from_latents(ddim_latents[-1])
         for target_idx in range(len(batch['target_image'])):
             target_light_features = self.get_light_features(batch, array_index=target_idx, generator=torch.Generator().manual_seed(self.seed))            
             # if target_idx > 0:
@@ -478,6 +518,7 @@ class SDDiffusionFace(L.LightningModule):
                 target_light_features,
                 is_apply_cfg=is_apply_cfg
             )
+
             pipe_args = {
                 "prompt_embeds": prompt_embeds,
                 "negative_prompt_embeds": negative_prompt_embeds,
@@ -486,12 +527,22 @@ class SDDiffusionFace(L.LightningModule):
                 "return_dict": False,
                 "num_inference_steps": self.num_inversion_steps,
                 "generator": torch.Generator().manual_seed(self.seed),
-                "latents": ddim_latents[-1]
+              
             }
-            if hasattr(self.pipe, "controlnet"):
-                pipe_args["image"] = self.get_control_image(batch, array_index=target_idx)  
+            if self.ddim_strength > 0:
+                pipe_args["image"] = ddim_latents[interrupt_index]
+                pipe_args["strength"] = self.ddim_strength                        
+                ddim_pipe = self.pipe_img2img
+                pipe_args["image"] = ddim_latents[interrupt_index]
+                if hasattr(self.pipe, "controlnet"):
+                    pipe_args["control_image"] = self.get_control_image(batch, array_index=target_idx) 
+            else:
+                pipe_args["latents"] = ((1.0 - self.gaussain_strength) * ddim_latents[-1]) + (self.gaussain_strength * noise)
+                ddim_pipe = self.pipe
+                if hasattr(self.pipe, "controlnet"):
+                    pipe_args["image"] = self.get_control_image(batch, array_index=target_idx)  
 
-            pt_image, _ = self.pipe(**pipe_args)
+            pt_image, _ = ddim_pipe(**pipe_args)
             
             gt_on_batch = 'target_image' if "target_image" in batch else 'source_image'
             gt_image = (batch[gt_on_batch][target_idx] + 1.0) / 2.0 #bump back to range[0-1]
@@ -664,6 +715,14 @@ class SDDiffusionFace(L.LightningModule):
     def set_guidance_scale(self, guidance_scale):
         self.use_set_guidance_scale = True
         self.guidance_scale = guidance_scale
+
+    def set_ddim_strength(self, ddim_strength):
+        if not self.already_load_img2img:
+            self.setup_ddim_img2img()
+        self.ddim_strength = ddim_strength
+        
+    def set_gaussain_strength(self, gaussain_strength):
+        self.gaussain_strength = gaussain_strength
 
 class ScrathSDDiffusionFace(SDDiffusionFace):
     def setup_sd(self, sd_path="runwayml/stable-diffusion-v1-5", controlnet_path=None):

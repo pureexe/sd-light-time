@@ -17,10 +17,20 @@ def clear_scene():
     for block in bpy.data.images:
         bpy.data.images.remove(block)
 
-def create_sphere(z_position):
-    bpy.ops.mesh.primitive_uv_sphere_add(segments=32, ring_count=16, radius=z_position, location=(0, 0, 0))
+def create_sphere(fov, z_position):
+    #bpy.ops.mesh.primitive_plane_add(size=2, location=(0, 0, 0))    
+    bpy.ops.mesh.primitive_uv_sphere_add( radius=1.09, location=(0, 0, 0))
     sphere = bpy.context.object
-    
+    #sphere.rotation_euler = (0, 1.5708, 0)  # 90 degrees (π/2) around Y-axis
+
+    # Add Subdivision Surface modifier
+    subdivision_modifier = sphere.modifiers.new(name="Subdivision", type='SUBSURF')
+    subdivision_modifier.levels = 5  # Viewport subdivision level
+    subdivision_modifier.render_levels = 5  # Render subdivision level
+
+    # Apply the modifier if you want it to be part of the mesh
+    bpy.ops.object.modifier_apply(modifier=subdivision_modifier.name)
+
     # Set material to fully reflective
     mat = bpy.data.materials.new(name="ChromeMaterial")
     mat.use_nodes = True
@@ -28,16 +38,20 @@ def create_sphere(z_position):
     if bsdf:
         bsdf.inputs['Roughness'].default_value = 0.0
         bsdf.inputs['Metallic'].default_value = 1.0
-    
+
     sphere.data.materials.append(mat)
     return sphere
+
 
 def setup_camera(fov, z_position):
     cam = bpy.data.objects.new("Camera", bpy.data.cameras.new("Camera"))
     bpy.context.scene.collection.objects.link(cam)
     bpy.context.scene.camera = cam
     
-    cam.location = (z_position, 0, 0) # z_position in GL format is X in blender
+    cam.location = (1/math.tan(fov/2), 0, 0)
+    #1/near  = tan(fov/2)
+    
+    #cam.location = (z_position, 0, 0) # z_position in GL format is X in blender
     cam.rotation_euler = (math.pi/2, 0, math.pi/2)
     cam.data.angle = fov
     
@@ -104,11 +118,11 @@ def main():
     output_path = argv[4]
     
     clear_scene()
-    create_sphere(z_position)
+    create_sphere(fov, z_position)
     setup_camera(fov, z_position)
     setup_environment(env_map_path)
     render_image(output_path)
-    #save_blend_file(output_path)
+    save_blend_file(output_path)
     
 if __name__ == "__main__":
     main()

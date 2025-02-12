@@ -7,7 +7,7 @@ import argparse
 
 BLENDER_PATH = "/home/pakkapon/mnt_tl_vision23/home/vll/software/blender-3.6.5-linux-x64/blender"
 ENVMAP_PATH = "/ist/ist-share/vision/relight/datasets/multi_illumination/unused/exr_envmap_train_mip2_exr_v3"
-OUTPUT_DIR = "/home/pakkapon/mnt_tl_vision23/data/pakkapon/datasets/multi_illumination/spherical/train/viz_chromeball_blender_mesh_perspective_v2"
+OUTPUT_DIR = "/ist/ist-share/vision/relight/datasets/multi_illumination/spherical/train/viz_chromeball_blender_mesh_perspective_v2"
 OBJ_PATH = "/ist/ist-share/vision/relight/datasets/multi_illumination/spherical/train/mesh/"
 JSON_PATH = "/ist/ist-share/vision/relight/datasets/multi_illumination/spherical/train/focal_json/"
 IMAGE_WIDTH = 512

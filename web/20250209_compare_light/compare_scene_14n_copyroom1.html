@@ -67,6 +67,7 @@
                 <th>ID</th>
                 <th>Input Image</th>
                 <th>Ball Image dataset</th>
+                <th>Ball (Perspective)</th>
                 <th>LDR chromeball ORDER 100</th>
                 <th>LDR chromeball ORDER 2</th>
                 <th>Efficient Render</th>
@@ -85,6 +86,12 @@
                         <img :src="'/output/datasets/multi_illumination/spherical/train/images/14n_copyroom1/dir_'+idx+'_mip2.jpg'" />
                     </figure>
                 </td>
+                <td>
+                    <figure class="image is-128x128 mx-auto">
+                        <img :src="'http://10.204.100.123/pakkapon/datasets/multi_illumination/spherical/train/viz_chromeball_blender_mesh_perspective_v2/14n_copyroom1/dir_'+idx+'_mip2.png'" />
+                    </figure>
+                </td>
+                
                 <td>
                     <figure class="image is-128x128 mx-auto">
                         <img :src="'/output/datasets/multi_illumination_train_mip2_jpg/14n_copyroom1/probes/dir_'+idx+'_chrome256.jpg'" />
