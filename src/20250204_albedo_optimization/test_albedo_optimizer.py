@@ -3,18 +3,35 @@ import numpy as np
 from termcolor import colored
 import skimage
 import os
+import lightning as L
+import json 
 
-from albedo_optimization import get_ideal_normal_ball_y_up, n2v, AlbedoOptimization
-
+from albedo_optimization import get_ideal_normal_ball_y_up, n2v, AlbedoOptimization, MultiIluminationSceneDataset
+SCENE_DIR = "/ist/ist-share/vision/relight/datasets/multi_illumination/spherical/train/images/14n_copyroom10"
 
 def test_setup_normal_pipeline():
-    pass 
+    # Test if the normal pipeline can be load
+    albedo_optimization = AlbedoOptimization()
+    class_name = albedo_optimization.pipe_normal.__class__.__name__
+    assert class_name == "MarigoldNormalsPipeline" # make sure that we load correct pipeline
+    print(colored('[passed]', 'green'),  'test_setup_normal_pipeline')
 
 def test_compute_normal():
-    pass 
+    print(colored('[skip]', 'yellow'),  'already tested by test_get_normal')
 
 def test_get_normal():
-    pass
+    albedo_optimization = AlbedoOptimization(use_lab=False)
+    img = os.path.join(SCENE_DIR, 'dir_0_mip2.jpg' )
+    img = skimage.io.imread(img)
+    img = skimage.img_as_float(img)
+    img = torch.tensor(img).permute(2,0,1)
+    normal = albedo_optimization.get_normal(img)
+    normal = (normal + 1.0) / 2.0
+    normal = normal.permute(1,2,0).cpu().numpy()
+    os.makedirs('output/test_render_image', exist_ok=True)
+    skimage.io.imsave('output/test_render_image/pred_normal.png', skimage.img_as_ubyte(normal))
+    print(colored('[passed]', 'green'),  'test_get_normal (please make inspect the file carefully.)')
+
 
 def test_setup_albedo():
     albedo_optimization = AlbedoOptimization()
@@ -126,16 +143,55 @@ def test_render_image():
 
 
 def test_on_train_epoch_start():
-    pass
+    """
+    # Optimize lightning for few epoch to make sure that albedo is not optimized in the first epoch (if cold_start_albedo is set more than 0)
+    """
+    val_dataset = MultiIluminationSceneDataset(
+        scene_path=SCENE_DIR,
+        data_multiplier=1,
+        image_size=(512,512),
+        use_lab = True
+    )
+    val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=val_dataset.get_num_images(), shuffle=False)
+    model = AlbedoOptimization(
+        num_images = val_dataset.get_num_images(),
+        lr_albedo = 1e-4,
+        lr_shcoeff = 1e-4,
+        std_multiplier = 1e-4,
+        cold_start_albedo = 1,
+        sh_regularize = 0,
+        use_lab = True
+    )
+    
+    class EpochEndCallback(L.pytorch.callbacks.Callback):
+        def on_train_epoch_end(self, trainer, model):
+            if trainer.current_epoch == 0:
+                assert model.albedo.requires_grad == False
+                assert model.shcoeffs.requires_grad == True
+            if trainer.current_epoch >= 1:
+                assert model.albedo.requires_grad == True
+                assert model.shcoeffs.requires_grad == True
 
-def test_training_step():
-    pass
+    trainer = L.Trainer(
+        reload_dataloaders_every_n_epochs=0,
+    callbacks=[EpochEndCallback()],
+        max_epochs=3
+    )
+    trainer.fit(
+        model=model,
+        train_dataloaders=val_dataloader,
+        val_dataloaders=val_dataloader,
+    )
+    print(colored('[passed]', 'green'),  'test_on_train_epoch_start')
 
-def test_log_tensorboard():
-    pass
+# def test_training_step():
+#     pass
 
-def test_validation_step():
-    pass
+# def test_log_tensorboard():
+#     pass
+
+# def test_validation_step():
+#     pass
 
 def test_get_ideal_normal_ball_y_up():
     """
@@ -207,12 +263,15 @@ def get_basis(normal_images):
 
 def main():
     print("Running tests for AlbedoOptimization")
-    #test_n2v()
-    #test_get_ideal_normal_ball_y_up()
-    #test_get_basis()
-    #test_render_image()
+    test_n2v()
+    test_get_ideal_normal_ball_y_up()
+    test_get_basis()
+    test_render_image()
     test_setup_albedo()
     test_setup_spherical_coefficient()
+    test_on_train_epoch_start()
+    test_setup_normal_pipeline()
+    test_get_normal()
     print(colored('=== ALL TEST PASSED ===', 'green')) 
 if __name__ == "__main__":
     main()

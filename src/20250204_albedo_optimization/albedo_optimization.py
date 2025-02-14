@@ -14,22 +14,22 @@ MASTER_TYPE = torch.float32
 parser = argparse.ArgumentParser()
 parser.add_argument('-ckpt', '--checkpoint', type=str, default=None)
 parser.add_argument('-std_mul', '--std_multiplier', type=float, default=1e-4)
-parser.add_argument('-lra', '--lr_albedo', type=float, default=1e-3)
-parser.add_argument('-lrs', '--lr_shcoeff', type=float, default=1e-3)
-parser.add_argument('--dataset_multipiler', type=int, default=1000)
-parser.add_argument('--sh_regularize', type=float, default=1e-4)
+parser.add_argument('-lra', '--lr_albedo', type=float, default=1e-4)
+parser.add_argument('-lrs', '--lr_shcoeff', type=float, default=1e-2)
+parser.add_argument('--dataset_multipiler', type=int, default=100)
+parser.add_argument('--sh_regularize', type=float, default=0)
 parser.add_argument('--cold_start_albedo', type=int, default=0, help="epoch to start training albedo, 0 mean start training since first epoch")
 parser.add_argument('--use_lab', type=int, default=1)
 args = parser.parse_args()
 
 
-
 class MultiIluminationSceneDataset(torch.utils.data.Dataset):
-    def __init__(self, scene_path = "path/to/scene", data_multiplier = 1, image_size = (512,512)):
+    def __init__(self, scene_path = "path/to/scene", data_multiplier = 1, image_size = (512,512), use_lab = False):
+        self.use_lab = use_lab
         self.image_size = image_size
         self.load_images(scene_path)
         self.data_multiplier = data_multiplier # prevent dataloader reload too frequently.
-        if use_lab:
+        if self.use_lab:
             self.transform = torchvision.transforms.Compose([
                 torchvision.transforms.ToTensor(),
                 torchvision.transforms.Resize(self.image_size),
@@ -64,7 +64,7 @@ class MultiIluminationSceneDataset(torch.utils.data.Dataset):
         if self.use_lab:
             img = np.array(img) #PIL to numpy range [0,255]
             img = img / 255.0 # rank [0,1]
-            img = rgb2lab(img)
+            img = rgb2lab(img) # lab color sapce (-1,1)
 
         img = self.transform(img) # [3, H ,W]
 
@@ -75,7 +75,7 @@ class MultiIluminationSceneDataset(torch.utils.data.Dataset):
         }
 
 class AlbedoOptimization(L.LightningModule):
-    def __init__(self, num_images=25, image_size = (512,512), lr_albedo=1e-4, lr_shcoeff=1e-4, std_multiplier = 1e-4, cold_start_albedo=0, sh_regularize=1e-4,use_lab = False):
+    def __init__(self, num_images=25, image_size = (512,512), lr_albedo=1e-4, lr_shcoeff=1e-4, std_multiplier = 1e-4, cold_start_albedo=0, sh_regularize=1e-4, use_lab = False, log_shading=True):
         super().__init__()        
         self.lr_shcoeff = lr_shcoeff
         self.lr_albedo = lr_albedo
@@ -83,7 +83,9 @@ class AlbedoOptimization(L.LightningModule):
         self.sh_regularize = sh_regularize
         self.cold_start_albedo = cold_start_albedo
         self.std_multiplier = std_multiplier
-
+        self.log_dir = ""
+        self.log_shading = log_shading
+        
         self.image_size = image_size
         self.num_images = num_images
         self.setup_albedo()
@@ -99,14 +101,14 @@ class AlbedoOptimization(L.LightningModule):
                 for a in batch['image']:
                     device = a.device
                     a = a.permute(1,2,0).cpu().numpy()
-                    a = lab2rgb(a)
+                    a = lab2rgb(a) # rgb color space [0,1]
                     a = torch.tensor(a).to(device)
                     a = a.permute(2,0,1)
                     n_images.append(a[None])
                 n_images = torch.concatenate(n_images, axis=0)
                 image = torch.mean(n_images, axis=0)
                 image = image.permute(1,2,0).cpu().numpy()
-                image = rgb2lab(image)
+                image = rgb2lab(image) # lab color space -1,1
                 image = torch.tensor(image).permute(2,0,1).float()
             else:
                 image = torch.mean(batch['image'],axis=0)
@@ -129,8 +131,9 @@ class AlbedoOptimization(L.LightningModule):
             image = lab2rgb(image)
             image = torch.tensor(image).to(device)
             image = image.permute(2,0,1)
+            image = (image + 1.0) / 2.0 # rescale to [0,1]
         else:
-            image = (image + 1.0) / 2.0
+            image = (image + 1.0) / 2.0  # rescale to [0,1]
         normals = self.pipe_normal(
             image,
             output_type='pt'
@@ -141,7 +144,6 @@ class AlbedoOptimization(L.LightningModule):
         if self.normal_map is not None:
             return self.normal_map 
         assert len(image.shape) == 3 and image.shape[0] == 3 # make sure it feed only 1 image
-        image = (image + 1.0) / 2.0
         normals = self.compute_normal(image)
         self.normal_map = normals.prediction[0]
         assert len(self.normal_map.shape) == 3 and self.normal_map.shape[0] == 3 #make sure self.normal_map is 3,H,W
@@ -289,44 +291,55 @@ class AlbedoOptimization(L.LightningModule):
             n2v(self.albedo[0], use_lab=self.use_lab),
             self.global_step
         )
-        # save frontside chromeball to visualize the lighting 
-        ball_image_front = self.render_image(self.shcoeffs, normal_ball_front)
-        for i in range(bz):
-            self.logger.experiment.add_image(
-                f"ball_front/{batch['name'][i]}",
-                n2v(ball_image_front[i], use_lab=self.use_lab),
-                self.global_step
-            )
-        # save backside chromeball to visualize the lighting 
-        ball_image_back = self.render_image(self.shcoeffs, normal_ball_back)
-        for i in range(bz):
-            self.logger.experiment.add_image(
-                f"ball_back/{batch['name'][i]}",
-                n2v(ball_image_back[i], use_lab=self.use_lab),
-                self.global_step
-            )
-        # render shading
-        render_shading = self.render_image(self.shcoeffs, normal_map[None])
-        for i in range(bz):
-            self.logger.experiment.add_image(
-                f"shading/{batch['name'][i]}",
-                n2v(render_shading[i], use_lab=self.use_lab),
-                self.global_step
-            )
+        #save albedo 
+        try:
+            log_dir = self.logger.log_dir
+        except:
+            log_dir = self.log_dir
+        epoch_id = 0 if self.global_step == 0 else self.current_epoch + 1
+        os.makedirs(f"{log_dir}/albedo", exist_ok=True)
+        torchvision.utils.save_image(n2v(self.albedo[0], use_lab=self.use_lab), f"{log_dir}/albedo/albedo_{epoch_id:04d}.png")
+        if self.log_shading:
+            # save frontside chromeball to visualize the lighting 
+            ball_image_front = self.render_image(self.shcoeffs, normal_ball_front)
+            for i in range(bz):
+                self.logger.experiment.add_image(
+                    f"ball_front/{batch['name'][i]}",
+                    n2v(ball_image_front[i], use_lab=self.use_lab),
+                    self.global_step
+                )
+            # save backside chromeball to visualize the lighting 
+            ball_image_back = self.render_image(self.shcoeffs, normal_ball_back)
+            for i in range(bz):
+                self.logger.experiment.add_image(
+                    f"ball_back/{batch['name'][i]}",
+                    n2v(ball_image_back[i], use_lab=self.use_lab),
+                    self.global_step
+                )
+            # render shading
+            render_shading = self.render_image(self.shcoeffs, normal_map[None])
+            for i in range(bz):
+                self.logger.experiment.add_image(
+                    f"shading/{batch['name'][i]}",
+                    n2v(render_shading[i], use_lab=self.use_lab),
+                    self.global_step
+                )
         # render image
         render_image = self.render_image(self.shcoeffs, normal_map[None], self.albedo)
-        for i in range(bz):
-            cat_image = torch.concatenate([batch['image'][i:i+1],render_image[i:i+1]],axis=0)
-            cat_image[0] = n2v(cat_image[0], use_lab=self.use_lab)
-            cat_image[1] = n2v(cat_image[1], use_lab=self.use_lab)
-            self.logger.experiment.add_image(
-                f"rendered/{batch['name'][i]}",
-                torchvision.utils.make_grid(cat_image),
-                self.global_step
-            )
+        if self.log_shading:
+            for i in range(bz):
+                cat_image = torch.concatenate([batch['image'][i:i+1],render_image[i:i+1]],axis=0)
+                cat_image[0] = n2v(cat_image[0], use_lab=self.use_lab)
+                cat_image[1] = n2v(cat_image[1], use_lab=self.use_lab)
+                self.logger.experiment.add_image(
+                    f"rendered/{batch['name'][i]}",
+                    torchvision.utils.make_grid(cat_image),
+                    self.global_step
+                )
         mse = torch.nn.functional.mse_loss(render_image, batch['image'])
         psnr_value = 10 * torch.log10(1.0**2 / mse)
         self.log('val/render_psnr', psnr_value)
+        self.log('val/loss', mse)
 
     def validation_step(self, batch, batch_idx):
         if self.global_step == 0:
@@ -338,6 +351,7 @@ class AlbedoOptimization(L.LightningModule):
         self.log_tensorboard(batch, batch_idx)
 
     def configure_optimizers(self):
+        # change optimizer for least square BCG LM
         optimizer = torch.optim.Adam([
             {'params': self.shcoeffs, 'lr': self.lr_shcoeff},
             {'params': self.albedo, 'lr': self.lr_albedo},
@@ -373,10 +387,10 @@ def n2v(tensor, use_lab = False):
     # normalize (-1,1) to visualize [0,1]
 
     if use_lab:
-        tensor = torch.clamp(tensor, -1, 1)
+        tensor = torch.clamp(tensor, -1, 1) # range [-1,1]
         device = tensor.device
         tensor = tensor.permute(1,2,0).cpu().numpy()
-        tensor = lab2rgb(tensor)
+        tensor = lab2rgb(tensor) # range [0,1]
         tensor = torch.tensor(tensor).to(device)
         tensor = tensor.permute(2,0,1)
     else:
@@ -426,10 +440,15 @@ def lab2rgb(img):
     # Convert from (-1,1) back to (0,1)
     img = (img + 1.0) / 2.0
 
-    # Convert to LAB space L (0-100), A/B (-128,127)
-    img[:,:,0] = np.clip(img[:,:,0], 0, 1) * 100  # L should be clipped
-    img[:,:,1] = img[:,:,1] * 255 - 128
-    img[:,:,2] = img[:,:,2] * 255 - 128
+    # Convert to LAB space from [0,1] to L (0-100), A/B (-128,127)
+    img[:,:,0] = np.clip(img[:,:,0]* 100, 0, 100)   # L should be clipped
+    img[:,:,1] = np.clip(img[:,:,1] * 255 - 128, -128, 127)  # A channel
+    img[:,:,2] = np.clip(img[:,:,2] * 255 - 128, -128, 127)  # B channel
+
+
+    # img[:,:,1:3] = np.clip(img[:,:,1:3], 0, 1)
+    # img[:,:,1] = img[:,:,1] * 255 - 128
+    # img[:,:,2] = img[:,:,2] * 255 - 128
 
     # Convert LAB to RGB
     img = skimage.color.lab2rgb(img)
@@ -448,12 +467,14 @@ def main():
     train_dataset = MultiIluminationSceneDataset(
         scene_path=SCENE_DIR,
         data_multiplier=1000,
-        image_size=(512,512)
+        image_size=(512,512),
+        use_lab = args.use_lab == 1
     )
     val_dataset = MultiIluminationSceneDataset(
         scene_path=SCENE_DIR,
         data_multiplier=1,
-        image_size=(512,512)
+        image_size=(512,512),
+        use_lab = args.use_lab == 1
     )
     model = AlbedoOptimization(
         num_images = train_dataset.get_num_images(),
@@ -461,7 +482,8 @@ def main():
         lr_shcoeff = args.lr_shcoeff,
         std_multiplier = args.std_multiplier,
         cold_start_albedo = args.cold_start_albedo,
-        sh_regularize = args.sh_regularize
+        sh_regularize = args.sh_regularize,
+        use_lab = args.use_lab == 1
     )
     model.initial_with_mean(val_dataset)
     train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=train_dataset.get_num_images(), shuffle=False, num_workers=8)

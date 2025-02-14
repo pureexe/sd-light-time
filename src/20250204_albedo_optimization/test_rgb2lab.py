@@ -50,6 +50,27 @@ def main():
     img = skimage.img_as_ubyte(img)
     img = skimage.io.imsave("rgb2lab.png", img)
 
+def crete_empty_image():
+    img = np.ones((256,256,3))
+    # L channel is in range 0-100, we set at 50
+    img[...,0] = img[...,0] * 50
+    # A and B is in range (-128,127)
+    img[:,:,1] = 0
+    img[:,:,2] = 0
+    img = skimage.color.lab2rgb(img)
+    img = skimage.img_as_ubyte(img)
+    skimage.io.imsave("lab_middle_color.png", img)
+
+def test_convert_gray_color():
+    img = np.ones((256,256,3))
+    img = img / 2.0
+    img = rgb2lab(img)
+    img = lab2rgb(img)
+    img = skimage.img_as_ubyte(img)
+    skimage.io.imsave("test_convert_gray_color.png", img)
+
+
 
 if __name__ == "__main__":
-    main()
+    test_convert_gray_color()
+    #main()
