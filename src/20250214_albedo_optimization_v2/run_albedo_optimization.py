@@ -25,46 +25,8 @@ parser.add_argument('-t','--total', type=int, default=1)
 args = parser.parse_args()
 
 
-class CustomEarlyStopping(EarlyStopping):
-    def __init__(self, monitor="val_loss", patience=5, min_delta=1e-4, mode="min"):
-        super().__init__(monitor=monitor, patience=patience, min_delta=min_delta, mode=mode)
-        self.wait_epochs = 0  # Count epochs where improvement is too small
-
-    def on_train_end(self, trainer, pl_module):
-        pass
-  
-    def on_validation_end(self, trainer, pl_module):
-        logs = trainer.callback_metrics
-        current = logs.get(self.monitor)
-
-        if current is None:
-            return  # Skip if no monitored value
-
-        # Check if the monitored metric improved
-        if self.best_score is None:
-            self.best_score = current
-            return
-
-        # Calculate improvement
-        improvement = (self.best_score - current) if self.mode == "min" else (current - self.best_score)
-        print(colored('[IMPROVEMENT]', 'blue'),  improvement)
-
-
-        if improvement > self.min_delta:
-            self.best_score = current  # Update best score
-            self.wait_epochs = 0  # Reset wait count
-            print(colored('[RESET PARTIENCE]', 'blue'), ": ", self.wait_epochs, " / ", self.patience)
-        else:
-            self.wait_epochs += 1  # Increment wait count
-            print(colored('[GOING TO END]', 'red'), ": ", self.wait_epochs, " / ", self.patience)
-
-
-        if self.wait_epochs >= self.patience:
-            print(colored('[STOPING SIGNAL DETECT]', 'red'), ": ", self.wait_epochs, " / ", self.patience)
-            trainer.should_stop = True  # Stop training
-
 def main():
-    SPLIT = "train"
+    SPLIT = "test"
     SCENE_DIR = f"/ist/ist-share/vision/relight/datasets/multi_illumination/spherical/{SPLIT}/"
     scenes = sorted(os.listdir(SCENE_DIR+"/images"))
     scenes = scenes[args.idx::args.total]

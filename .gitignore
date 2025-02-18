@@ -1,3 +1,4 @@
+src/lightning_log_rgb
 *.sif
 thrid_party/DECA/deca-env/
 src/20240915/*.png

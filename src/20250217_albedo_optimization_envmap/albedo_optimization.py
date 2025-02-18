@@ -179,8 +179,9 @@ class AlbedoOptimization(L.LightningModule):
         """
         create the spherical coefficient tensor that can optimize shape [num_images, 3, 9]
         """
-        initial_random = torch.randn(self.num_images, 3, 9) * self.std_multiplier
+        initial_random = torch.randn(self.num_images, 3, self.envmap_height, self.envmap_width) * self.std_multiplier
         initial_random[:,:,0] = initial_random[:,:,0] + np.sqrt(4*np.pi) # pass the image color
+        self.envmap = torc
         self.shcoeffs = torch.nn.Parameter(
             initial_random
         )

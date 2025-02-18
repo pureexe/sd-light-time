@@ -48,6 +48,8 @@ class MultiIluminationSceneDataset(torch.utils.data.Dataset):
         ACCEPT_EXTENSION = ['jpg', 'png']
         all_files =  [f for f in sorted(os.listdir(scene_path)) if f.split(".")[-1] in ACCEPT_EXTENSION]
         self.names = [".".join(f.split(".")[:-1]) for f in all_files]
+        print(all_files)
+        exit()
 
         # read image 
         self.image_paths = [os.path.join(scene_path, f) for f in all_files]
@@ -116,7 +118,8 @@ class AlbedoOptimization(L.LightningModule):
                 image = torch.tensor(image).permute(2,0,1).float()
             else:
                 image = torch.mean(batch['image'],axis=0)
-            image = atanh(image) # mapping from [-1,1] to [-inf,inf]
+            image = (image + 1.0) / 2.0 #mapping from [-1,1] to [0,1]
+            image = logit(image) # mapping from [0,1] to [-inf,inf]
             self.albedo = torch.nn.Parameter(image[None])
             self.albedo.requires_grad = False
             break
@@ -125,14 +128,15 @@ class AlbedoOptimization(L.LightningModule):
        """
        expected albedo shape [1,3,H,W] as tensor
        """
+       albedo = logit(albedo)
        self.albedo = torch.nn.Parameter(albedo)
 
 
     def get_albedo(self):
         """
-        return albedo in scale [-1,1]
+        return albedo in scale [0,1]
         """
-        return torch.tanh(self.albedo)
+        return torch.sigmoid(self.albedo)
         
     def setup_normal_pipeline(self):
         self.pipe_normal = diffusers.MarigoldNormalsPipeline.from_pretrained(
@@ -180,7 +184,7 @@ class AlbedoOptimization(L.LightningModule):
         create the spherical coefficient tensor that can optimize shape [num_images, 3, 9]
         """
         initial_random = torch.randn(self.num_images, 3, 9) * self.std_multiplier
-        initial_random[:,:,0] = initial_random[:,:,0] + np.sqrt(4*np.pi) # pass the image color
+        initial_random[:,:,0] = initial_random[:,:,0] + (np.sqrt(4*np.pi)) # pass the image color
         self.shcoeffs = torch.nn.Parameter(
             initial_random
         )
@@ -242,10 +246,12 @@ class AlbedoOptimization(L.LightningModule):
             axis=2
         ) # [bz, 3, h, w]
 
-        # hard cap, shading should in range [1,1]
-        shading = torch.clamp(shading, -1, 1)
+        # hard cap, shading should in range [0,1]
+        shading = torch.clamp(shading, 0, 1)
+  
 
         if albedo is not None:
+            # albedo range [0,1] * shading range [0,1] to image range [0,1]
             rendered = albedo * shading
         else:
             rendered = shading
@@ -275,8 +281,9 @@ class AlbedoOptimization(L.LightningModule):
         render_image = self.render_image(self.shcoeffs, normal_map, self.get_albedo())
 
         render_image = torch.clamp(render_image, -1, 1) # hard constain image rance
-
-        loss = torch.nn.functional.mse_loss(render_image, batch['image'])
+        
+        gt = (batch['image'] + 1.0) / 2.0
+        loss = torch.nn.functional.mse_loss(render_image, gt)
 
         if self.sh_regularize > 0:
             loss += self.sh_regularize * (torch.norm(self.shcoeffs[...,1:], p=2) + torch.norm(self.shcoeffs[...,0] - (np.sqrt(4*np.pi))))  #add L2 regularize for stability
@@ -315,7 +322,7 @@ class AlbedoOptimization(L.LightningModule):
         # save albedo 
         self.logger.experiment.add_image(
             f'albedo',
-            n2v(self.get_albedo()[0], use_lab=self.use_lab),
+            n2v(s2n(self.get_albedo()[0]), use_lab=self.use_lab),
             self.global_step
         )
         #save albedo 
@@ -325,14 +332,14 @@ class AlbedoOptimization(L.LightningModule):
             log_dir = self.log_dir
         epoch_id = 0 if self.global_step == 0 else self.current_epoch + 1
         os.makedirs(f"{log_dir}/albedo", exist_ok=True)
-        torchvision.utils.save_image(n2v(self.get_albedo()[0], use_lab=self.use_lab), f"{log_dir}/albedo/albedo_{epoch_id:04d}.png")
+        torchvision.utils.save_image(n2v(s2n(self.get_albedo()[0]), use_lab=self.use_lab), f"{log_dir}/albedo/albedo_{epoch_id:04d}.png")
         if self.log_shading:
             # save frontside chromeball to visualize the lighting 
             ball_image_front = self.render_image(self.shcoeffs, normal_ball_front)
             for i in range(bz):
                 self.logger.experiment.add_image(
                     f"ball_front/{batch['name'][i]}",
-                    n2v(ball_image_front[i], use_lab=self.use_lab),
+                    n2v(s2n(ball_image_front[i]), use_lab=self.use_lab),
                     self.global_step
                 )
             # save backside chromeball to visualize the lighting 
@@ -340,7 +347,7 @@ class AlbedoOptimization(L.LightningModule):
             for i in range(bz):
                 self.logger.experiment.add_image(
                     f"ball_rear/{batch['name'][i]}",
-                    n2v(ball_image_back[i], use_lab=self.use_lab),
+                    n2v(s2n(ball_image_back[i]), use_lab=self.use_lab),
                     self.global_step
                 )
             # render shading
@@ -348,7 +355,7 @@ class AlbedoOptimization(L.LightningModule):
             for i in range(bz):
                 self.logger.experiment.add_image(
                     f"shading/{batch['name'][i]}",
-                    n2v(render_shading[i], use_lab=self.use_lab),
+                    n2v(s2n(render_shading[i]), use_lab=self.use_lab),
                     self.global_step
                 )
         # render image
@@ -357,13 +364,14 @@ class AlbedoOptimization(L.LightningModule):
             for i in range(bz):
                 cat_image = torch.concatenate([batch['image'][i:i+1],render_image[i:i+1]],axis=0)
                 cat_image[0] = n2v(cat_image[0], use_lab=self.use_lab)
-                cat_image[1] = n2v(cat_image[1], use_lab=self.use_lab)
+                cat_image[1] = n2v(s2n(cat_image[1]), use_lab=self.use_lab)
                 self.logger.experiment.add_image(
                     f"rendered/{batch['name'][i]}",
                     torchvision.utils.make_grid(cat_image),
                     self.global_step
                 )
-        mse = torch.nn.functional.mse_loss(render_image, batch['image'])
+        gt = (batch['image'] + 1.0) / 2.0
+        mse = torch.nn.functional.mse_loss(render_image, gt)
         psnr_value = 10 * torch.log10(1.0**2 / mse)
         self.log('val/render_psnr', psnr_value)
         self.log('val/loss', mse)
@@ -390,13 +398,22 @@ class AlbedoOptimization(L.LightningModule):
         render_shading = self.render_image(self.shcoeffs.to(normal_map.device), normal_map[None], albedo=None)
         shading_dir = os.path.join(log_dir, "shadings")
         os.makedirs(shading_dir, exist_ok=True)
+        if self.use_lab:
+            shading_lab_dir =  os.path.join(log_dir, "shadings_lab")
+            os.makedirs(shading_lab_dir,exist_ok=True)
 
         for i in range(self.shcoeffs.shape[0]):
-            c_shading = render_shading[i]
-            c_shading = c_shading.permute(1,2,0).cpu().detach().numpy()
-            c_shading = (c_shading + 1.0) / 2.0
+            if self.use_lab:
+                c_shading = render_shading[i]
+                c_shading = c_shading.permute(1,2,0).cpu().detach().numpy()
+                c_shading = skimage.img_as_ubyte(c_shading)
+                skimage.io.imsave(os.path.join(shading_lab_dir, f"dir_{i}_mip2.png"), c_shading)
+            c_shading = render_shading[i].cpu().detach()
+            c_shading = n2v(s2n(c_shading), use_lab=self.use_lab)
+            c_shading = c_shading.permute(1,2,0).numpy()
             c_shading = skimage.img_as_ubyte(c_shading)
             skimage.io.imsave(os.path.join(shading_dir, f"dir_{i}_mip2.png"), c_shading)
+
 
     def save_render(self, path=None, image=None):
         if path is None:
@@ -408,14 +425,15 @@ class AlbedoOptimization(L.LightningModule):
             normal_map = self.get_normal(image)
         else:
             normal_map = self.normal_map
-        render_shading = self.render_image(self.shcoeffs.to(normal_map.device), normal_map[None], albedo=self.albedo.to(normal_map.device))
+        albedo = self.get_albedo().to(normal_map.device)
+        render_shading = self.render_image(self.shcoeffs.to(normal_map.device), normal_map[None], albedo=albedo)
         shading_dir = os.path.join(log_dir, "render")
         os.makedirs(shading_dir, exist_ok=True)
 
         for i in range(self.shcoeffs.shape[0]):
-            c_shading = render_shading[i]
-            c_shading = c_shading.permute(1,2,0).cpu().detach().numpy()
-            c_shading = (c_shading + 1.0) / 2.0
+            c_shading = render_shading[i].cpu().detach()
+            c_shading = n2v(s2n(c_shading), use_lab=self.use_lab)
+            c_shading = c_shading.permute(1,2,0).numpy()
             c_shading = skimage.img_as_ubyte(c_shading)
             skimage.io.imsave(os.path.join(shading_dir, f"dir_{i}_mip2.png"), c_shading)
 
@@ -538,6 +556,23 @@ def atanh(x, eps=1e-6):
     # Clamp x to avoid -1 or 1 exactly
     x = torch.clamp(x, -1 + eps, 1 - eps)
     return 0.5 * torch.log((1 + x) / (1 - x))
+
+def logit(x, eps=1e-6):
+    """
+    Compute the inverse sigmoid (logit function) safely.
+    
+    Args:
+        x (torch.Tensor): Input tensor with values in range (0,1).
+        eps (float): Small value to avoid log of zero or division by zero.
+    
+    Returns:
+        torch.Tensor: Output tensor with values in range (-inf, inf).
+    """
+    x = torch.clamp(x, eps, 1 - eps)  # Avoid numerical issues at 0 and 1
+    return torch.logit(x)
+
+def s2n(a):
+    return (a * 2.0) - 1.0
 
 def main():
 

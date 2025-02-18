@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Diffusion Face Relighting - Reimplmented in SD</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@1.0.2/css/bulma.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@cityssm/bulma-sticky-table@3.0.0/bulma-with-sticky-table.min.css" />
+    <style>
+        .fixed-tabs {
+          position: fixed;
+          top: 0;
+          width: 100%;
+          z-index: 1000;
+        }
+        body {
+          /* padding-top: 3rem;  #Adjust for the height of the fixed tab */
+        }
+        .crop-image {
+            width: 128px;
+            height: 128px;
+            object-fit: cover;
+            object-position: left center; /* Show the left half */
+        }
+        .crop-image-left-bottom {
+            width: 128px;
+            height: 256px;
+            object-fit: cover;
+            object-position: left bottom; /* Show the left half */
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/lodash@4.17.21/lodash.min.js"></script>    
+</head>
+<body>
+<div id="app">
+<div class="table-container mx-auto" style="overflow-y:auto;max-height:100vh;">
+    <div v-for="scene in scenes">
+        <section class="hero">
+            <div class="hero-body has-text-centered">             
+                <h1 class="title is-1">{{scene}}</h1>
+            </div>
+        </section>
+        <table class="table is-bordered is-striped is-narrow mx-auto has-sticky-header" >
+            <thead>
+                <tr class="has-background-primary">
+                    <th>Ground Truth</th>
+                    <th v-for="light_id in avaliable_lights" v-for="light_id in avaliable_lights" :class="{'has-background-primary': test_lights.indexOf(light_id) > -1, 'has-background-danger': test_lights.indexOf(light_id) == -1}">
+                        <figure class="image is-128x128 mx-auto">
+                            <img :src="'/output/datasets/multi_illumination/spherical/train/images/'+scene+'/dir_'+light_ids[light_id]+'_mip2.jpg'" />
+                        </figure>
+                    </th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>RGB <output></output></td>   
+                    <td v-for="light_id in avaliable_lights" >
+                        <figure class="image is-128x128 mx-auto">
+                            <img :src="'/output/datasets/multi_illumination/spherical/train/control_render_from_fitting_v1/'+scene+'/dir_'+light_id+'_mip2.png'" />
+                        </figure>
+                    </td>
+                </tr>
+                <tr>
+                    <td>RGB Shading</td>   
+                    <td v-for="light_id in avaliable_lights" >
+                        <figure class="image is-128x128 mx-auto">
+                            <img :src="'/output/datasets/multi_illumination/spherical/train/control_shading_from_fitting_v1/'+scene+'/dir_'+light_id+'_mip2.png'" />
+                        </figure>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    
+    </div>
+</div>
+</div>
+<script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+<script>
+function fetchJson(fileURL, callback) {
+    fetch(fileURL)
+        .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+        return response.json();
+        })
+        .then(jsonData => callback(null, jsonData))
+        .catch(error => callback(error, null));
+    }
+      
+const { createApp, ref } = Vue
+createApp({
+    setup() {
+        const scenes = ref([
+            "14n_copyroom1",
+            "14n_copyroom6",
+            "14n_copyroom8",
+            "14n_copyroom10",
+            "14n_office1",
+            "14n_office2",
+            "14n_office3",
+            "14n_office4",
+            "14n_office5",
+            "14n_office6"
+        ])
+        const avaliable_lights = _.range(25);
+        const test_lights = []
+        const light_ids = ref(['0', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '1', '20', '21', '22', '23', '24', '2', '3', '4', '5', '6', '7', '8', '9'])
+
+        return {
+            scenes,
+            avaliable_lights,
+            light_ids,
+            test_lights
+        }
+    },
+    methods: {
+        handleKeyPress(event) {
+            const key = event.key; // Get the key pressed
+            if (key === "ArrowLeft") {
+                this.current_tab = this.current_tab == 0 ? this.avaliable_tabs.length - 1: (this.current_tab-1);
+            } else if (key === "ArrowRight") {
+                this.current_tab = (this.current_tab+1) % this.avaliable_tabs.length;
+            } else if (["1", "2", "3", "4"].includes(key)) {
+                this.current_tab = parseInt(key)-1
+            }
+        },
+        getVersion(epoch_id){
+            if(epoch_id<=8){
+                return "98665"
+            }
+            if(epoch_id<=14){
+                return "98664"
+            }
+            if(epoch_id<=20){
+                return "98663"
+            }
+            if(epoch_id<=26){
+                return "98662"
+            }
+            if(epoch_id<=32){
+                return "98661"
+            }
+            if(epoch_id<=38){
+                return "98660"
+            }
+            if(epoch_id<=44){
+                return "98659"
+            }
+            if(epoch_id<=50){
+                return "98658"
+            }
+           
+            return "";
+        },
+        getFaceSplit(){
+            if(this.current_tab == 1){
+                return ['left']
+            }
+            if(this.current_tab == 2){
+                return ['left'];
+            }
+            if(this.current_tab == 3){
+                return ['right'];
+            }
+            return ['left','right'];
+        }
+    },
+    mounted() {
+        let self = this;
+    },
+    beforeDestroy() {
+    }
+}).mount('#app')
+</script>
+</body>
+</html>
