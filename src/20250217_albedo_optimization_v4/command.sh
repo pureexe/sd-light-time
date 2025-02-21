@@ -1,54 +1,54 @@
 gpu
 bin/v100shell
-cd src/20250217_albedo_optimization_v3/
+cd src/20250217_albedo_optimization_v4/
 
-# 99483
+# 99655 
 python albedo_optimization.py -lra 1e-2 -lrs 1e-2
 
-# 99485
+# 99656
 python albedo_optimization.py -lra 1e-2 -lrs 1e-3
 
-# 99486
+# 99657
 python albedo_optimization.py -lra 1e-2 -lrs 1e-4
 
-# 99487
+# 99658
 python albedo_optimization.py -lra 1e-2 -lrs 1e-5
 
-# 99488
+# 99659
 python albedo_optimization.py -lra 1e-3 -lrs 1e-2
 
-# 99489
+# 99660
 python albedo_optimization.py -lra 1e-3 -lrs 1e-3
 
-# 99490
+# 99661
 python albedo_optimization.py -lra 1e-3 -lrs 1e-4
 
-# 99491
+# 99662
 python albedo_optimization.py -lra 1e-3 -lrs 1e-5
 
 ###########################
-# 99492 
+# 99663 
 python albedo_optimization.py -lra 1e-4 -lrs 1e-2
 
-# 99494
+# 99664
 python albedo_optimization.py -lra 1e-4 -lrs 1e-3
 
-# 99495
+# 99665
 python albedo_optimization.py -lra 1e-4 -lrs 1e-4
 
-# 99496
+# 99666
 python albedo_optimization.py -lra 1e-4 -lrs 1e-5
 
-# 99497
+# 99667
 python albedo_optimization.py -lra 1e-5 -lrs 1e-2
 
-# 99498
+# 99668
 python albedo_optimization.py -lra 1e-5 -lrs 1e-3
 
-# 99500
+# 99669
 python albedo_optimization.py -lra 1e-5 -lrs 1e-4
 
-# 99501
+# 99670
 python albedo_optimization.py -lra 1e-5 -lrs 1e-5
 
 ############## RUN ALBEDO

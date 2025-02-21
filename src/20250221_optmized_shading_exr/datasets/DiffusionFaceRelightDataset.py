@@ -190,7 +190,9 @@ class DiffusionFaceRelightDataset(torch.utils.data.Dataset):
             image_path = os.path.join(root_dir,  directory, f"{name}.{ext}")
             if os.path.exists(image_path):
                 if ext == 'exr':
-                    ezexr.write(image_path, image)
+                    image = ezexr.imread(image_path) # [H,W,C]
+                    image = torch.tensor(image)
+                    image = image.permute(2,0,1) 
                 else:
                     image = torchvision.io.read_image(image_path) / 255.0
                 image = image[:3]
@@ -298,7 +300,7 @@ class DiffusionFaceRelightDataset(torch.utils.data.Dataset):
 
         image = self.transform['image'](self.get_image(name,self.images_dir, 512, 512))
         background = self.get_background(name, 512, 512)
-        shading = self.transform['image'] (self.get_control_image(name,self.shadings_dir, 512, 512))
+        shading = self.transform['control'] (self.get_control_image(name,self.shadings_dir, 512, 512))
         if len(self.diffusion_face_features) > 0:
             diffusion_face_features = self.diffusion_face_features[name]
         else:

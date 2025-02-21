@@ -23,7 +23,7 @@ if __name__ == "__main__":
     parser.add_argument('--sh_regularize', type=float, default=1e-3)
     parser.add_argument('--sh_3channel', type=float, default=0)
     parser.add_argument('--cold_start_albedo', type=int, default=0, help="epoch to start training albedo, 0 mean start training since first epoch")
-    parser.add_argument('--use_lab', type=int, default=1)
+    parser.add_argument('--use_lab', type=int, default=0)
     args = parser.parse_args()
 
 
@@ -396,7 +396,10 @@ class AlbedoOptimization(L.LightningModule):
             path = f"{log_dir}/shcoeffs.npy"
         np.save(path, self.shcoeffs.cpu().detach().numpy())
 
-    def save_shading(self, path=None, image=None):
+    def save_shading(self, path=None, image=None, file_type="png"):
+        if file_type == "exr":
+            import ezexr
+        
         if path is None:
             try:
                 log_dir = self.logger.log_dir
@@ -414,16 +417,22 @@ class AlbedoOptimization(L.LightningModule):
             os.makedirs(shading_lab_dir,exist_ok=True)
 
         for i in range(self.shcoeffs.shape[0]):
-            if self.use_lab:
-                c_shading = render_shading[i]
-                c_shading = c_shading.permute(1,2,0).cpu().detach().numpy()
+            if file_type == "exr":
+                exr_dir = os.path.join(log_dir, "shadings_exr")
+                os.makedirs(exr_dir, exist_ok=True)
+                exr_path = os.path.join(exr_dir, f"dir_{i}_mip2.exr")
+                ezexr.imwrite(render_shading[i],exr_path)
+            else:
+                if self.use_lab:
+                    c_shading = render_shading[i]
+                    c_shading = c_shading.permute(1,2,0).cpu().detach().numpy()
+                    c_shading = skimage.img_as_ubyte(c_shading)
+                    skimage.io.imsave(os.path.join(shading_lab_dir, f"dir_{i}_mip2.png"), c_shading)
+                c_shading = render_shading[i].cpu().detach()
+                c_shading = n2v(s2n(c_shading), use_lab=self.use_lab)
+                c_shading = c_shading.permute(1,2,0).numpy()
                 c_shading = skimage.img_as_ubyte(c_shading)
-                skimage.io.imsave(os.path.join(shading_lab_dir, f"dir_{i}_mip2.png"), c_shading)
-            c_shading = render_shading[i].cpu().detach()
-            c_shading = n2v(s2n(c_shading), use_lab=self.use_lab)
-            c_shading = c_shading.permute(1,2,0).numpy()
-            c_shading = skimage.img_as_ubyte(c_shading)
-            skimage.io.imsave(os.path.join(shading_dir, f"dir_{i}_mip2.png"), c_shading)
+                skimage.io.imsave(os.path.join(shading_dir, f"dir_{i}_mip2.png"), c_shading)
 
 
     def save_render(self, path=None, image=None):
@@ -593,7 +602,7 @@ def main():
     SCENE_DIR = "/ist/ist-share/vision/relight/datasets/multi_illumination/spherical/train/images/14n_copyroom10"
     train_dataset = MultiIluminationSceneDataset(
         scene_path=SCENE_DIR,
-        data_multiplier=1000,
+        data_multiplier=args.dataset_multipiler,
         image_size=(512,512),
         use_lab = args.use_lab == 1
     )

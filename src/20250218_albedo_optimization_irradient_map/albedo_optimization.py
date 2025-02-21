@@ -22,6 +22,8 @@ if __name__ == "__main__":
     parser.add_argument('--dataset_multipiler', type=int, default=1000)
     parser.add_argument('--sh_regularize', type=float, default=0)
     parser.add_argument('--sh_3channel', type=float, default=0)
+    parser.add_argument('-eh','--env_height', type=float, default=8)
+    parser.add_argument('-ew','--env_width', type=float, default=16)
     parser.add_argument('--cold_start_albedo', type=int, default=0, help="epoch to start training albedo, 0 mean start training since first epoch")
     parser.add_argument('--use_lab', type=int, default=1)
     args = parser.parse_args()
@@ -90,7 +92,7 @@ class AlbedoOptimization(L.LightningModule):
         use_lab = False,
         log_shading=True,
         optimize_albedo=True,
-        irraident_size = (128,256)
+        irraident_size = (16,32)
     ):
         super().__init__()        
         self.sh_3channel = sh_3channel
@@ -197,7 +199,7 @@ class AlbedoOptimization(L.LightningModule):
     def setup_irradiance(self):
         # irradiance is intiail around 1. so when first pass, it output albedo
         self.irradiance = torch.nn.Parameter(
-            (torch.randn(self.num_images,3, self.irraident_size[0], self.irraident_size[1]) * self.std_multiplier) + 1.0
+            torch.randn(self.num_images,3, self.irraident_size[0], self.irraident_size[1]) * self.std_multiplier + 1.0
         )
 
     def get_shading(self, normal):
@@ -621,6 +623,7 @@ def main():
         sh_regularize = args.sh_regularize,
         sh_3channel = args.sh_3channel,
         use_lab = args.use_lab == 1
+        irraident_size=(args.env_height,args.env_width)
     )
     model.initial_with_mean(val_dataset)
     train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=train_dataset.get_num_images(), shuffle=False, num_workers=8)
