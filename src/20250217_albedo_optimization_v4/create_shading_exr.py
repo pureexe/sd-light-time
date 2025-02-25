@@ -6,7 +6,7 @@ import ezexr
 import skimage
 import torch 
 
-SPLIT = "train"
+SPLIT = "test"
 PREDICT_DIR = f"/ist/ist-share/vision/pakkapon/relight/sd-light-time/src/20250217_albedo_optimization_v4/output/compute_albedo/{SPLIT}"
 SOURCE_DIR = f"/ist/ist-share/vision/relight/datasets/multi_illumination/spherical/{SPLIT}/images"
 

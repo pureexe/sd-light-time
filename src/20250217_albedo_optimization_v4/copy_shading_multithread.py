@@ -3,9 +3,9 @@ from tqdm.auto import tqdm
 import os
 from multiprocessing import Pool, cpu_count
 
-OUT_NAME = "control_shading_from_fitting_v3_exr"
-SOURCE_DIR = "/ist/ist-share/vision/pakkapon/relight/sd-light-time/src/20250217_albedo_optimization_v4/output/compute_albedo/train"
-TARGET_DIR = "/ist/ist-share/vision/relight/datasets/multi_illumination/spherical/train"
+OUT_NAME = "control_render_from_fitting_v2"
+SOURCE_DIR = "/ist/ist-share/vision/pakkapon/relight/sd-light-time/src/20250217_albedo_optimization_v4/output/compute_albedo/test"
+TARGET_DIR = "/ist/ist-share/vision/relight/datasets/multi_illumination/spherical/test"
 NUM_WORKERS = 20  # Number of parallel processes
 
 def get_version_dir(scene_dir):
@@ -17,7 +17,7 @@ def copy_scene(scene):
     try:
         dataset_dir = get_version_dir(os.path.join(SOURCE_DIR, scene))
         out_dir = os.path.join(TARGET_DIR, OUT_NAME, scene)
-        shutil.copytree(os.path.join(dataset_dir, "shading_exr"), out_dir)
+        shutil.copytree(os.path.join(dataset_dir, "render"), out_dir)
         return True
     except Exception as e:
         return f"Error copying {scene}: {e}"

@@ -33,3 +33,38 @@ bin/siatv100 src/20250221_optmized_shading_exr/train.py \
         -dataset_val "/data/pakkapon/datasets/multi_illumination/spherical/train" \
         -dataset_val_split "/data/pakkapon/datasets/multi_illumination/spherical/index/14n_copyroom10_all.json" 
 
+
+# experiment 3, EXR that devide from image version  99998
+bin/siatv100 src/20250221_optmized_shading_exr/train.py \
+        -lr 1e-4 \
+        --guidance_scale 1.0 \
+        --network_type sd_no_bg \
+        --batch_size 8 \
+        -c 1 \
+        --feature_type clip \
+        --shadings_dir "control_shading_from_fitting_v3_exr_divide"\
+        --backgrounds_dir "images" \
+        --images_dir "images"\
+        -dataset "/data/pakkapon/datasets/multi_illumination/spherical/train" \
+        -dataset_val "/data/pakkapon/datasets/multi_illumination/spherical/train" \
+        -dataset_val_split "/data/pakkapon/datasets/multi_illumination/spherical/index/14n_copyroom10_all.json" 
+
+
+# experiment FIT 1 SCENE first  #version_100235
+
+bin/siatv100 src/20250221_optmized_shading_exr/train.py \
+        -lr 1e-4 \
+        --guidance_scale 1.0 \
+        --network_type sd_no_bg \
+        --batch_size 8 \
+        -c 1 \
+        --feature_type clip \
+        --shadings_dir "control_shading_from_fitting_v3_exr"\
+        --backgrounds_dir "control_render_from_fitting_v2" \
+        --images_dir "control_render_from_fitting_v2"\
+        -dataset "/data/pakkapon/datasets/multi_illumination/spherical/train" \
+        -dataset_split "/data/pakkapon/datasets/multi_illumination/spherical/index/14n_copyroom10_train.json" \
+        --dataset_train_multiplier 1000\
+        -dataset_val "/data/pakkapon/datasets/multi_illumination/spherical/train" \
+        -dataset_val_split "/data/pakkapon/datasets/multi_illumination/spherical/index/14n_copyroom10_all.json" 
+
