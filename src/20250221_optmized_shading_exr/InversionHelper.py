@@ -38,8 +38,7 @@ def get_latent_from_image(vae, image, generator=None):
     Returns:
         _type_: _description_
     """
-  
-    latents =  vae.encode(image.to(vae.dtype)).latent_dist.sample(generator=generator)
+    latents =  vae.encode(image).latent_dist.sample(generator=generator)
     latents = latents * vae.config.scaling_factor
     latents = latents.to(vae.dtype)
     return latents

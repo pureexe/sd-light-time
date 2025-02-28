@@ -357,7 +357,7 @@ def main():
                         for guidance_scale in guidance_scales:
                             #model.set_guidance_scale(guidance_scale)
                             #model.set_ddim_strength(guidance_scale) #temporary hack to feed the guidance ratio                        
-                            model.set_gaussain_strength(guidance_scale)  #temporary hack to feed the guidance ratio
+                            #model.set_gaussain_strength(guidance_scale)  #temporary hack to feed the guidance ratio
                             output_dir = f"output/{FOLDER_NAME}/val_{mode}/{METHODS[version]}/{guidance_scale}/{NAMES[version]}/{LRS[version]}/chk{checkpoint}/"
                             # skip if output dir exist 
                             if os.path.exists(output_dir):

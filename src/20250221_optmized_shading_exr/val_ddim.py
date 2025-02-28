@@ -1,6 +1,13 @@
-# bin/siatv100 src/20250221_optmized_shading_exr/val_ddim.py -i 99826 -m all_everett_dining1_exr_oldgt -c 40,30,20,10,0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,32,33,34,35,36,37,38,39,40,41,42
-# bin/siatv100 src/20250221_optmized_shading_exr/val_ddim.py -i 99828 -m all_everett_dining1_exr_newgt -c 40,30,20,10,0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,32,33,34,35,36,37,38,39,40,41,42
-# bin/siatv100 src/20250221_optmized_shading_exr/val_ddim.py -i 99998 -m all_everett_dining1_divide -c 15,10,5,0,1,2,3,4,5,6,7,8,9,10,11,12,13,14
+# bin/siatv100 src/20250221_optmized_shading_exr/val_ddim.py -i 99826 -m v2_all_everett_dining1_exr_oldgt -c 50,40,30,20,10,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49
+# bin/siatv100 src/20250221_optmized_shading_exr/val_ddim.py -i 99828 -m v2_all_everett_dining1_exr_newgt -c 50,40,30,20,10,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49
+# bin/siatv100 src/20250221_optmized_shading_exr/val_ddim.py -i 99998 -m v2_all_everett_dining1_divide -c 50,40,30,20,10,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49
+
+
+# bin/siatv100 src/20250221_optmized_shading_exr/val_ddim.py -i 99828 -m v2_all_14n_copyroom10_light3_exr_newgt -c 50,40,30,20,10,1,5,15,25,35,45,55,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49
+
+
+
+# bin/siatv100 src/20250221_optmized_shading_exr/val_ddim.py -i 99828 -m single_everett_dining1_exr_newgt -c 40
 
 # bin/siatv100 src/20250221_optmized_shading_exr/val_ddim.py -i 99828 -m all_14n_copyroom10_light3_exr_newgt -c 40,30,20,10,0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,32,33,34,35,36,37,38,39,40,41,42
 # bin/siatv100 src/20250221_optmized_shading_exr/val_ddim.py -i 99828 -m all_14n_copyroom10_light4_exr_newgt -c 40,30,20,10,0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,32,33,34,35,36,37,38,39,40,41,42
@@ -95,11 +102,19 @@ use_no_light = [99826, 99828, 99998]
 use_random_mask_background = []
 
 def get_from_mode(mode):
-    if mode == "all_everett_dining1_divide":
+    if mode == "single_everett_dining1_exr_newgt":
+        return "/data/pakkapon/datasets/multi_illumination/spherical/test", 100, DDIMDiffusionFaceRelightDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/index/everett_dining1_single_light0.json", "shadings_dir": "control_shading_from_fitting_v3_exr", "backgrounds_dir": "control_render_from_fitting_v2", "images_dir":"images" , "feature_types": []},  "a photorealistic image"
+    if mode == "v2_all_14n_copyroom10_light3_exr_newgt":
+        return "/data/pakkapon/datasets/multi_illumination/spherical/train", 100, DDIMDiffusionFaceRelightDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/index/14n_copyroom10_all_light3.json", "shadings_dir": "control_shading_from_fitting_v3_exr", "backgrounds_dir": "control_render_from_fitting_v2", "images_dir":"control_render_from_fitting_v2" , "feature_types": []},  "a photorealistic image"
+    if mode == "v2_all_14n_copyroom10_light4_exr_newgt":
+        return "/data/pakkapon/datasets/multi_illumination/spherical/train", 100, DDIMDiffusionFaceRelightDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/index/14n_copyroom10_all_light4.json", "shadings_dir": "control_shading_from_fitting_v3_exr", "backgrounds_dir": "control_render_from_fitting_v2", "images_dir":"control_render_from_fitting_v2" , "feature_types": []},  "a photorealistic image"
+    if mode == "v2_all_14n_copyroom10_light20_exr_newgt":
+        return "/data/pakkapon/datasets/multi_illumination/spherical/train", 100, DDIMDiffusionFaceRelightDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/index/14n_copyroom10_all_light20.json", "shadings_dir": "control_shading_from_fitting_v3_exr", "backgrounds_dir": "control_render_from_fitting_v2", "images_dir":"control_render_from_fitting_v2" , "feature_types": []},  "a photorealistic image"
+    if mode == "v2_all_everett_dining1_divide":
         return "/data/pakkapon/datasets/multi_illumination/spherical/test", 100, DDIMDiffusionFaceRelightDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/index/everett_dining1_all.json", "shadings_dir": "control_shading_from_fitting_v3_exr_divide", "backgrounds_dir": "images", "feature_types": []},  "a photorealistic image"
-    if mode == "all_everett_dining1_exr_oldgt":
+    if mode == "v2_all_everett_dining1_exr_oldgt":
         return "/data/pakkapon/datasets/multi_illumination/spherical/test", 100, DDIMDiffusionFaceRelightDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/index/everett_dining1_all.json", "shadings_dir": "control_shading_from_fitting_v3_exr", "backgrounds_dir": "images", "feature_types": []},  "a photorealistic image"
-    if mode == "all_everett_dining1_exr_newgt":
+    if mode == "v2_all_everett_dining1_exr_newgt":
         return "/data/pakkapon/datasets/multi_illumination/spherical/test", 100, DDIMDiffusionFaceRelightDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/index/everett_dining1_all.json", "shadings_dir": "control_shading_from_fitting_v3_exr", "backgrounds_dir": "control_render_from_fitting_v2", "images_dir":"control_render_from_fitting_v2" , "feature_types": []},  "a photorealistic image"
     if mode == "all_everett_kitchen4_divide":
         return "/data/pakkapon/datasets/multi_illumination/spherical/test", 100, DDIMDiffusionFaceRelightDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/index/everett_kitchen4_all.json", "shadings_dir": "control_shading_from_fitting_v3_exr_divide", "backgrounds_dir": "images", "feature_types": []},  "a photorealistic image"
@@ -173,7 +188,7 @@ def main():
                         for guidance_scale in guidance_scales:
                             #model.set_guidance_scale(guidance_scale)
                             #model.set_ddim_strength(guidance_scale) #temporary hack to feed the guidance ratio                        
-                            model.set_gaussain_strength(guidance_scale)  #temporary hack to feed the guidance ratio
+                            #model.set_gaussain_strength(guidance_scale)  #temporary hack to feed the guidance ratio
                             output_dir = f"output/{FOLDER_NAME}/val_{mode}/{METHODS[version]}/{guidance_scale}/{NAMES[version]}/{LRS[version]}/chk{checkpoint}/"
                             # skip if output dir exist 
                             if os.path.exists(output_dir):
