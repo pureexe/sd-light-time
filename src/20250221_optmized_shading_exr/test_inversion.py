@@ -13,7 +13,7 @@ def get_image():
     Get image for use 
     @return image in range [-1,1] shape [b,c,h,w]
     """
-    image = skimage.io.imread("/ist/ist-share/vision/relight/datasets/multi_illumination/spherical/test/images/everett_dining1/dir_0_mip2.jpg")
+    image = skimage.io.imread("/ist/ist-share/vision/relight/datasets/multi_illumination/spherical/train/control_render_from_fitting_v2/14n_copyroom10/dir_4_mip2.png")
     image = skimage.img_as_float(image)
     image = skimage.transform.resize(image, (512,512))
     image = torch.tensor(image)

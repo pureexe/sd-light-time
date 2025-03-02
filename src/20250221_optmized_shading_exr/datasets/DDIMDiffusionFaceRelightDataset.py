@@ -61,7 +61,7 @@ class DDIMDiffusionFaceRelightDataset(DiffusionFaceRelightDataset):
 
             #output['target_background'].append(self.get_background(envmap_name, 512, 512))
             output['target_background'].append(output['source_background']) #background must be source background instead of target background becausewe didn't have the background of the relit image
-            output['target_shading'].append(self.transform['image'](self.get_image(envmap_name,self.shadings_dir, 512, 512)))
+            output['target_shading'].append(self.transform['control'](self.get_image(envmap_name,self.shadings_dir, 512, 512)))
             output['target_image'].append(self.transform['image'](self.get_image(envmap_name,self.images_dir, 512, 512)))
             output['word_name'].append(envmap_name)
 
