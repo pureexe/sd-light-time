@@ -31,20 +31,44 @@
     <table class="table is-bordered is-striped is-narrow mx-auto has-sticky-header">
         <thead>
             <tr class="has-background-primary">
-                <th>Epoch</th>
+                <th>Epoch 125</th>
                 <th v-for="light_id in avaliable_lights" v-for="light_id in avaliable_lights" :class="{'has-background-primary': test_lights.indexOf(light_id) > -1, 'has-background-danger': test_lights.indexOf(light_id) == -1}">
                     <figure class="image is-128x128 mx-auto">
-                        <img :src="'/output/datasets/multi_illumination/spherical/test/control_render_from_fitting_v2/everett_dining1/dir_'+light_id+'_mip2.png'" />
+                        <img :src="'/output/datasets/multi_illumination/spherical/train/control_render_from_fitting_v2/14n_copyroom10/dir_'+light_id+'_mip2.png'" />
                     </figure>
                 </th>
             </tr>
         </thead>
         <tbody>
-            <tr v-for="epoch_id in [1,10,20,30,40]">
-                <td>{{epoch_id}}</td>
+            <tr v-for="epoch_id in [125]">
+                <td>Source 0 </td>
                 <td v-for="light_id in avaliable_lights">
                     <figure class="image is-128x128 mx-auto">
-                        <img :src="'/output/20250221_optmized_shading_exr/val_all_everett_dining1_exr_newgt/default/1.0/newshading_newgt/1e-4/'+'/chk'+epoch_id+'/lightning_logs/version_'+getVersion(epoch_id)+'/crop_image/everett_dining1-dir_0_mip2_everett_dining1-dir_'+light_id+'_mip2.png'" />
+                        <img :src="'/output/20250221_optmized_shading_exr/val_v3_all_14n_copyroom10_light0_exr_newgt/default/1.0/newshading_newgt/1e-4/'+'/chk'+epoch_id+'/lightning_logs/version_101273/crop_image/14n_copyroom10-dir_0_mip2_14n_copyroom10-dir_'+light_id+'_mip2.png'" />
+                    </figure>
+                </td>
+            </tr>
+            <tr v-for="epoch_id in [125]">
+                <td>Source 3</td>
+                <td v-for="light_id in avaliable_lights">
+                    <figure class="image is-128x128 mx-auto">
+                        <img :src="'/output/20250221_optmized_shading_exr/val_v3_all_14n_copyroom10_light3_exr_newgt/default/1.0/newshading_newgt/1e-4/'+'/chk'+epoch_id+'/lightning_logs/version_101274/crop_image/14n_copyroom10-dir_3_mip2_14n_copyroom10-dir_'+light_id+'_mip2.png'" />
+                    </figure>
+                </td>
+            </tr>
+            <tr v-for="epoch_id in [125]">
+                <td>Source 4</td>
+                <td v-for="light_id in avaliable_lights">
+                    <figure class="image is-128x128 mx-auto">
+                        <img :src="'/output/20250221_optmized_shading_exr/val_v3_all_14n_copyroom10_light4_exr_newgt/default/1.0/newshading_newgt/1e-4/'+'/chk'+epoch_id+'/lightning_logs/version_101275/crop_image/14n_copyroom10-dir_4_mip2_14n_copyroom10-dir_'+light_id+'_mip2.png'" />
+                    </figure>
+                </td>
+            </tr>
+            <tr v-for="epoch_id in [125]">
+                <td>Source 20</td>
+                <td v-for="light_id in avaliable_lights">
+                    <figure class="image is-128x128 mx-auto">
+                        <img :src="'/output/20250221_optmized_shading_exr/val_v3_all_14n_copyroom10_light20_exr_newgt/default/1.0/newshading_newgt/1e-4/'+'/chk'+epoch_id+'/lightning_logs/version_101271/crop_image/14n_copyroom10-dir_20_mip2_14n_copyroom10-dir_'+light_id+'_mip2.png'" />
                     </figure>
                 </td>
             </tr>
@@ -71,7 +95,7 @@ createApp({
     setup() {
         const scenes = ref([])
         const avaliable_lights = _.range(25);
-        const test_lights = []
+        const test_lights = [0,3,4,20]
         return {
             scenes,
             avaliable_lights,
@@ -90,7 +114,10 @@ createApp({
             }
         },
         getVersion(epoch_id){
-            return "100155";
+            if(epoch_id > 50){
+                return "100430"
+            }
+            return "99828";
         },
         getFaceSplit(){
             if(this.current_tab == 1){
