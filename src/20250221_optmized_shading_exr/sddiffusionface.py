@@ -57,6 +57,7 @@ class SDDiffusionFace(L.LightningModule):
         self.ddim_guidance_scale = 1.0
         self.ddim_strength = 0.0
         self.gaussain_strength = 0.0
+        self.ddim_brightness_random = 0.0
         self.use_set_guidance_scale = False
         self.learning_rate = learning_rate
         self.feature_type = feature_type
@@ -494,7 +495,8 @@ class SDDiffusionFace(L.LightningModule):
                 generator=torch.Generator().manual_seed(self.seed),
                 controlnet_image=self.get_control_image(batch) if hasattr(self.pipe, "controlnet") else None,
                 guidance_scale=self.ddim_guidance_scale,
-                interrupt_index = interrupt_index
+                interrupt_index = interrupt_index,
+                brightness_random = self.ddim_brightness_random
             )
 
         # if dataset is not list, convert to list
@@ -846,6 +848,9 @@ class SDDiffusionFace(L.LightningModule):
         
     def set_gaussain_strength(self, gaussain_strength):
         self.gaussain_strength = gaussain_strength
+    
+    def set_ddim_brightness_random(self, val):
+        self.ddim_brightness_random = val
 
 class ScrathSDDiffusionFace(SDDiffusionFace):
     def setup_sd(self, sd_path="runwayml/stable-diffusion-v1-5", controlnet_path=None):

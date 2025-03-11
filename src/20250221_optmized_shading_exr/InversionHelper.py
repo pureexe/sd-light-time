@@ -28,6 +28,21 @@ def get_text_embeddings(pipe, text):
     
     return pipe.text_encoder(tokens).last_hidden_state
 
+def get_image_from_latent(vae, latents, generator=None):
+    """_summary_
+
+    Args:
+        vae (_type_): VAE Autoencoder class
+        image (_type_): image in format [-1,1]
+
+    Returns:
+        _type_: _description_
+    """
+
+    image = vae.decode(latents / vae.config.scaling_factor).sample
+    image = image.to(vae.dtype)
+    return latents
+
 def get_latent_from_image(vae, image, generator=None):
     """_summary_
 
@@ -143,13 +158,34 @@ def denoise_step(pipe, hidden_states, latents, timestep, callback_kwargs, noise_
         return predict_latents, noise_pred_text, noise_pred_uncond
 
 
-def get_ddim_latents(pipe, image, text_embbeding, num_inference_steps, generator = None, controlnet_image=None, guidance_scale=1.0, interrupt_index=None):
+def get_ddim_latents(
+        pipe,
+        image,
+        text_embbeding,
+        num_inference_steps,
+        generator = None,
+        controlnet_image=None,
+        guidance_scale=1.0,
+        interrupt_index=None,
+        brightness_random=0.0, # random to increase or decrease brightness
+        image_shift_mean=False
+    ):
     scheduler_config = pipe.scheduler.config
 
     normal_scheduler = DDIMScheduler.from_config(scheduler_config, subfolder='scheduler')
     inverse_scheduler = DDIMInverseScheduler.from_config(scheduler_config, subfolder='scheduler')
 
     pipe.scheduler = inverse_scheduler
+
+    if image_shift_mean: # shift brightness to the middle 
+        assert len(image.shape) == 4
+        for b in range(image.shape[0]):
+            image_gray = 0.299 * image[b,0] + 0.587 * image[b,1] + 0.114 * image[b,2]
+            image_mean = image_gray.mean()
+            print("=========================")
+            print("MEAN: ", image_mean)
+            print("=========================")
+            image[b] = torch.clamp(image[b] - image_mean, -1, 1)
 
     if hasattr(pipe, 'vae'):
         z0_noise = get_latent_from_image(pipe.vae, image)
@@ -166,13 +202,27 @@ def get_ddim_latents(pipe, image, text_embbeding, num_inference_steps, generator
         "generator": generator,        
     }
 
+    image_transform = None
+    if brightness_random > 0.0:
+        image_transform = torchvision.transforms.Compose([
+                torchvision.transforms.ColorJitter(brightness=brightness_random, contrast=0.0, saturation=0.0, hue=0.0),
+        ])
+
     def callback_ddim(pipe, step_index, timestep, callback_kwargs):
         ddim_timesteps.append(timestep)
         ddim_latents.append(callback_kwargs['latents'])
+        if image_transform is not None:
+            images = get_image_from_latent(callback_kwargs['latents']) # rank [-1,1]
+            images = (images + 1.0) / 2.0
+            assert images.min() >= 0.0 and images.max() <= 1.0
+            images = image_transform(images) # transofrm expect rank [0,1]
+            images = (images * 2.0) - 1.0
+            callback_kwargs['latents'] = get_latent_from_image(images)
         if interrupt_index is not None and step_index >= interrupt_index:
             pipe._interrupt = True
             return callback_kwargs
         return callback_kwargs
+
     ddim_args['latents'] = z0_noise
     ddim_args['output_type'] = 'latent'
     ddim_args["callback_on_step_end"] = callback_ddim

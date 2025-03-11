@@ -21,14 +21,30 @@
 # bin/siatv100 src/20250221_optmized_shading_exr/val_ddim.py -i 100235 -m v3_all_14n_copyroom10_light20_exr_newgt -c 65,60,50,40,30,20,10,1,5,15,25,35,45,55
 
 
-# bin/siatv100 src/20250221_optmized_shading_exr/val_ddim.py -i 101150 -m v3_all_14n_copyroom10_light0_exr_newgt -c 98,99,100,125,120,115,110,105,101,102,103,104,106,107,108,109,111,112,113,114,116,117,118,119,121,122,123,124
-# bin/siatv100 src/20250221_optmized_shading_exr/val_ddim.py -i 101150 -m v3_all_14n_copyroom10_light3_exr_newgt -c 98,99,100,125,120,115,110,105,101,102,103,104,106,107,108,109,111,112,113,114,116,117,118,119,121,122,123,124
-# bin/siatv100 src/20250221_optmized_shading_exr/val_ddim.py -i 101150 -m v3_all_14n_copyroom10_light4_exr_newgt -c 98,99,100,125,120,115,110,105,101,102,103,104,106,107,108,109,111,112,113,114,116,117,118,119,121,122,123,124
-# bin/siatv100 src/20250221_optmized_shading_exr/val_ddim.py -i 101150 -m v3_all_14n_copyroom10_light20_exr_newgt -c 98,99,100,125,120,115,110,105,101,102,103,104,106,107,108,109,111,112,113,114,116,117,118,119,121,122,123,124
-# bin/siatv100 src/20250221_optmized_shading_exr/val_ddim.py -i 101150 -m v3_all_everett_dining1_exr_newgt -c 125,120,115,110,105,101,102,103,104,106,107,108,109,111,112,113,114,116,117,118,119,121,122,123,124,98,99,100
-# bin/siatv100 src/20250221_optmized_shading_exr/val_ddim.py -i 101150 -m v3_all_everett_dining1_light3_exr_newgt -c 125,120,115,110,105,101,102,103,104,106,107,108,109,111,112,113,114,116,117,118,119,121,122,123,124,98,99,100
-# bin/siatv100 src/20250221_optmized_shading_exr/val_ddim.py -i 101150 -m v3_all_everett_dining1_light4_exr_newgt -c 125,120,115,110,105,101,102,103,104,106,107,108,109,111,112,113,114,116,117,118,119,121,122,123,124,98,99,100
-# bin/siatv100 src/20250221_optmized_shading_exr/val_ddim.py -i 101150 -m v3_all_everett_dining1_light20_exr_newgt -c 125,120,115,110,105,101,102,103,104,106,107,108,109,111,112,113,114,116,117,118,119,121,122,123,124,98,99,100
+# bin/siatv100 src/20250221_optmized_shading_exr/val_ddim.py -i 101578,101579,101580,101581 -m v3_all_14n_copyroom10_light0_exr_newgt -c 98
+# bin/siatv100 src/20250221_optmized_shading_exr/val_ddim.py -i 101578,101579,101580,101581 -m v3_all_14n_copyroom10_light3_exr_newgt -c 98
+# bin/siatv100 src/20250221_optmized_shading_exr/val_ddim.py -i 101578,101579,101580,101581 -m v3_all_14n_copyroom10_light4_exr_newgt -c 98
+# bin/siatv100 src/20250221_optmized_shading_exr/val_ddim.py -i 101578,101579,101580,101581 -m v3_all_14n_copyroom10_light20_exr_newgt -c 98
+
+# bin/siatv100 src/20250221_optmized_shading_exr/val_ddim.py -i 101580 -m v3_all_14n_copyroom10_light0_exr_newgt,v3_all_14n_copyroom10_light3_exr_newgt,v3_all_14n_copyroom10_light4_exr_newgt,v3_all_14n_copyroom10_light20_exr_newgt -c 98
+# bin/siatv100 src/20250221_optmized_shading_exr/val_ddim.py -i 101581 -m v3_all_14n_copyroom10_light0_exr_newgt,v3_all_14n_copyroom10_light3_exr_newgt,v3_all_14n_copyroom10_light4_exr_newgt,v3_all_14n_copyroom10_light20_exr_newgt -c 98
+# bin/siatv100 src/20250221_optmized_shading_exr/val_ddim.py -i 101578,101579,101580,101581 -m v3_all_14n_copyroom10_light0_exr_newgt,v3_all_14n_copyroom10_light3_exr_newgt,v3_all_14n_copyroom10_light4_exr_newgt,v3_all_14n_copyroom10_light20_exr_newgt -c 98
+# bin/siatv100 src/20250221_optmized_shading_exr/val_ddim.py -i 101578,101579,101580,101581 -m v3_all_everett_dining1_exr_newgt,v3_all_everett_dining1_light3_exr_newgt,v3_all_everett_dining1_light4_exr_newgt,v3_all_everett_dining1_light20_exr_newgt -c 98
+
+
+# bin/siatv100 src/20250221_optmized_shading_exr/val_ddim.py -i 101761 -m v3_all_14n_copyroom10_light0_exr_newgt,v3_all_14n_copyroom10_light3_exr_newgt,v3_all_14n_copyroom10_light4_exr_newgt,v3_all_14n_copyroom10_light20_exr_newgt -c 72
+# bin/siatv100 src/20250221_optmized_shading_exr/val_ddim.py -i 101761 -m v3_all_everett_dining1_exr_newgt,v3_all_everett_dining1_light3_exr_newgt,v3_all_everett_dining1_light4_exr_newgt,v3_all_everett_dining1_light20_exr_newgt -c 72
+
+
+
+# bin/siatv100 src/20250221_optmized_shading_exr/val_ddim.py -i 101150 -m v3_all_14n_copyroom10_light0_exr_newgt -c 140,141,142,143,144,145,146
+# bin/siatv100 src/20250221_optmized_shading_exr/val_ddim.py -i 101150 -m v3_all_14n_copyroom10_light3_exr_newgt -c 140,141,142,143,144,145,146
+# bin/siatv100 src/20250221_optmized_shading_exr/val_ddim.py -i 101150 -m v3_all_14n_copyroom10_light4_exr_newgt -c 140,141,142,143,144,145,146
+# bin/siatv100 src/20250221_optmized_shading_exr/val_ddim.py -i 101150 -m v3_all_14n_copyroom10_light20_exr_newgt -c 140,141,142,143,144,145,146
+# bin/siatv100 src/20250221_optmized_shading_exr/val_ddim.py -i 101150 -m v3_all_everett_dining1_exr_newgt -c 140,141,142,143,144,145,146
+# bin/siatv100 src/20250221_optmized_shading_exr/val_ddim.py -i 101150 -m v3_shiftbrightness_to_middle_all_everett_dining1_light3_exr_newgt -c 125
+# bin/siatv100 src/20250221_optmized_shading_exr/val_ddim.py -i 101150 -m v3_all_everett_dining1_light4_exr_newgt -c 140,141,142,143,144,145,146
+# bin/siatv100 src/20250221_optmized_shading_exr/val_ddim.py -i 101150 -m v3_all_everett_dining1_light20_exr_newgt -c 140,141,142,143,144,145,146
 
 # v3_all_everett_dining1_light20_exr_newgt
 
@@ -50,6 +66,8 @@
 # bin/siatv100 src/20250221_optmized_shading_exr/val_ddim.py -i 99828 -m all_everett_kitchen4_exr_newgt -c 40,30,20,10,0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,32,33,34,35,36,37,38,39,40,41,42
 # bin/siatv100 src/20250221_optmized_shading_exr/val_ddim.py -i 99998 -m all_everett_kitchen4_divide -c 15,10,5,0,1,2,3,4,5,6,7,8,9,10,11,12,13,14
 
+# tensorboard --host 10.204.100.211 --port 8214 --logdir_spec=5e-5:version_101105,1e-5:version_101106,5e-6:version_101107,1e-6:version_101108,1e-4:version_99828,5e-5_2:version_101578,1e-5_2:version_101579,5e-6_2:version_101580,5e-6_2:version_101581,version_100430:1e-4_2
+# tensorboard --host 10.204.100.211 --port 8214 --logdir_spec=5e-5:/ist/ist-share/vision/pakkapon/relight/sd-light-time/output/20250221_optmized_shading_exr/multi_mlp_fit/lightning_logs/version_101105/events.out.tfevents.1740975444.ist-gpu-01.216355.1,1e-5:/ist/ist-share/vision/pakkapon/relight/sd-light-time/output/20250221_optmized_shading_exr/multi_mlp_fit/lightning_logs/version_101106/events.out.tfevents.1740975383.ist-gpu-15.314924.1,5e-6:/ist/ist-share/vision/pakkapon/relight/sd-light-time/output/20250221_optmized_shading_exr/multi_mlp_fit/lightning_logs/version_101107/events.out.tfevents.1740975233.ist-gpu-05.105437.1,1e-6:/ist/ist-share/vision/pakkapon/relight/sd-light-time/output/20250221_optmized_shading_exr/multi_mlp_fit/lightning_logs/version_101108/events.out.tfevents.1740975361.ist-gpu-06.438705.1,1e-4:/ist/ist-share/vision/pakkapon/relight/sd-light-time/output/20250221_optmized_shading_exr/multi_mlp_fit/lightning_logs/version_99828/events.out.tfevents.1740111600.ist-gpu-13.120325.1,5e-5_2:/ist/ist-share/vision/pakkapon/relight/sd-light-time/output/20250221_optmized_shading_exr/multi_mlp_fit/lightning_logs/version_101578/events.out.tfevents.1741332508.ist-gpu-09.354587.0,1e-5_2:/ist/ist-share/vision/pakkapon/relight/sd-light-time/output/20250221_optmized_shading_exr/multi_mlp_fit/lightning_logs/version_101579/events.out.tfevents.1741332516.ist-gpu-06.295451.0,5e-6_2:/ist/ist-share/vision/pakkapon/relight/sd-light-time/output/20250221_optmized_shading_exr/multi_mlp_fit/lightning_logs/version_101580/events.out.tfevents.1741332524.ist-gpu-07.323960.0,5e-6_2:/ist/ist-share/vision/pakkapon/relight/sd-light-time/output/20250221_optmized_shading_exr/multi_mlp_fit/lightning_logs/version_101581/epoch_0099,/ist/ist-share/vision/pakkapon/relight/sd-light-time/output/20250221_optmized_shading_exr/multi_mlp_fit/lightning_logs/version_100430/events.out.tfevents.1740492129.ist-gpu-10.49142.0:1e-4_2
 
 import os
 import lightning as L
@@ -89,6 +107,11 @@ NAMES = {
     100430: 'newshading_newgt',
     100235: 'singlescene_newgt',
     101150: 'newshading_newgt',
+    101578: 'newshading_newgt',
+    101579: 'newshading_newgt',
+    101580: 'newshading_newgt',
+    101581: 'newshading_newgt',
+    101761: 'singlescene_newgt'
 }
 METHODS = {
     99826: 'default',
@@ -97,6 +120,11 @@ METHODS = {
     100430: 'default',
     100235: 'default',
     101150: 'default',
+    101578: 'default',
+    101579: 'default',
+    101580: 'default',
+    101581: 'default',
+    101761: 'default',
 }
 CONDITIONS_CLASS = {
     99826: SDDiffusionFaceNoBg,
@@ -105,6 +133,11 @@ CONDITIONS_CLASS = {
     100430: SDDiffusionFaceNoBg,
     100235: SDDiffusionFaceNoBg,
     101150: SDDiffusionFaceNoBg,
+    101578: SDDiffusionFaceNoBg,
+    101579: SDDiffusionFaceNoBg,
+    101580: SDDiffusionFaceNoBg,
+    101581: SDDiffusionFaceNoBg,
+    101761: SDDiffusionFaceNoBg
 }
 LRS = {
     99826: '1e-4',
@@ -112,7 +145,12 @@ LRS = {
     99998: '1e-4',
     100430: '1e-4',
     100235: '1e-4',
-    101150: '1e-4'
+    101150: '1e-4',
+    101578: '5e-5',
+    101579: '1e-5',
+    101580: '5e-6',
+    101581: '1e-6',
+    101761: '1e-4'
 }
 DIRNAME = {
     99826: CHECKPOINT_FOLDER_NAME,
@@ -120,7 +158,12 @@ DIRNAME = {
     99998: CHECKPOINT_FOLDER_NAME,
     100430: CHECKPOINT_FOLDER_NAME,
     100235: CHECKPOINT_FOLDER_NAME,
-    101150: CHECKPOINT_FOLDER_NAME
+    101150: CHECKPOINT_FOLDER_NAME,
+    101578: CHECKPOINT_FOLDER_NAME,
+    101579: CHECKPOINT_FOLDER_NAME,
+    101580: CHECKPOINT_FOLDER_NAME,
+    101581: CHECKPOINT_FOLDER_NAME,
+    101761: CHECKPOINT_FOLDER_NAME
 }
 CHECKPOINTS = {
     99826: 20,
@@ -128,13 +171,18 @@ CHECKPOINTS = {
     99998: 20,
     100430: 90,
     100235: 60,
-    101150: 20
+    101150: 20,
+    101578: 98,
+    101579: 98,
+    101580: 98,
+    101581: 98,
+    101761: 72
 }
 
 use_ab_background = []
 use_shcoeff2 = []
 use_only_light = []
-use_no_light = [99826, 99828, 99998, 100430, 100235,101150]
+use_no_light = [99826, 99828, 99998, 100430, 100235,101150, 101578, 101579, 101580, 101581]
 use_random_mask_background = []
 
 def get_from_mode(mode):
@@ -163,6 +211,8 @@ def get_from_mode(mode):
     if mode == "v3_all_everett_dining1_light4_exr_newgt":
         return "/data/pakkapon/datasets/multi_illumination/spherical/test", 100, DDIMDiffusionFaceRelightDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/index/everett_dining1_all_light4.json", "shadings_dir": "control_shading_from_fitting_v3_exr", "backgrounds_dir": "control_render_from_fitting_v2", "images_dir":"control_render_from_fitting_v2" , "feature_types": []},  "a photorealistic image"
     if mode == "v3_all_everett_dining1_light3_exr_newgt":
+        return "/data/pakkapon/datasets/multi_illumination/spherical/test", 100, DDIMDiffusionFaceRelightDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/index/everett_dining1_all_light3.json", "shadings_dir": "control_shading_from_fitting_v3_exr", "backgrounds_dir": "control_render_from_fitting_v2", "images_dir":"control_render_from_fitting_v2" , "feature_types": []},  "a photorealistic image"
+    if mode == "v3_shiftbrightness_to_middle_all_everett_dining1_light3_exr_newgt":
         return "/data/pakkapon/datasets/multi_illumination/spherical/test", 100, DDIMDiffusionFaceRelightDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/index/everett_dining1_all_light3.json", "shadings_dir": "control_shading_from_fitting_v3_exr", "backgrounds_dir": "control_render_from_fitting_v2", "images_dir":"control_render_from_fitting_v2" , "feature_types": []},  "a photorealistic image"
     if mode == "v3_all_everett_dining1_exr_newgt":
         return "/data/pakkapon/datasets/multi_illumination/spherical/test", 100, DDIMDiffusionFaceRelightDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/index/everett_dining1_all.json", "shadings_dir": "control_shading_from_fitting_v3_exr", "backgrounds_dir": "control_render_from_fitting_v2", "images_dir":"control_render_from_fitting_v2" , "feature_types": []},  "a photorealistic image"
@@ -239,6 +289,7 @@ def main():
                             #model.set_guidance_scale(guidance_scale)
                             #model.set_ddim_strength(guidance_scale) #temporary hack to feed the guidance ratio                        
                             #model.set_gaussain_strength(guidance_scale)  #temporary hack to feed the guidance ratio
+                            #model.set_ddim_brightness_random(0.4)
                             output_dir = f"output/{FOLDER_NAME}/val_{mode}/{METHODS[version]}/{guidance_scale}/{NAMES[version]}/{LRS[version]}/chk{checkpoint}/"
                             # skip if output dir exist 
                             if os.path.exists(output_dir):
