@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #CUDA_VISIBLE_DEVICES
-COMMAND="/home/pakkapon/.local/bin/singularity exec --bind /scratch/pakkapon/datasets:/data/pakkapon/datasets --bind /scratch/pakkapon/huggingface:/home/$USER/.cache/huggingface  --nv --env PYTHONPATH=$(pwd):$(pwd)/src --env CUDA_VISIBLE_DEVICES=$GPU /pure/c2/singularity/relight/lighttime-deepfloyd.sif python $@"
+COMMAND="/home/pakkapon/.local/bin/singularity exec --bind /scratch/pakkapon/datasets:/data/pakkapon/datasets --bind /scratch/pakkapon/huggingface:/home/$USER/.cache/huggingface  --nv --env PYTHONPATH=$(pwd):$(pwd)/src --env CUDA_VISIBLE_DEVICES=$GPU /pure/c2/singularity/diffusers0310v6.sif python $@"
 
 SESS="UL"
 PANENAME="${NODE}g${GPU}${NAME}"

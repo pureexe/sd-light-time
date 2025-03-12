@@ -11,8 +11,6 @@ import os
 from constants import OUTPUT_MULTI, DATASET_ROOT_DIR, DATASET_VAL_DIR, DATASET_VAL_SPLIT
 from sddiffusionface import SDDiffusionFace, ScrathSDDiffusionFace, SDWithoutAdagnDiffusionFace, SDOnlyAdagnDiffusionFace, SDDiffusionFaceNoBg, SDDiffusionFaceNoShading, SDOnlyShading, SDDiffusionFace5ch
 
-from LineNotify import notify
-
 parser = argparse.ArgumentParser()
 parser.add_argument('-lr', '--learning_rate', type=float, default=1e-4)
 parser.add_argument('-clr', '--ctrlnet_lr', type=float, default=1)
@@ -71,7 +69,6 @@ def get_model_class():
     elif args.network_type == 'sd5ch':
         return SDDiffusionFace5ch
 
-@notify
 def main():
     model_class = get_model_class()
     model = model_class(
