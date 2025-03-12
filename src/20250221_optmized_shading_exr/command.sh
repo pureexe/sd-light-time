@@ -239,13 +239,14 @@ bin/siatv100 src/20250221_optmized_shading_exr/train.py \
 
 
 # DATASET POTION 10, 20, 50, 100, 200, 500
-# 10 scene version_102350
+# 10 scene (REBOOT) 102371 / version_102350
 bin/siatv100 src/20250221_optmized_shading_exr/train.py \
         -lr 1e-4 \
         --guidance_scale 1.0 \
         --network_type sd_no_bg \
         --batch_size 8 \
         -c 1 \
+        --dataset_train_multiplier 100 \
         --feature_type clip \
         --shadings_dir "control_shading_from_fitting_v3_exr"\
         --backgrounds_dir "control_render_from_fitting_v2" \
@@ -255,13 +256,14 @@ bin/siatv100 src/20250221_optmized_shading_exr/train.py \
         -dataset_val "/data/pakkapon/datasets/multi_illumination/spherical/train" \
         -dataset_val_split "/data/pakkapon/datasets/multi_illumination/spherical/index/14n_copyroom10_all_4lights.json"
 
-# 20 scene version_102351
+# 20 scene (REBOOT) 102372 / version_102351
 bin/siatv100 src/20250221_optmized_shading_exr/train.py \
         -lr 1e-4 \
         --guidance_scale 1.0 \
         --network_type sd_no_bg \
         --batch_size 8 \
         -c 1 \
+        --dataset_train_multiplier 50 \
         --feature_type clip \
         --shadings_dir "control_shading_from_fitting_v3_exr"\
         --backgrounds_dir "control_render_from_fitting_v2" \
@@ -271,13 +273,14 @@ bin/siatv100 src/20250221_optmized_shading_exr/train.py \
         -dataset_val "/data/pakkapon/datasets/multi_illumination/spherical/train" \
         -dataset_val_split "/data/pakkapon/datasets/multi_illumination/spherical/index/14n_copyroom10_all_4lights.json"
 
-# 50 scene version_102352
+# 50 scene (REBOOT) 102373 / version_102352
 bin/siatv100 src/20250221_optmized_shading_exr/train.py \
         -lr 1e-4 \
         --guidance_scale 1.0 \
         --network_type sd_no_bg \
         --batch_size 8 \
         -c 1 \
+        --dataset_train_multiplier 20 \
         --feature_type clip \
         --shadings_dir "control_shading_from_fitting_v3_exr"\
         --backgrounds_dir "control_render_from_fitting_v2" \
@@ -287,12 +290,13 @@ bin/siatv100 src/20250221_optmized_shading_exr/train.py \
         -dataset_val "/data/pakkapon/datasets/multi_illumination/spherical/train" \
         -dataset_val_split "/data/pakkapon/datasets/multi_illumination/spherical/index/14n_copyroom10_all_4lights.json"
 
-# 100 scene version_102353
+# 100 scene (REBOOT) 102374 / version_102353
 bin/siatv100 src/20250221_optmized_shading_exr/train.py \
         -lr 1e-4 \
         --guidance_scale 1.0 \
         --network_type sd_no_bg \
         --batch_size 8 \
+        --dataset_train_multiplier 10 \
         -c 1 \
         --feature_type clip \
         --shadings_dir "control_shading_from_fitting_v3_exr"\
@@ -303,12 +307,13 @@ bin/siatv100 src/20250221_optmized_shading_exr/train.py \
         -dataset_val "/data/pakkapon/datasets/multi_illumination/spherical/train" \
         -dataset_val_split "/data/pakkapon/datasets/multi_illumination/spherical/index/14n_copyroom10_all_4lights.json"
 
-# 200 scene version_102354
+# 200 scene (REBOOT) 102375 / version_102354
 bin/siatv100 src/20250221_optmized_shading_exr/train.py \
         -lr 1e-4 \
         --guidance_scale 1.0 \
         --network_type sd_no_bg \
         --batch_size 8 \
+        --dataset_train_multiplier 5 \
         -c 1 \
         --feature_type clip \
         --shadings_dir "control_shading_from_fitting_v3_exr"\
@@ -319,13 +324,14 @@ bin/siatv100 src/20250221_optmized_shading_exr/train.py \
         -dataset_val "/data/pakkapon/datasets/multi_illumination/spherical/train" \
         -dataset_val_split "/data/pakkapon/datasets/multi_illumination/spherical/index/14n_copyroom10_all_4lights.json"
 
-# 500 scene version_102355
+# 500 scene (REBOOT) 102376 / version_102355
 bin/siatv100 src/20250221_optmized_shading_exr/train.py \
         -lr 1e-4 \
         --guidance_scale 1.0 \
         --network_type sd_no_bg \
         --batch_size 8 \
         -c 1 \
+        --dataset_train_multiplier 2 \
         --feature_type clip \
         --shadings_dir "control_shading_from_fitting_v3_exr"\
         --backgrounds_dir "control_render_from_fitting_v2" \
@@ -334,3 +340,21 @@ bin/siatv100 src/20250221_optmized_shading_exr/train.py \
         -dataset_split "/data/pakkapon/datasets/multi_illumination/spherical/index/multi_500_scenes_all.json" \
         -dataset_val "/data/pakkapon/datasets/multi_illumination/spherical/train" \
         -dataset_val_split "/data/pakkapon/datasets/multi_illumination/spherical/index/14n_copyroom10_all_4lights.json"
+
+
+# face dataset #102427
+bin/siatv100 src/20250221_optmized_shading_exr/train.py \
+        -lr 1e-4 \
+        --guidance_scale 1.0 \
+        --network_type sd_no_bg \
+        --batch_size 8 \
+        -c 1 \
+        --feature_type clip \
+        --shadings_dir "shadings" \
+        --backgrounds_dir "backgrounds" \
+        --images_dir "images"\
+        -dataset "/data/pakkapon/datasets/face/ffhq_defareli/train" \
+        -dataset_val "/data/pakkapon/datasets/face/ffhq_defareli/valid_spatial" \
+        -dataset_val_split "/data/pakkapon/datasets/face/ffhq_defareli/valid_spatial/index-array.json"
+
+
