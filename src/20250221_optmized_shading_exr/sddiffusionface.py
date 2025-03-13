@@ -40,6 +40,7 @@ class SDDiffusionFace(L.LightningModule):
             use_false_shading=False,
             use_triplet_background=False,
             ctrlnet_lr=1,
+            lr_expo_decay=1.0,
             *args,
             **kwargs
         ) -> None:
@@ -62,6 +63,7 @@ class SDDiffusionFace(L.LightningModule):
         self.learning_rate = learning_rate
         self.feature_type = feature_type
         self.ctrlnet_lr = ctrlnet_lr
+        self.lr_expo_decay = 1.0
 
         self.num_inversion_steps = num_inversion_steps
         self.num_inference_steps = num_inference_steps
@@ -835,6 +837,15 @@ class SDDiffusionFace(L.LightningModule):
             {'params': self.adaptive_group_norm, 'lr': self.learning_rate},
             {'params': self.controlnet_trainable, 'lr': self.learning_rate * self.ctrlnet_lr},
         ])
+        if self.lr_expo_decay != 1.0:
+            scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=self.lr_expo_decay)
+            return {
+                "optimizer": optimizer,
+                "lr_scheduler": {
+                    "scheduler": scheduler,
+                    "interval": "epoch",  # Decay the learning rate at each epoch
+                }
+            }
         return optimizer
     
     def set_guidance_scale(self, guidance_scale):

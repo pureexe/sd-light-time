@@ -13,6 +13,8 @@ from sddiffusionface import SDDiffusionFace, ScrathSDDiffusionFace, SDWithoutAda
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-lr', '--learning_rate', type=float, default=1e-4)
+parser.add_argument('-lr_expo_decay', '--lr_expo_decay', type=float, default=1.0)
+
 parser.add_argument('-clr', '--ctrlnet_lr', type=float, default=1)
 parser.add_argument('-ckpt', '--checkpoint', type=str, default=None)
 parser.add_argument('--batch_size', type=int, default=1)
@@ -41,6 +43,8 @@ parser.add_argument('--backgrounds_dir', type=str, default="backgrounds")
 parser.add_argument('--images_dir', type=str, default="images") 
 parser.add_argument('--false_shading', action='store_true', help='Set false_shading to True')
 parser.add_argument('--triplet_background', action='store_true', help='Compute triplet loss for background to avoid cheating.')
+parser.add_argument('--grad_accum', type=int, default=1, help='gradient accumulation if need')
+
 
 parser.add_argument(
     '-split',  
@@ -78,7 +82,8 @@ def main():
         feature_type=args.feature_type,
         ctrlnet_lr=args.ctrlnet_lr,
         use_false_shading=args.false_shading,
-        use_triplet_background=args.triplet_background
+        use_triplet_background=args.triplet_background,
+        lr_expo_decay=args.lr_expo_decay
     )
     train_dir = args.dataset
     val_dir = args.dataset_val 
@@ -141,7 +146,8 @@ def main():
         callbacks=[checkpoint_callback],
         default_root_dir=OUTPUT_MULTI,
         val_check_interval=args.val_check_interval,
-        num_sanity_val_steps=0
+        num_sanity_val_steps=0,
+        accumulate_grad_batches=args.grad_accum
     )
     if not args.checkpoint or not os.path.exists(args.checkpoint):
        trainer.validate(model, val_dataloader)
