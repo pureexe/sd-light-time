@@ -673,6 +673,14 @@ class SDDiffusionFace(L.LightningModule):
                         f.write(f"{ddsim.item()}\n")
                     os.chmod(f"{log_dir}/{epoch_text}lpips", 0o777)
                     os.chmod(f"{log_dir}/{epoch_text}lpips/{filename}.txt", 0o777)
+            # add learning rate to tensorboard
+            if True:                 
+                opt = self.optimizers()
+                if isinstance(opt, list):
+                    opt = opt[0]  # In case of multiple optimizers
+                lr = opt.param_groups[0]['lr']
+                # Log learning rate
+                self.log("learning_rate", lr, on_epoch=True)
 
             if True:              
                 if self.global_step == 0:

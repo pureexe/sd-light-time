@@ -15,6 +15,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('-lr', '--learning_rate', type=float, default=1e-4)
 parser.add_argument('-lr_expo_decay', '--lr_expo_decay', type=float, default=1.0)
 
+parser.add_argument('--restart_ckpt', type=int, default=0, help="restart ckpt parameter back to epoch 0, we need to do this in case you want to resume model  with differnet leraning rate")
 parser.add_argument('-clr', '--ctrlnet_lr', type=float, default=1)
 parser.add_argument('-ckpt', '--checkpoint', type=str, default=None)
 parser.add_argument('--batch_size', type=int, default=1)
@@ -75,16 +76,21 @@ def get_model_class():
 
 def main():
     model_class = get_model_class()
-    model = model_class(
-        learning_rate=args.learning_rate,
-        gate_multipiler=args.gate_multipiler,
-        guidance_scale=args.guidance_scale,
-        feature_type=args.feature_type,
-        ctrlnet_lr=args.ctrlnet_lr,
-        use_false_shading=args.false_shading,
-        use_triplet_background=args.triplet_background,
-        lr_expo_decay=args.lr_expo_decay
-    )
+    if args.checkpoint is None:
+        model = model_class(
+            learning_rate=args.learning_rate,
+            gate_multipiler=args.gate_multipiler,
+            guidance_scale=args.guidance_scale,
+            feature_type=args.feature_type,
+            ctrlnet_lr=args.ctrlnet_lr,
+            use_false_shading=args.false_shading,
+            use_triplet_background=args.triplet_background,
+            lr_expo_decay=args.lr_expo_decay
+        )
+    else:
+        # add learning rate parameter in case we load with differnet learning
+        model = model_class.load_from_checkpoint(args.checkpoint, learning_rate=args.learning_rate)
+                
     train_dir = args.dataset
     val_dir = args.dataset_val 
     use_shcoeff2 = args.feature_type in ['diffusion_face_shcoeff', 'clip_shcoeff', 'shcoeff_order2', 'vae_shcoeff']
@@ -155,7 +161,7 @@ def main():
         model=model,
         train_dataloaders=train_dataloader,
         val_dataloaders=val_dataloader,
-        ckpt_path=args.checkpoint
+        ckpt_path= args.checkpoint if args.restart_ckpt == 0 else None
     )
 
     

@@ -5,6 +5,41 @@ import matplotlib.pyplot as plt
 import glob
 import pandas as pd
 
+# def moving_average(data: list, weight: float) -> list:
+#     """
+#     Computes a moving average where the latest value has a given weight, 
+#     and the rest share the remaining weight.
+    
+#     :param data: List of float values.
+#     :param weight: Weight for the latest value (e.g., 0.9).
+#     :return: List of moving averages.
+#     """
+#     if not data or not (0 < weight < 1):
+#         return []
+
+#     result = []
+#     for i in range(1, len(data) + 1):
+#         latest_weight = weight
+#         rest_weight = (1 - weight) / (i - 1) if i > 1 else 0
+#         avg = sum(data[j] * (latest_weight if j == i - 1 else rest_weight) for j in range(i))
+#         result.append(avg)
+
+#     return result
+
+LEARNING_RATE='1e-6'
+MOVING_SCALE = 0.5
+
+
+def moving_average(data: list, alpha: float) -> list:
+    data = np.asarray(data, dtype=np.float32)
+    ema = np.empty_like(data)
+    ema[0] = data[0]  # Initialize with the first data point
+
+    for i in range(1, len(data)):
+        ema[i] = alpha * data[i] + (1 - alpha) * ema[i - 1]
+
+    return ema
+
 def extract_checkpoints(base_path):
     """Extracts all available checkpoints in the given base path."""
     try:
@@ -18,6 +53,7 @@ def extract_checkpoints(base_path):
 def read_psnr_file(filepath):
     """Reads a PSNR file and computes the average value."""
     try:
+        print("READING...: ", filepath)
         with open(filepath, 'r') as f:
             values = [float(line.strip()) for line in f if line.strip()]
         return np.mean(values) if values else None
@@ -67,18 +103,21 @@ def plot_mean_psnr(folders, output_file="mean_psnr_plot.png"):
     # Compute mean for each checkpoint
     sorted_checkpoints = sorted(psnr_dict.keys())
     mean_psnr_values = [np.mean(psnr_dict[chk]) for chk in sorted_checkpoints]
+    
+    # apply moving average
+    moving_mean_psnr_values =  moving_average(mean_psnr_values, MOVING_SCALE)
 
-    df = pd.DataFrame({'checkpoint': sorted_checkpoints, 'psnr': mean_psnr_values})
+
+    df = pd.DataFrame({'checkpoint': sorted_checkpoints, 'psnr': mean_psnr_values, f'moving_{MOVING_SCALE}': moving_mean_psnr_values})
     df.to_csv("mean_psnr_0_3_4_20.csv", index=False)
-
 
     # Plot the averaged PSNR curve
     plt.figure(figsize=(8, 5))
-    plt.plot(sorted_checkpoints, mean_psnr_values, marker='o', linestyle='-', color='b', label="Mean PSNR")
+    plt.plot(sorted_checkpoints[:-1], moving_mean_psnr_values[:-1], marker='o', linestyle='-', color='b', label="Mean PSNR")
     
     plt.xlabel("Checkpoint Number")
-    plt.ylabel("Average PSNR")
-    plt.title("Mean PSNR vs Checkpoint")
+    plt.ylabel(f"Moving Average PSNR (Exp Moving AVG {MOVING_SCALE:.2f})")
+    plt.title(f"LR: {LEARNING_RATE}, Mean PSNR (Exp Moving AVG {MOVING_SCALE:.2f}) vs Checkpoint")
     plt.legend()
     plt.grid(True)
     
@@ -88,10 +127,10 @@ def plot_mean_psnr(folders, output_file="mean_psnr_plot.png"):
 
 # Example usage
 folders = [
-    "/ist/ist-share/vision/pakkapon/relight/sd-light-time/output/20250221_optmized_shading_exr/val_v3_all_14n_copyroom10_light0_exr_newgt/default/1.0/newshading_newgt/1e-4/chk95/lightning_logs/version_101142/psnr",
-    "/ist/ist-share/vision/pakkapon/relight/sd-light-time/output/20250221_optmized_shading_exr/val_v3_all_14n_copyroom10_light3_exr_newgt/default/1.0/newshading_newgt/1e-4/chk95/lightning_logs/version_101142/psnr",
-    "/ist/ist-share/vision/pakkapon/relight/sd-light-time/output/20250221_optmized_shading_exr/val_v3_all_14n_copyroom10_light4_exr_newgt/default/1.0/newshading_newgt/1e-4/chk95/lightning_logs/version_101142/psnr",
-    "/ist/ist-share/vision/pakkapon/relight/sd-light-time/output/20250221_optmized_shading_exr/val_v3_all_14n_copyroom10_light20_exr_newgt/default/1.0/newshading_newgt/1e-4/chk95/lightning_logs/version_101142/psnr",
+    f"/ist/ist-share/vision/pakkapon/relight/sd-light-time/output/20250221_optmized_shading_exr/val_v3_all_14n_copyroom10_light0_exr_newgt/default/1.0/newshading_newgt/{LEARNING_RATE}/chk95/lightning_logs/version_101142/psnr",
+    f"/ist/ist-share/vision/pakkapon/relight/sd-light-time/output/20250221_optmized_shading_exr/val_v3_all_14n_copyroom10_light3_exr_newgt/default/1.0/newshading_newgt/{LEARNING_RATE}/chk95/lightning_logs/version_101142/psnr",
+    f"/ist/ist-share/vision/pakkapon/relight/sd-light-time/output/20250221_optmized_shading_exr/val_v3_all_14n_copyroom10_light4_exr_newgt/default/1.0/newshading_newgt/{LEARNING_RATE}/chk95/lightning_logs/version_101142/psnr",
+    f"/ist/ist-share/vision/pakkapon/relight/sd-light-time/output/20250221_optmized_shading_exr/val_v3_all_14n_copyroom10_light20_exr_newgt/default/1.0/newshading_newgt/{LEARNING_RATE}/chk95/lightning_logs/version_101142/psnr",
 ]
 
-plot_mean_psnr(folders, output_file="mean_psnr_0_3_4_20.png")
+plot_mean_psnr(folders, output_file=f"lr{LEARNING_RATE}_mean{MOVING_SCALE}_psnr_0_3_4_20.png")

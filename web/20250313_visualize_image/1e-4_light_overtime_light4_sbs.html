@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Diffusion Face Relighting - Reimplmented in SD</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@1.0.2/css/bulma.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@cityssm/bulma-sticky-table@3.0.0/bulma-with-sticky-table.min.css" />
+    <style>
+        .fixed-tabs {
+          position: fixed;
+          top: 0;
+          width: 100%;
+          z-index: 1000;
+        }
+        body {
+          /* padding-top: 3rem;  #Adjust for the height of the fixed tab */
+        }
+        .crop-image {
+            width: 128px;
+            height: 128px;
+            object-fit: cover;
+            object-position: left center; /* Show the left half */
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/lodash@4.17.21/lodash.min.js"></script>    
+</head>
+<body>
+<div id="app">
+    <div class="table-container mx-auto" style="overflow-y:auto;max-height:100vh;">
+        <section class="hero is-warning">
+            <div class="hero-body">
+                <center>
+                    <p class="title">Input Image ID: {{source_light}}</p>
+                </center>
+            </div>
+          </section>
+        <div v-for="light_id in avaliable_lights">
+            <section class="hero">
+                <div class="hero-body">
+                    <center><h1 class="title">TARGET_LIGHT: {{light_id}}</h1></center>
+                </div>
+            </section>
+            <table class="table is-bordered is-striped is-narrow mx-auto">
+                <thead>
+                    <tr class="has-background-danger">
+                        <th> Epoch</th>
+                        <th v-for="epoch_id in checkpoints">{{epoch_id}}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Ground Truth<br> ID: {{light_id}}</td>
+                        <td v-for="epoch_id in checkpoints">
+                            <figure class="image is-128x128 mx-auto">
+                                <img :src="'/output/datasets/multi_illumination/spherical/train/control_render_from_fitting_v2/14n_copyroom10/dir_'+light_id+'_mip2.png'" />
+                            </figure>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><b>Predicted</b></td>
+                        <td v-for="epoch_id in checkpoints">
+                            <figure class="image is-128x128 mx-auto">
+                                <img :src="'/output/20250221_optmized_shading_exr/val_v3_all_14n_copyroom10_light'+source_light+'_exr_newgt/default/1.0/newshading_newgt/1e-4/'+'/chk'+epoch_id+'/lightning_logs/version_'+getVersion(epoch_id)+'/crop_image/14n_copyroom10-dir_'+source_light+'_mip2_14n_copyroom10-dir_'+light_id+'_mip2.png'" />
+                            </figure>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td >Input Image <br> ID: {{source_light}}</td>
+                        <td v-for="epoch_id in checkpoints" >
+                            <figure class="image is-128x128 mx-auto">
+                                <img :src="'/output/datasets/multi_illumination/spherical/train/control_render_from_fitting_v2/14n_copyroom10/dir_'+source_light+'_mip2.png'" />
+                            </figure>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        
+    </div>
+</div>
+<script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+<script>
+function fetchJson(fileURL, callback) {
+    fetch(fileURL)
+        .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+        return response.json();
+        })
+        .then(jsonData => callback(null, jsonData))
+        .catch(error => callback(error, null));
+    }
+      
+const { createApp, ref } = Vue
+createApp({
+    setup() {
+        const scenes = ref([])
+        const avaliable_lights = _.range(25);
+        const checkpoints = [1, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120, 130, 140, 150]
+        const source_light = 4
+        const test_lights = [source_light]
+        return {
+            scenes,
+            avaliable_lights,
+            test_lights,
+            source_light,
+            checkpoints
+        }
+    },
+    methods: {
+        getVersion(epoch_id){
+            if(epoch_id >= 147){
+                return "102567"
+            }
+            if(epoch_id >= 140){
+                return "101568"
+            }
+            if(epoch_id >= 98){
+                return "101275"
+            }
+            if(epoch_id > 50){
+                return "101141"
+            }
+            return "101010";
+        }
+    },
+    mounted() {
+    },
+    beforeDestroy() {
+    }
+}).mount('#app')
+</script>
+</body>
+</html>

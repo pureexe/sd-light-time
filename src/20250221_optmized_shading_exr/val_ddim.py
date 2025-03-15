@@ -36,6 +36,16 @@
 # bin/siatv100 src/20250221_optmized_shading_exr/val_ddim.py -i 101761 -m v3_all_everett_dining1_exr_newgt,v3_all_everett_dining1_light3_exr_newgt,v3_all_everett_dining1_light4_exr_newgt,v3_all_everett_dining1_light20_exr_newgt -c 72
 
 
+# bin/siatv100 src/20250221_optmized_shading_exr/val_ddim.py -i 102272 -m v3_all_14n_copyroom10_light0_exr_newgt,v3_all_14n_copyroom10_light3_exr_newgt,v3_all_14n_copyroom10_light4_exr_newgt,v3_all_14n_copyroom10_light20_exr_newgt -c 99,100,101,102,103,104,105,106,107,108,109,110,111,112,113,114,115,116,117,118,119,120,121,122,123,124,125
+# bin/siatv100 src/20250221_optmized_shading_exr/val_ddim.py -i 102273 -m v3_all_14n_copyroom10_light0_exr_newgt,v3_all_14n_copyroom10_light3_exr_newgt,v3_all_14n_copyroom10_light4_exr_newgt,v3_all_14n_copyroom10_light20_exr_newgt -c 99,100,101,102,103,104,105,106,107,108,109,110,111,112,113,114,115,116,117,118,119,120,121,122,123,124,125
+# bin/siatv100 src/20250221_optmized_shading_exr/val_ddim.py -i 102274 -m v3_all_14n_copyroom10_light0_exr_newgt,v3_all_14n_copyroom10_light3_exr_newgt,v3_all_14n_copyroom10_light4_exr_newgt,v3_all_14n_copyroom10_light20_exr_newgt -c 99,100,101,102,103,104,105,106,107,108,109,110,111,112,113,114,115,116,117,118,119,120,121,122,123,124,125
+# bin/siatv100 src/20250221_optmized_shading_exr/val_ddim.py -i 102279 -m v3_all_14n_copyroom10_light0_exr_newgt,v3_all_14n_copyroom10_light3_exr_newgt,v3_all_14n_copyroom10_light4_exr_newgt,v3_all_14n_copyroom10_light20_exr_newgt -c 99,100,101,102,103,104,105,106,107,108,109,110,111,112,113,114,115,116,117,118,119,120,121,122,123,124,125
+
+
+# bin/siatv100 src/20250221_optmized_shading_exr/val_ddim.py -i 102510 -m v3_all_14n_copyroom10_light0_exr_newgt -c 147,148,149,150,151,152,153
+# bin/siatv100 src/20250221_optmized_shading_exr/val_ddim.py -i 102510 -m v3_all_14n_copyroom10_light3_exr_newgt -c 147,148,149,150,151,152,153
+# bin/siatv100 src/20250221_optmized_shading_exr/val_ddim.py -i 102510 -m v3_all_14n_copyroom10_light4_exr_newgt -c 147,148,149,150,151,152,153
+# bin/siatv100 src/20250221_optmized_shading_exr/val_ddim.py -i 102510 -m v3_all_14n_copyroom10_light20_exr_newgt -c 147,148,149,150,151,152,153
 
 # bin/siatv100 src/20250221_optmized_shading_exr/val_ddim.py -i 101150 -m v3_all_14n_copyroom10_light0_exr_newgt -c 140,141,142,143,144,145,146
 # bin/siatv100 src/20250221_optmized_shading_exr/val_ddim.py -i 101150 -m v3_all_14n_copyroom10_light3_exr_newgt -c 140,141,142,143,144,145,146
@@ -111,7 +121,12 @@ NAMES = {
     101579: 'newshading_newgt',
     101580: 'newshading_newgt',
     101581: 'newshading_newgt',
-    101761: 'singlescene_newgt'
+    101761: 'singlescene_newgt',
+    102272: 'newshading_newgt',
+    102273: 'newshading_newgt',
+    102274: 'newshading_newgt',
+    102279: 'newshading_newgt',
+    102510: 'newshading_newgt'
 }
 METHODS = {
     99826: 'default',
@@ -125,6 +140,11 @@ METHODS = {
     101580: 'default',
     101581: 'default',
     101761: 'default',
+    102272: 'default',
+    102273: 'default',
+    102274: 'default',
+    102279: 'default',
+    102510: 'default'
 }
 CONDITIONS_CLASS = {
     99826: SDDiffusionFaceNoBg,
@@ -137,7 +157,12 @@ CONDITIONS_CLASS = {
     101579: SDDiffusionFaceNoBg,
     101580: SDDiffusionFaceNoBg,
     101581: SDDiffusionFaceNoBg,
-    101761: SDDiffusionFaceNoBg
+    101761: SDDiffusionFaceNoBg,
+    102272: SDDiffusionFaceNoBg,
+    102273: SDDiffusionFaceNoBg,
+    102274: SDDiffusionFaceNoBg,
+    102279: SDDiffusionFaceNoBg,
+    102510: SDDiffusionFaceNoBg
 }
 LRS = {
     99826: '1e-4',
@@ -150,7 +175,12 @@ LRS = {
     101579: '1e-5',
     101580: '5e-6',
     101581: '1e-6',
-    101761: '1e-4'
+    101761: '1e-4',
+    102272: '5e-5',
+    102273: '1e-5',
+    102274: '5e-6',
+    102279: '1e-6',
+    102510: '1e-4'
 }
 DIRNAME = {
     99826: CHECKPOINT_FOLDER_NAME,
@@ -163,7 +193,12 @@ DIRNAME = {
     101579: CHECKPOINT_FOLDER_NAME,
     101580: CHECKPOINT_FOLDER_NAME,
     101581: CHECKPOINT_FOLDER_NAME,
-    101761: CHECKPOINT_FOLDER_NAME
+    101761: CHECKPOINT_FOLDER_NAME,
+    102272: CHECKPOINT_FOLDER_NAME,
+    102273: CHECKPOINT_FOLDER_NAME,
+    102274: CHECKPOINT_FOLDER_NAME,
+    102279: CHECKPOINT_FOLDER_NAME,
+    102510: CHECKPOINT_FOLDER_NAME,
 }
 CHECKPOINTS = {
     99826: 20,
@@ -176,13 +211,18 @@ CHECKPOINTS = {
     101579: 98,
     101580: 98,
     101581: 98,
-    101761: 72
+    101761: 72,
+    102272: 20,
+    102273: 20,
+    102274: 20,
+    102279: 20,
+    102510: 150,
 }
 
 use_ab_background = []
 use_shcoeff2 = []
 use_only_light = []
-use_no_light = [99826, 99828, 99998, 100430, 100235,101150, 101578, 101579, 101580, 101581]
+use_no_light = [99826, 99828, 99998, 100430, 100235,101150, 101578, 101579, 101580, 101581, 102272, 102273, 102274, 102279, 102510]
 use_random_mask_background = []
 
 def get_from_mode(mode):
