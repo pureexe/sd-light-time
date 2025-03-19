@@ -46,7 +46,7 @@
                         <td>Ground Truth</td>
                         <td v-for="epoch_id in checkpoints">
                             <figure class="image is-128x128 mx-auto">
-                                <img :src="'/output/20250221_optmized_shading_exr/multi_mlp_fit/lightning_logs/version_102427/epoch_'+_.padStart(epoch_id, 4, '0')+'/target_image/'+image_names[light_id]+'.jpg'" />
+                                <img :src="'/output/20250221_optmized_shading_exr/multi_mlp_fit/lightning_logs/version_102804/epoch_'+_.padStart(epoch_id, 4, '0')+'/target_image/'+image_names[light_id]+'.jpg'" />
                             </figure>
                         </td>
                     </tr>
@@ -54,7 +54,7 @@
                         <td><b>Predicted</b></td>
                         <td v-for="epoch_id in checkpoints">
                             <figure class="image is-128x128 mx-auto">
-                                <img :src="'/output/20250221_optmized_shading_exr/multi_mlp_fit/lightning_logs/version_102427/epoch_'+_.padStart(epoch_id, 4, '0')+'/crop_image/'+image_names[light_id]+'.png'" />
+                                <img :src="'/output/20250221_optmized_shading_exr/multi_mlp_fit/lightning_logs/version_102804/epoch_'+_.padStart(epoch_id, 4, '0')+'/crop_image/'+image_names[light_id]+'.png'" />
                             </figure>
                         </td>
                     </tr>
@@ -70,7 +70,7 @@
                         <td >Input Image</td>
                         <td v-for="epoch_id in checkpoints" >
                             <figure class="image is-128x128 mx-auto">
-                                <img :src="'/output/20250221_optmized_shading_exr/multi_mlp_fit/lightning_logs/version_102427/epoch_'+_.padStart(epoch_id, 4, '0')+'/source_image/'+image_names[light_id]+'.jpg'" />
+                                <img :src="'/output/20250221_optmized_shading_exr/multi_mlp_fit/lightning_logs/version_102804/epoch_'+_.padStart(epoch_id, 4, '0')+'/source_image/'+image_names[light_id]+'.jpg'" />
                             </figure>
                         </td>
                     </tr>
@@ -102,7 +102,7 @@ createApp({
         const scenes = ref([])
         const avaliable_lights = _.range(5);
         const test_lights = []
-        const checkpoints = _.range(1,50)
+        const checkpoints = _.range(1,30)
         const column_names = ["Input", "Predicted", "Grouund Truth"];
         const image_names = [
             '069_03_01_051_14_069_03_01_051_18',

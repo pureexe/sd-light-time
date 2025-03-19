@@ -543,6 +543,7 @@ class SDDiffusionFace(L.LightningModule):
                 ddim_pipe = self.pipe
                 if hasattr(self.pipe, "controlnet"):
                     pipe_args["image"] = self.get_control_image(batch, array_index=target_idx)  
+                assert pipe_args["image"].shape[2] == 512 and pipe_args["image"].shape[3] == 512
 
             pt_image, _ = ddim_pipe(**pipe_args)
             
@@ -551,7 +552,7 @@ class SDDiffusionFace(L.LightningModule):
 
             gt_image = gt_image.to(pt_image.device)
             tb_image = [gt_image, pt_image]
-            
+            print(f"--------> SEED: {self.seed}")
             # generation only to see if everything still work as expected
             sd_args = {
                 "prompt_embeds": prompt_embeds,
@@ -675,12 +676,17 @@ class SDDiffusionFace(L.LightningModule):
                     os.chmod(f"{log_dir}/{epoch_text}lpips/{filename}.txt", 0o777)
             # add learning rate to tensorboard
             if True:                 
+                need_lr_by_pass = False
                 opt = self.optimizers()
                 if isinstance(opt, list):
-                    opt = opt[0]  # In case of multiple optimizers
-                lr = opt.param_groups[0]['lr']
-                # Log learning rate
-                self.log("learning_rate", lr, on_epoch=True)
+                    try:
+                        opt = opt[0]  # In case of multiple optimizers
+                    except:
+                        need_lr_by_pass = True
+                if not need_lr_by_pass:
+                    lr = opt.param_groups[0]['lr']
+                    # Log learning rate
+                    self.log("learning_rate", lr, on_epoch=True)
 
             if True:              
                 if self.global_step == 0:

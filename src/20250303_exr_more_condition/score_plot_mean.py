@@ -26,7 +26,7 @@ import pandas as pd
 
 #     return result
 
-LEARNING_RATE='1e-6'
+LEARNING_RATE='1e-4'
 MOVING_SCALE = 0.5
 
 

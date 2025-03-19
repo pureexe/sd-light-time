@@ -28,10 +28,10 @@
 <body>
 <div id="app">
     <div class="table-container mx-auto" style="overflow-y:auto;max-height:100vh;">
-        <div v-for="light_id in avaliable_lights">
+        <div v-for="image_name in image_names">
             <section class="hero">
                 <div class="hero-body">
-                    <center><h1 class="title">File Name {{image_names[light_id]}}</h1></center>
+                    <center><h1 class="title">File Name {{image_name}}</h1></center>
                 </div>
             </section>
             <table class="table is-bordered is-striped is-narrow mx-auto">
@@ -46,7 +46,7 @@
                         <td>Ground Truth</td>
                         <td v-for="epoch_id in checkpoints">
                             <figure class="image is-128x128 mx-auto">
-                                <img :src="'/output/20250221_optmized_shading_exr/multi_mlp_fit/lightning_logs/version_102427/epoch_'+_.padStart(epoch_id, 4, '0')+'/target_image/'+image_names[light_id]+'.jpg'" />
+                                <img :src="'/output/20250221_optmized_shading_exr/val_face_spatial_guy329/default/1.0/newshading_newgt/1e-4/chk'+epoch_id+'/lightning_logs/version_102822/target_image/'+image_name+'.jpg'" />
                             </figure>
                         </td>
                     </tr>
@@ -54,15 +54,7 @@
                         <td><b>Predicted</b></td>
                         <td v-for="epoch_id in checkpoints">
                             <figure class="image is-128x128 mx-auto">
-                                <img :src="'/output/20250221_optmized_shading_exr/multi_mlp_fit/lightning_logs/version_102427/epoch_'+_.padStart(epoch_id, 4, '0')+'/crop_image/'+image_names[light_id]+'.png'" />
-                            </figure>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>DeFaReLI</td>
-                        <td v-for="epoch_id in checkpoints">
-                            <figure class="image is-128x128 mx-auto">
-                                <img :src="'/output/datasets/face/ffhq_defareli/valid_spatial/pred_difareli/'+image_names[light_id]+'.png'" />
+                                <img :src="'/output/20250221_optmized_shading_exr/val_face_spatial_guy329/default/1.0/newshading_newgt/1e-4/chk'+epoch_id+'/lightning_logs/version_102822/crop_image/'+image_name+'.png'" />
                             </figure>
                         </td>
                     </tr>
@@ -70,7 +62,8 @@
                         <td >Input Image</td>
                         <td v-for="epoch_id in checkpoints" >
                             <figure class="image is-128x128 mx-auto">
-                                <img :src="'/output/20250221_optmized_shading_exr/multi_mlp_fit/lightning_logs/version_102427/epoch_'+_.padStart(epoch_id, 4, '0')+'/source_image/'+image_names[light_id]+'.jpg'" />
+                                <img :src="'/output/20250221_optmized_shading_exr/val_face_spatial_guy329/default/1.0/newshading_newgt/1e-4/chk'+epoch_id+'/lightning_logs/version_102822/source_image/'+image_name+'.jpg'" />
+
                             </figure>
                         </td>
                     </tr>
@@ -102,14 +95,13 @@ createApp({
         const scenes = ref([])
         const avaliable_lights = _.range(5);
         const test_lights = []
-        const checkpoints = _.range(1,50)
+        const checkpoints = [21,22,23]
         const column_names = ["Input", "Predicted", "Grouund Truth"];
         const image_names = [
-            '069_03_01_051_14_069_03_01_051_18',
-            '127_03_01_051_00_127_03_01_051_08',
-            '177_03_01_051_00_177_03_01_051_14',
-            '246_03_01_051_10_246_03_01_051_00',
-            '329_03_01_051_11_329_03_01_051_07'
+            '329_03_01_051_11_329_03_01_051_07',
+            '329_03_01_051_11_329_03_01_051_10',
+            '329_03_01_051_11_329_03_01_051_11',
+            '329_03_01_051_11_329_03_01_051_17',
         ]
         const source_light = 0
         return {
