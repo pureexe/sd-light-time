@@ -122,7 +122,7 @@ def main():
         ],
     ]
     names = ['1e-4', '5e-5','1e-5','5e-6','1e-6']
-    checkpoints = [99, 109, 119, 129, 139, 149, 159, 169, 179, 189, 197]
+    checkpoints = [99, 109, 119, 129, 139, 149, 159, 169, 174, 179, 189, 197]
     plot_chart(folders, names, checkpoints)
 
 if __name__ == "__main__":

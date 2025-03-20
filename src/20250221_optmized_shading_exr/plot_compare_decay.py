@@ -72,33 +72,34 @@ def plot_chart(folders, names, folders2, names2, checkpoints, checkpoints2, chec
         sorted_checkpoints = sorted(psnr_dict.keys())
         mean_psnr_values = [np.mean(psnr_dict[chk]) for chk in sorted_checkpoints]
         #mean_psnr_values =  moving_average(mean_psnr_values, MOVING_SCALE)
-        plt.plot(sorted_checkpoints, mean_psnr_values,  label=name, marker='o')
+        plt.plot(sorted_checkpoints[:-1], mean_psnr_values[:-1],  label=name, marker='o')
         
     ###### 
     print("==================================")
     print("==================================")
     print("==================================")
     for idx in range(len(folders2)):
-        folder_path = folders2[idx] 
         name = names2[idx]
         psnr_dict = {}
-        for chk_id in checkpoints2:
-            chk_folder = os.path.join(folder_path, f'epoch_{chk_id:04d}')
-            if not os.path.exists(chk_folder):
-                continue
-            chk_folder = os.path.join(chk_folder, 'psnr')
-            psnr_files = glob.glob(os.path.join(chk_folder, "*.txt"))
-            avg_values = [read_psnr_file(f) for f in psnr_files]
-            avg_values = [v for v in avg_values if v is not None]
-            if avg_values:
-                if chk_id not in psnr_dict:
-                    psnr_dict[chk_id + checkpoint_start] = []
-                psnr_dict[chk_id + checkpoint_start].extend(avg_values)
+        for idy in range(len(folders2[idx])):
+            folder_path = folders2[idx][idy] 
+            for chk_id in checkpoints2:
+                chk_folder = os.path.join(folder_path, f'epoch_{chk_id:04d}')
+                if not os.path.exists(chk_folder):
+                    continue
+                chk_folder = os.path.join(chk_folder, 'psnr')
+                psnr_files = glob.glob(os.path.join(chk_folder, "*.txt"))
+                avg_values = [read_psnr_file(f) for f in psnr_files]
+                avg_values = [v for v in avg_values if v is not None]
+                if avg_values:
+                    if chk_id not in psnr_dict:
+                        psnr_dict[chk_id + checkpoint_start] = []
+                    psnr_dict[chk_id + checkpoint_start].extend(avg_values)
         #Compute mean for each checkpoint
         sorted_checkpoints = sorted(psnr_dict.keys())
         mean_psnr_values = [np.mean(psnr_dict[chk]) for chk in sorted_checkpoints]
         #mean_psnr_values =  moving_average(mean_psnr_values, MOVING_SCALE)
-        plt.plot(sorted_checkpoints, mean_psnr_values,  label=name, marker='o')
+        plt.plot(sorted_checkpoints[:-1], mean_psnr_values[:-1],  label=name, marker='o')
         
            
         
@@ -128,15 +129,21 @@ def main():
     ]
     names = ['1e-4']
     folders2 = [
-        '/ist/ist-share/vision/pakkapon/relight/sd-light-time/output/20250221_optmized_shading_exr/multi_mlp_fit/lightning_logs/version_102596',
-        '/ist/ist-share/vision/pakkapon/relight/sd-light-time/output/20250221_optmized_shading_exr/multi_mlp_fit/lightning_logs/version_102595'
+        [
+            '/ist/ist-share/vision/pakkapon/relight/sd-light-time/output/20250221_optmized_shading_exr/multi_mlp_fit/lightning_logs/version_102596',
+            '/ist/ist-share/vision/pakkapon/relight/sd-light-time/output/20250221_optmized_shading_exr/multi_mlp_fit/lightning_logs/version_103073',            
+        ],
+        [
+            '/ist/ist-share/vision/pakkapon/relight/sd-light-time/output/20250221_optmized_shading_exr/multi_mlp_fit/lightning_logs/version_102595',
+            '/ist/ist-share/vision/pakkapon/relight/sd-light-time/output/20250221_optmized_shading_exr/multi_mlp_fit/lightning_logs/version_103286',
+        ]
     ]
     names2 = [
         'decay_5e-5',
         'decay_1e-5',
     ]
-    checkpoints = range(150, 200)
-    checkpoints2 = range(1, 30)
+    checkpoints = range(150, 225)
+    checkpoints2 = range(1, 60)
     checkpoint_start = 160
     plot_chart(folders, names, folders2, names2, checkpoints, checkpoints2, checkpoint_start)
 

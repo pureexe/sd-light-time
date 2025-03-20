@@ -173,7 +173,7 @@ bin/siatv100 src/20250221_optmized_shading_exr/train.py \
 
 ## TUNE LEARNING RATE  
 
-# 102776/102272/ version_101578 / version_101105
+# 103368/102776/102272/ version_101578 / version_101105
 bin/siatv100 src/20250221_optmized_shading_exr/train.py \
         -lr 5e-5 \
         --guidance_scale 1.0 \
@@ -187,11 +187,12 @@ bin/siatv100 src/20250221_optmized_shading_exr/train.py \
         -dataset "/data/pakkapon/datasets/multi_illumination/spherical/train" \
         -dataset_val "/data/pakkapon/datasets/multi_illumination/spherical/train" \
         -dataset_val_split "/data/pakkapon/datasets/multi_illumination/spherical/index/14n_copyroom10_all.json" \
-        -ckpt /ist/ist-share/vision/pakkapon/relight/sd-light-time/output/20250221_optmized_shading_exr/multi_mlp_fit/lightning_logs/version_102272/checkpoints/epoch=000149.ckpt
+        -ckpt /ist/ist-share/vision/pakkapon/relight/sd-light-time/output/20250221_optmized_shading_exr/multi_mlp_fit/lightning_logs/version_102776/checkpoints/epoch=000176.ckpt
+        #-ckpt /ist/ist-share/vision/pakkapon/relight/sd-light-time/output/20250221_optmized_shading_exr/multi_mlp_fit/lightning_logs/version_102272/checkpoints/epoch=000149.ckpt
         #-ckpt /ist/ist-share/vision/pakkapon/relight/sd-light-time/output/20250221_optmized_shading_exr/multi_mlp_fit/lightning_logs/version_101578/checkpoints/epoch=000098.ckpt
         #-ckpt /ist/ist-share/vision/pakkapon/relight/sd-light-time/output/20250221_optmized_shading_exr/multi_mlp_fit/lightning_logs/version_101105/checkpoints/epoch=000048.ckpt
 
-# 102777/102273/ version_101579/version_101106
+# 103369/102777/102273/ version_101579/version_101106
 bin/siatv100 src/20250221_optmized_shading_exr/train.py \
         -lr 1e-5 \
         --guidance_scale 1.0 \
@@ -205,11 +206,12 @@ bin/siatv100 src/20250221_optmized_shading_exr/train.py \
         -dataset "/data/pakkapon/datasets/multi_illumination/spherical/train" \
         -dataset_val "/data/pakkapon/datasets/multi_illumination/spherical/train" \
         -dataset_val_split "/data/pakkapon/datasets/multi_illumination/spherical/index/14n_copyroom10_all.json" \
-        -ckpt /ist/ist-share/vision/pakkapon/relight/sd-light-time/output/20250221_optmized_shading_exr/multi_mlp_fit/lightning_logs/version_102273/checkpoints/epoch=000149.ckpt
+        -ckpt /ist/ist-share/vision/pakkapon/relight/sd-light-time/output/20250221_optmized_shading_exr/multi_mlp_fit/lightning_logs/version_102777/checkpoints/epoch=000176.ckpt
+        # -ckpt /ist/ist-share/vision/pakkapon/relight/sd-light-time/output/20250221_optmized_shading_exr/multi_mlp_fit/lightning_logs/version_102273/checkpoints/epoch=000149.ckpt
         #-ckpt /ist/ist-share/vision/pakkapon/relight/sd-light-time/output/20250221_optmized_shading_exr/multi_mlp_fit/lightning_logs/version_101579/checkpoints/epoch=000098.ckpt
         #-ckpt /ist/ist-share/vision/pakkapon/relight/sd-light-time/output/20250221_optmized_shading_exr/multi_mlp_fit/lightning_logs/version_101106/checkpoints/epoch=000048.ckpt
 
-# 102778/102274/version_101580/version_101107
+# 103370/102778/102274/version_101580/version_101107
 bin/siatv100 src/20250221_optmized_shading_exr/train.py \
         -lr 5e-6 \
         --guidance_scale 1.0 \
@@ -223,11 +225,12 @@ bin/siatv100 src/20250221_optmized_shading_exr/train.py \
         -dataset "/data/pakkapon/datasets/multi_illumination/spherical/train" \
         -dataset_val "/data/pakkapon/datasets/multi_illumination/spherical/train" \
         -dataset_val_split "/data/pakkapon/datasets/multi_illumination/spherical/index/14n_copyroom10_all.json" \
-        -ckpt /ist/ist-share/vision/pakkapon/relight/sd-light-time/output/20250221_optmized_shading_exr/multi_mlp_fit/lightning_logs/version_102274/checkpoints/epoch=000150.ckpt
+        -ckpt /ist/ist-share/vision/pakkapon/relight/sd-light-time/output/20250221_optmized_shading_exr/multi_mlp_fit/lightning_logs/version_102778/checkpoints/epoch=000177.ckpt
+        # -ckpt /ist/ist-share/vision/pakkapon/relight/sd-light-time/output/20250221_optmized_shading_exr/multi_mlp_fit/lightning_logs/version_102274/checkpoints/epoch=000150.ckpt
         #-ckpt /ist/ist-share/vision/pakkapon/relight/sd-light-time/output/20250221_optmized_shading_exr/multi_mlp_fit/lightning_logs/version_101580/checkpoints/epoch=000099.ckpt
         #-ckpt /ist/ist-share/vision/pakkapon/relight/sd-light-time/output/20250221_optmized_shading_exr/multi_mlp_fit/lightning_logs/version_101107/checkpoints/epoch=000048.ckpt
 
-# version_102773/version_102279 version_101581/version_101108
+# 103371/version_102773/version_102279 version_101581/version_101108
 bin/siatv100 src/20250221_optmized_shading_exr/train.py \
         -lr 1e-6 \
         --guidance_scale 1.0 \
@@ -241,13 +244,14 @@ bin/siatv100 src/20250221_optmized_shading_exr/train.py \
         -dataset "/data/pakkapon/datasets/multi_illumination/spherical/train" \
         -dataset_val "/data/pakkapon/datasets/multi_illumination/spherical/train" \
         -dataset_val_split "/data/pakkapon/datasets/multi_illumination/spherical/index/14n_copyroom10_all.json" \
-        -ckpt /ist/ist-share/vision/pakkapon/relight/sd-light-time/output/20250221_optmized_shading_exr/multi_mlp_fit/lightning_logs/version_102279/checkpoints/epoch=000150.ckpt
+        -ckpt /ist/ist-share/vision/pakkapon/relight/sd-light-time/output/20250221_optmized_shading_exr/multi_mlp_fit/lightning_logs/version_102773/checkpoints/epoch=000177.ckpt       
+        # -ckpt /ist/ist-share/vision/pakkapon/relight/sd-light-time/output/20250221_optmized_shading_exr/multi_mlp_fit/lightning_logs/version_102279/checkpoints/epoch=000150.ckpt
         #-ckpt /ist/ist-share/vision/pakkapon/relight/sd-light-time/output/20250221_optmized_shading_exr/multi_mlp_fit/lightning_logs/version_101581/checkpoints/epoch=000099.ckpt
         #-ckpt /ist/ist-share/vision/pakkapon/relight/sd-light-time/output/20250221_optmized_shading_exr/multi_mlp_fit/lightning_logs/version_101108/checkpoints/epoch=000049.ckpt
 
 
 # DATASET POTION 10, 20, 50, 100, 200, 500
-# 10 scene (REBOOT)  102781/102371 | version_102350
+# 10 scene (REBOOT)  103351/102781/102371 | version_102350
 bin/siatv100 src/20250221_optmized_shading_exr/train.py \
         -lr 1e-4 \
         --guidance_scale 1.0 \
@@ -263,9 +267,10 @@ bin/siatv100 src/20250221_optmized_shading_exr/train.py \
         -dataset_split "/data/pakkapon/datasets/multi_illumination/spherical/index/multi_10_scenes_all.json" \
         -dataset_val "/data/pakkapon/datasets/multi_illumination/spherical/train" \
         -dataset_val_split "/data/pakkapon/datasets/multi_illumination/spherical/index/14n_copyroom10_all_4lights.json" \
-        -ckpt /ist/ist-share/vision/pakkapon/relight/sd-light-time/output/20250221_optmized_shading_exr/multi_mlp_fit/lightning_logs/version_102371/checkpoints/epoch=000030.ckpt
+        -ckpt /ist/ist-share/vision/pakkapon/relight/sd-light-time/output/20250221_optmized_shading_exr/multi_mlp_fit/lightning_logs/version_102781/checkpoints/epoch=000042.ckpt
+        # -ckpt /ist/ist-share/vision/pakkapon/relight/sd-light-time/output/20250221_optmized_shading_exr/multi_mlp_fit/lightning_logs/version_102371/checkpoints/epoch=000030.ckpt
 
-# 20 scene (REBOOT) 102782/102372 | version_102351
+# 20 scene (REBOOT) 103352/102782/102372 | version_102351
 bin/siatv100 src/20250221_optmized_shading_exr/train.py \
         -lr 1e-4 \
         --guidance_scale 1.0 \
@@ -281,9 +286,10 @@ bin/siatv100 src/20250221_optmized_shading_exr/train.py \
         -dataset_split "/data/pakkapon/datasets/multi_illumination/spherical/index/multi_20_scenes_all.json" \
         -dataset_val "/data/pakkapon/datasets/multi_illumination/spherical/train" \
         -dataset_val_split "/data/pakkapon/datasets/multi_illumination/spherical/index/14n_copyroom10_all_4lights.json" \
-        -ckpt /ist/ist-share/vision/pakkapon/relight/sd-light-time/output/20250221_optmized_shading_exr/multi_mlp_fit/lightning_logs/version_102372/checkpoints/epoch=000030.ckpt
+        -ckpt /ist/ist-share/vision/pakkapon/relight/sd-light-time/output/20250221_optmized_shading_exr/multi_mlp_fit/lightning_logs/version_102782/checkpoints/epoch=000042.ckpt
+        #-ckpt /ist/ist-share/vision/pakkapon/relight/sd-light-time/output/20250221_optmized_shading_exr/multi_mlp_fit/lightning_logs/version_102372/checkpoints/epoch=000030.ckpt
 
-# 50 scene (REBOOT) 102783/102373 | version_102352
+# 50 scene (REBOOT) 103353/102783/102373 | version_102352
 bin/siatv100 src/20250221_optmized_shading_exr/train.py \
         -lr 1e-4 \
         --guidance_scale 1.0 \
@@ -299,9 +305,10 @@ bin/siatv100 src/20250221_optmized_shading_exr/train.py \
         -dataset_split "/data/pakkapon/datasets/multi_illumination/spherical/index/multi_50_scenes_all.json" \
         -dataset_val "/data/pakkapon/datasets/multi_illumination/spherical/train" \
         -dataset_val_split "/data/pakkapon/datasets/multi_illumination/spherical/index/14n_copyroom10_all_4lights.json" \
-        -ckpt /ist/ist-share/vision/pakkapon/relight/sd-light-time/output/20250221_optmized_shading_exr/multi_mlp_fit/lightning_logs/version_102373/checkpoints/epoch=000030.ckpt
+        -ckpt /ist/ist-share/vision/pakkapon/relight/sd-light-time/output/20250221_optmized_shading_exr/multi_mlp_fit/lightning_logs/version_102783/checkpoints/epoch=000042.ckpt
+        #-ckpt /ist/ist-share/vision/pakkapon/relight/sd-light-time/output/20250221_optmized_shading_exr/multi_mlp_fit/lightning_logs/version_102373/checkpoints/epoch=000030.ckpt
 
-# 100 scene (REBOOT) 102784/102374 | version_102353
+# 100 scene (REBOOT) 103354/102784/102374 | version_102353
 bin/siatv100 src/20250221_optmized_shading_exr/train.py \
         -lr 1e-4 \
         --guidance_scale 1.0 \
@@ -317,9 +324,10 @@ bin/siatv100 src/20250221_optmized_shading_exr/train.py \
         -dataset_split "/data/pakkapon/datasets/multi_illumination/spherical/index/multi_100_scenes_all.json" \
         -dataset_val "/data/pakkapon/datasets/multi_illumination/spherical/train" \
         -dataset_val_split "/data/pakkapon/datasets/multi_illumination/spherical/index/14n_copyroom10_all_4lights.json" \
-        -ckpt /ist/ist-share/vision/pakkapon/relight/sd-light-time/output/20250221_optmized_shading_exr/multi_mlp_fit/lightning_logs/version_102374/checkpoints/epoch=000030.ckpt
+        -ckpt /ist/ist-share/vision/pakkapon/relight/sd-light-time/output/20250221_optmized_shading_exr/multi_mlp_fit/lightning_logs/version_102784/checkpoints/epoch=000046.ckpt
+        #-ckpt /ist/ist-share/vision/pakkapon/relight/sd-light-time/output/20250221_optmized_shading_exr/multi_mlp_fit/lightning_logs/version_102374/checkpoints/epoch=000030.ckpt
 
-# 200 scene (REBOOT) 102785/102375 | version_102354
+# 200 scene (REBOOT) 103355/102785/102375 | version_102354
 bin/siatv100 src/20250221_optmized_shading_exr/train.py \
         -lr 1e-4 \
         --guidance_scale 1.0 \
@@ -335,9 +343,10 @@ bin/siatv100 src/20250221_optmized_shading_exr/train.py \
         -dataset_split "/data/pakkapon/datasets/multi_illumination/spherical/index/multi_200_scenes_all.json" \
         -dataset_val "/data/pakkapon/datasets/multi_illumination/spherical/train" \
         -dataset_val_split "/data/pakkapon/datasets/multi_illumination/spherical/index/14n_copyroom10_all_4lights.json" \
-        -ckpt /ist/ist-share/vision/pakkapon/relight/sd-light-time/output/20250221_optmized_shading_exr/multi_mlp_fit/lightning_logs/version_102375/checkpoints/epoch=000030.ckpt
+        -ckpt /ist/ist-share/vision/pakkapon/relight/sd-light-time/output/20250221_optmized_shading_exr/multi_mlp_fit/lightning_logs/version_102785/checkpoints/epoch=000042.ckpt
+        #-ckpt /ist/ist-share/vision/pakkapon/relight/sd-light-time/output/20250221_optmized_shading_exr/multi_mlp_fit/lightning_logs/version_102375/checkpoints/epoch=000030.ckpt
 
-# 500 scene (REBOOT) 102786/102376 | version_102355
+# 500 scene (REBOOT) 103356/102786/102376 | version_102355
 bin/siatv100 src/20250221_optmized_shading_exr/train.py \
         -lr 1e-4 \
         --guidance_scale 1.0 \
@@ -353,7 +362,8 @@ bin/siatv100 src/20250221_optmized_shading_exr/train.py \
         -dataset_split "/data/pakkapon/datasets/multi_illumination/spherical/index/multi_500_scenes_all.json" \
         -dataset_val "/data/pakkapon/datasets/multi_illumination/spherical/train" \
         -dataset_val_split "/data/pakkapon/datasets/multi_illumination/spherical/index/14n_copyroom10_all_4lights.json" \
-        -ckpt /ist/ist-share/vision/pakkapon/relight/sd-light-time/output/20250221_optmized_shading_exr/multi_mlp_fit/lightning_logs/version_102376/checkpoints/epoch=000030.ckpt
+        -ckpt /ist/ist-share/vision/pakkapon/relight/sd-light-time/output/20250221_optmized_shading_exr/multi_mlp_fit/lightning_logs/version_102786/checkpoints/epoch=000042.ckpt
+        #-ckpt /ist/ist-share/vision/pakkapon/relight/sd-light-time/output/20250221_optmized_shading_exr/multi_mlp_fit/lightning_logs/version_102376/checkpoints/epoch=000030.ckpt
 
 
 # face dataset #103211/#102771/#102427
@@ -373,7 +383,7 @@ bin/siatv100 src/20250221_optmized_shading_exr/train.py \
         -ckpt /ist/ist-share/vision/pakkapon/relight/sd-light-time/output/20250221_optmized_shading_exr/multi_mlp_fit/lightning_logs/version_102771/checkpoints/epoch=000037.ckpt
         #-ckpt /ist/ist-share/vision/pakkapon/relight/sd-light-time/output/20250221_optmized_shading_exr/multi_mlp_fit/lightning_logs/version_102427/checkpoints/epoch=000024.ckpt
 
-# face dataset #102686 #pipeline SDFACE
+# face dataset #103288 / 102686 #pipeline SDFACE
 bin/siatv100 src/20250221_optmized_shading_exr/train.py \
         -lr 1e-4 \
         --guidance_scale 1.0 \
@@ -386,10 +396,11 @@ bin/siatv100 src/20250221_optmized_shading_exr/train.py \
         --images_dir "images"\
         -dataset "/data/pakkapon/datasets/face/ffhq_defareli/train" \
         -dataset_val "/data/pakkapon/datasets/face/ffhq_defareli/valid_spatial" \
-        -dataset_val_split "/data/pakkapon/datasets/face/ffhq_defareli/valid_spatial/index-array.json"
+        -dataset_val_split "/data/pakkapon/datasets/face/ffhq_defareli/valid_spatial/index-array.json" \
+        -ckpt /ist/ist-share/vision/pakkapon/relight/sd-light-time/output/20250221_optmized_shading_exr/multi_mlp_fit/lightning_logs/version_102686/checkpoints/epoch=000024.ckpt
 
 # supect the learning rate cause problem 
-# LR5e-5 103208/102803
+# LR5e-5 103400/102803  -- (failed run 103208)
 bin/siatv100 src/20250221_optmized_shading_exr/train.py \
         -lr 5e-5 \
         --guidance_scale 1.0 \
@@ -402,10 +413,10 @@ bin/siatv100 src/20250221_optmized_shading_exr/train.py \
         --images_dir "images"\
         -dataset "/data/pakkapon/datasets/face/ffhq_defareli/train" \
         -dataset_val "/data/pakkapon/datasets/face/ffhq_defareli/valid_spatial" \
-        -dataset_val_split "/data/pakkapon/datasets/face/ffhq_defareli/valid_spatial/index-array.json"
+        -dataset_val_split "/data/pakkapon/datasets/face/ffhq_defareli/valid_spatial/index-array.json" \
         -ckpt /ist/ist-share/vision/pakkapon/relight/sd-light-time/output/20250221_optmized_shading_exr/multi_mlp_fit/lightning_logs/version_102803/checkpoints/epoch=000011.ckpt
 
-# LR1e-5 102804
+# LR1e-5 103401/102804 -- (failed run 103209)
 bin/siatv100 src/20250221_optmized_shading_exr/train.py \
         -lr 1e-5 \
         --guidance_scale 1.0 \
@@ -418,7 +429,7 @@ bin/siatv100 src/20250221_optmized_shading_exr/train.py \
         --images_dir "images"\
         -dataset "/data/pakkapon/datasets/face/ffhq_defareli/train" \
         -dataset_val "/data/pakkapon/datasets/face/ffhq_defareli/valid_spatial" \
-        -dataset_val_split "/data/pakkapon/datasets/face/ffhq_defareli/valid_spatial/index-array.json"
+        -dataset_val_split "/data/pakkapon/datasets/face/ffhq_defareli/valid_spatial/index-array.json" \
         -ckpt /ist/ist-share/vision/pakkapon/relight/sd-light-time/output/20250221_optmized_shading_exr/multi_mlp_fit/lightning_logs/version_102804/checkpoints/epoch=000011.ckpt
 
 # Don't worry. render v2 is compatible with shading v3 
@@ -443,7 +454,7 @@ bin/siatv100 src/20250221_optmized_shading_exr/train.py \
         #-ckpt /ist/ist-share/vision/pakkapon/relight/sd-light-time/output/20250221_optmized_shading_exr/multi_mlp_fit/lightning_logs/version_102510/checkpoints/epoch=000160.ckpt \
         #--restart_ckpt 1
 
-# decay learning rate to 1e-5 /version_102596 (previously version_102510/101150/100430/99828)
+# decay learning rate to 1e-5 version_103073/version_102596 (previously version_102510/101150/100430/99828)
 bin/siatv100 src/20250221_optmized_shading_exr/train.py \
         -lr 5e-5 \
         --guidance_scale 1.0 \

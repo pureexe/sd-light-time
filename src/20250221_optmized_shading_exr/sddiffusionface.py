@@ -757,6 +757,9 @@ class SDDiffusionFace(L.LightningModule):
     
     def set_ddim_brightness_random(self, val):
         self.ddim_brightness_random = val
+    
+    def set_num_inversion_steps(self, new_val):
+        self.num_inversion_steps = new_val
 
 class ScrathSDDiffusionFace(SDDiffusionFace):
     def setup_sd(self, sd_path="runwayml/stable-diffusion-v1-5", controlnet_path=None):

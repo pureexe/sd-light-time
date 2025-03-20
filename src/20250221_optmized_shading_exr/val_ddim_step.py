@@ -38,52 +38,41 @@
 # bin/siatv100 src/20250221_optmized_shading_exr/val_ddim.py -i 101761 -m v3_all_everett_dining1_exr_newgt,v3_all_everett_dining1_light3_exr_newgt,v3_all_everett_dining1_light4_exr_newgt,v3_all_everett_dining1_light20_exr_newgt -c 72
 
 
-# bin/siatv100 src/20250221_optmized_shading_exr/val_ddim.py -i 102776 -m v3_all_14n_copyroom10_light0_exr_newgt -c 150,151,152,153,154,155,156,157,158,159,160,161,162,163,164,165,166,167,168,169,170,171,172,173,174,175,176,177
-# bin/siatv100 src/20250221_optmized_shading_exr/val_ddim.py -i 102777 -m v3_all_14n_copyroom10_light0_exr_newgt -c 150,151,152,153,154,155,156,157,158,159,160,161,162,163,164,165,166,167,168,169,170,171,172,173,174,175,176,177
-# bin/siatv100 src/20250221_optmized_shading_exr/val_ddim.py -i 102778 -m v3_all_14n_copyroom10_light0_exr_newgt -c 150,151,152,153,154,155,156,157,158,159,160,161,162,163,164,165,166,167,168,169,170,171,172,173,174,175,176,177
-# bin/siatv100 src/20250221_optmized_shading_exr/val_ddim.py -i 102773 -m v3_all_14n_copyroom10_light0_exr_newgt -c 150,151,152,153,154,155,156,157,158,159,160,161,162,163,164,165,166,167,168,169,170,171,172,173,174,175,176,177
+# bin/siatv100 src/20250221_optmized_shading_exr/val_ddim.py -i 102272 -m v3_all_14n_copyroom10_light0_exr_newgt -c 149,139,129,119,109,99
+# bin/siatv100 src/20250221_optmized_shading_exr/val_ddim.py -i 102273 -m v3_all_14n_copyroom10_light0_exr_newgt -c 149,139,129,119,109,99
+# bin/siatv100 src/20250221_optmized_shading_exr/val_ddim.py -i 102274 -m v3_all_14n_copyroom10_light0_exr_newgt -c 149,139,129,119,109,99
+# bin/siatv100 src/20250221_optmized_shading_exr/val_ddim.py -i 102279 -m v3_all_14n_copyroom10_light0_exr_newgt -c 149,139,129,119,109,99
 
 
-# bin/siatv100 src/20250221_optmized_shading_exr/val_ddim.py -i 102776 -m v3_all_14n_copyroom10_light3_exr_newgt -c 150,151,152,153,154,155,156,157,158,159,160,161,162,163,164,165,166,167,168,169,170,171,172,173,174,175,176,177
-# bin/siatv100 src/20250221_optmized_shading_exr/val_ddim.py -i 102777 -m v3_all_14n_copyroom10_light3_exr_newgt -c 150,151,152,153,154,155,156,157,158,159,160,161,162,163,164,165,166,167,168,169,170,171,172,173,174,175,176,177
-# bin/siatv100 src/20250221_optmized_shading_exr/val_ddim.py -i 102778 -m v3_all_14n_copyroom10_light3_exr_newgt -c 150,151,152,153,154,155,156,157,158,159,160,161,162,163,164,165,166,167,168,169,170,171,172,173,174,175,176,177
-# bin/siatv100 src/20250221_optmized_shading_exr/val_ddim.py -i 102773 -m v3_all_14n_copyroom10_light3_exr_newgt -c 150,151,152,153,154,155,156,157,158,159,160,161,162,163,164,165,166,167,168,169,170,171,172,173,174,175,176,177
+# bin/siatv100 src/20250221_optmized_shading_exr/val_ddim.py -i 102272 -m v3_all_14n_copyroom10_light3_exr_newgt -c 149,139,129,119,109,99
+# bin/siatv100 src/20250221_optmized_shading_exr/val_ddim.py -i 102273 -m v3_all_14n_copyroom10_light3_exr_newgt -c 149,139,129,119,109,99
+# bin/siatv100 src/20250221_optmized_shading_exr/val_ddim.py -i 102274 -m v3_all_14n_copyroom10_light3_exr_newgt -c 149,139,129,119,109,99
+# bin/siatv100 src/20250221_optmized_shading_exr/val_ddim.py -i 102279 -m v3_all_14n_copyroom10_light3_exr_newgt -c 149,139,129,119,109,99
 
-# bin/siatv100 src/20250221_optmized_shading_exr/val_ddim.py -i 102776 -m v3_all_14n_copyroom10_light4_exr_newgt -c 150,151,152,153,154,155,156,157,158,159,160,161,162,163,164,165,166,167,168,169,170,171,172,173,174,175,176,177
-# bin/siatv100 src/20250221_optmized_shading_exr/val_ddim.py -i 102777 -m v3_all_14n_copyroom10_light4_exr_newgt -c 150,151,152,153,154,155,156,157,158,159,160,161,162,163,164,165,166,167,168,169,170,171,172,173,174,175,176,177
-# bin/siatv100 src/20250221_optmized_shading_exr/val_ddim.py -i 102778 -m v3_all_14n_copyroom10_light4_exr_newgt -c 150,151,152,153,154,155,156,157,158,159,160,161,162,163,164,165,166,167,168,169,170,171,172,173,174,175,176,177
-# bin/siatv100 src/20250221_optmized_shading_exr/val_ddim.py -i 102773 -m v3_all_14n_copyroom10_light4_exr_newgt -c 150,151,152,153,154,155,156,157,158,159,160,161,162,163,164,165,166,167,168,169,170,171,172,173,174,175,176,177
-
-
-# bin/siatv100 src/20250221_optmized_shading_exr/val_ddim.py -i 102776 -m v3_all_14n_copyroom10_light20_exr_newgt -c 150,151,152,153,154,155,156,157,158,159,160,161,162,163,164,165,166,167,168,169,170,171,172,173,174,175,176,177
-# bin/siatv100 src/20250221_optmized_shading_exr/val_ddim.py -i 102777 -m v3_all_14n_copyroom10_light20_exr_newgt -c 150,151,152,153,154,155,156,157,158,159,160,161,162,163,164,165,166,167,168,169,170,171,172,173,174,175,176,177
-# bin/siatv100 src/20250221_optmized_shading_exr/val_ddim.py -i 102778 -m v3_all_14n_copyroom10_light20_exr_newgt -c 150,151,152,153,154,155,156,157,158,159,160,161,162,163,164,165,166,167,168,169,170,171,172,173,174,175,176,177
-# bin/siatv100 src/20250221_optmized_shading_exr/val_ddim.py -i 102773 -m v3_all_14n_copyroom10_light20_exr_newgt -c 150,151,152,153,154,155,156,157,158,159,160,161,162,163,164,165,166,167,168,169,170,171,172,173,174,175,176,177
+# bin/siatv100 src/20250221_optmized_shading_exr/val_ddim.py -i 102272 -m v3_all_14n_copyroom10_light4_exr_newgt -c 149,139,129,119,109,99
+# bin/siatv100 src/20250221_optmized_shading_exr/val_ddim.py -i 102273 -m v3_all_14n_copyroom10_light4_exr_newgt -c 149,139,129,119,109,99
+# bin/siatv100 src/20250221_optmized_shading_exr/val_ddim.py -i 102274 -m v3_all_14n_copyroom10_light4_exr_newgt -c 149,139,129,119,109,99
+# bin/siatv100 src/20250221_optmized_shading_exr/val_ddim.py -i 102279 -m v3_all_14n_copyroom10_light4_exr_newgt -c 149,139,129,119,109,99
 
 
-
-
-# bin/siatv100 src/20250221_optmized_shading_exr/val_ddim.py -i 102774 -m v3_all_14n_copyroom10_light0_exr_newgt -c 220,215,200,198,199,200,201,202,203,204,205,206,207,208,209,210,211,212,213,214,215,216,217,218,219,220,221,222,223,224
-# bin/siatv100 src/20250221_optmized_shading_exr/val_ddim.py -i 102774 -m v3_all_14n_copyroom10_light3_exr_newgt -c 220,215,200,198,199,200,201,202,203,204,205,206,207,208,209,210,211,212,213,214,215,216,217,218,219,220,221,222,223,224
-# bin/siatv100 src/20250221_optmized_shading_exr/val_ddim.py -i 102774 -m v3_all_14n_copyroom10_light4_exr_newgt -c 220,215,200,198,199,200,201,202,203,204,205,206,207,208,209,210,211,212,213,214,215,216,217,218,219,220,221,222,223,224
-# bin/siatv100 src/20250221_optmized_shading_exr/val_ddim.py -i 102774 -m v3_all_14n_copyroom10_light20_exr_newgt -c 220,215,200,198,199,200,201,202,203,204,205,206,207,208,209,210,211,212,213,214,215,216,217,218,219,220,221,222,223,224
-
-
-# bin/siatv100 src/20250221_optmized_shading_exr/val_ddim.py -i 103212 -m v3_all_14n_copyroom10_light0_exr_newgt,v3_all_14n_copyroom10_light3_exr_newgt -c 225,226,227,228,229,230,231,232,233
-# bin/siatv100 src/20250221_optmized_shading_exr/val_ddim.py -i 103212 -m v3_all_14n_copyroom10_light4_exr_newgt,v3_all_14n_copyroom10_light20_exr_newgt -c 225,226,227,228,229,230,231,232,233
+# bin/siatv100 src/20250221_optmized_shading_exr/val_ddim.py -i 102272 -m v3_all_14n_copyroom10_light20_exr_newgt -c 149,139,129,119,109,99
+# bin/siatv100 src/20250221_optmized_shading_exr/val_ddim.py -i 102273 -m v3_all_14n_copyroom10_light20_exr_newgt -c 149,139,129,119,109,99
+# bin/siatv100 src/20250221_optmized_shading_exr/val_ddim.py -i 102274 -m v3_all_14n_copyroom10_light20_exr_newgt -c 149,139,129,119,109,99
+# bin/siatv100 src/20250221_optmized_shading_exr/val_ddim.py -i 102279 -m v3_all_14n_copyroom10_light20_exr_newgt -c 149,139,129,119,109,99
 
 
 
 
-# bin/siatv100 src/20250221_optmized_shading_exr/val_ddim.py -i 102427 -m face_spatial_guy329_single -c 21,22,23
+# bin/siatv100 src/20250221_optmized_shading_exr/val_ddim.py -i 102510 -m v3_all_14n_copyroom10_light0_exr_newgt -c 197,190,180,170,160,195,185,175,165,155,153,154,155,156,157,158,159,160,161,162,163,164,165,166,167,168,169,170,171,172,173,174,175,176,177,178,179,180,181,182,183,184,185,186,187,188,189,190,191,192,193,194,195,196,197
+# bin/siatv100 src/20250221_optmized_shading_exr/val_ddim.py -i 102510 -m v3_all_14n_copyroom10_light3_exr_newgt -c 197,190,180,170,160,195,185,175,165,155,153,154,155,156,157,158,159,160,161,162,163,164,165,166,167,168,169,170,171,172,173,174,175,176,177,178,179,180,181,182,183,184,185,186,187,188,189,190,191,192,193,194,195,196,197
+# bin/siatv100 src/20250221_optmized_shading_exr/val_ddim.py -i 102510 -m v3_all_14n_copyroom10_light4_exr_newgt -c 197,190,180,170,160,195,185,175,165,155,153,154,155,156,157,158,159,160,161,162,163,164,165,166,167,168,169,170,171,172,173,174,175,176,177,178,179,180,181,182,183,184,185,186,187,188,189,190,191,192,193,194,195,196,197
+# bin/siatv100 src/20250221_optmized_shading_exr/val_ddim.py -i 102510 -m v3_all_14n_copyroom10_light20_exr_newgt -c 197,190,180,170,160,195,185,175,165,155,153,154,155,156,157,158,159,160,161,162,163,164,165,166,167,168,169,170,171,172,173,174,175,176,177,178,179,180,181,182,183,184,185,186,187,188,189,190,191,192,193,194,195,196,197
+
+# bin/siatv100 src/20250221_optmized_shading_exr/val_ddim_step.py -i 102427 -m face_spatial_guy329_single -c 21,22,23
 # bin/siatv100 src/20250221_optmized_shading_exr/val_ddim.py -i 102771 -m valid_face_same -c 29
 # bin/siatv100 src/20250221_optmized_shading_exr/val_ddim.py -i 102771 -m valid_face_different -c 29
 # bin/siatv100 src/20250221_optmized_shading_exr/val_ddim.py -i 102771 -m valid2left -c 29
 # bin/siatv100 src/20250221_optmized_shading_exr/val_ddim.py -i 102771 -m valid2right -c 29
-
-
-# bin/siatv100 src/20250221_optmized_shading_exr/val_ddim.py -i 103288 -m valid_face_same -c 29
-# bin/siatv100 src/20250221_optmized_shading_exr/val_ddim.py -i 103288 -m valid_face_different -c 29
 
 
 
@@ -140,6 +129,8 @@ parser.add_argument("-i", "--version", type=str, default="2")
 parser.add_argument("-m", "--mode", type=str, default="face_left,face_right")
 parser.add_argument("-g", "--guidance_scale", type=str, default="1")
 parser.add_argument("-c", "--checkpoint", type=str, default="lastest")
+parser.add_argument("-s", "--steps", type=str, default="20,30,50,100,200,500,700,999")
+
 
 args = parser.parse_args()
 
@@ -168,14 +159,7 @@ NAMES = {
     102279: 'newshading_newgt',
     102510: 'newshading_newgt',
     102427: 'newshading_newgt',
-    102771: 'newshading_newgt',
-    102774: 'newshading_newgt',
-    103212: 'newshading_newgt',
-    102773: 'newshading_newgt', 
-    102776: 'newshading_newgt', 
-    102777: 'newshading_newgt', 
-    102778: 'newshading_newgt',
-    103288: 'sdface'
+    102771: 'newshading_newgt'
 }
 METHODS = {
     99826: 'default',
@@ -195,14 +179,7 @@ METHODS = {
     102279: 'default',
     102510: 'default',
     102427: 'default',
-    102771: 'default',
-    102774: 'default',
-    103212: 'default',
-    102773: 'default',
-    102776: 'default',
-    102777: 'default',
-    102778: 'default',
-    103288: 'default'
+    102771: 'default'
 }
 CONDITIONS_CLASS = {
     99826: SDDiffusionFaceNoBg,
@@ -222,14 +199,7 @@ CONDITIONS_CLASS = {
     102279: SDDiffusionFaceNoBg,
     102510: SDDiffusionFaceNoBg,
     102427: SDDiffusionFaceNoBg,
-    102771: SDDiffusionFaceNoBg,
-    102774: SDDiffusionFaceNoBg,
-    103212: SDDiffusionFaceNoBg,
-    102773: SDDiffusionFaceNoBg, 
-    102776: SDDiffusionFaceNoBg, 
-    102777: SDDiffusionFaceNoBg,
-    102778: SDDiffusionFaceNoBg,
-    103288: SDDiffusionFace
+    102771: SDDiffusionFaceNoBg
 }
 LRS = {
     99826: '1e-4',
@@ -249,14 +219,7 @@ LRS = {
     102279: '1e-6',
     102510: '1e-4',
     102427: '1e-4',
-    102771: '1e-4',
-    102774: '1e-4',
-    103212: '1e-4',
-    102773: '1e-6',
-    102776: '5e-5',
-    102777: '1e-5',
-    102778: '5e-6',
-    103288: '1e-4'
+    102771: '1e-4'
 }
 DIRNAME = {
     99826: CHECKPOINT_FOLDER_NAME,
@@ -276,14 +239,7 @@ DIRNAME = {
     102279: CHECKPOINT_FOLDER_NAME,
     102510: CHECKPOINT_FOLDER_NAME,
     102427: CHECKPOINT_FOLDER_NAME,
-    102771: CHECKPOINT_FOLDER_NAME,
-    102774: CHECKPOINT_FOLDER_NAME,
-    103212: CHECKPOINT_FOLDER_NAME,
-    102773: CHECKPOINT_FOLDER_NAME,
-    102776: CHECKPOINT_FOLDER_NAME, 
-    102777: CHECKPOINT_FOLDER_NAME,
-    102778: CHECKPOINT_FOLDER_NAME,
-    103288: CHECKPOINT_FOLDER_NAME
+    102771: CHECKPOINT_FOLDER_NAME
 }
 CHECKPOINTS = {
     99826: 20,
@@ -303,20 +259,13 @@ CHECKPOINTS = {
     102279: 20,
     102510: 150,
     102427: 20,
-    102771: 29,
-    102774: 20,
-    103212: 20,
-    102773: 20,
-    102776: 20,
-    102777: 20,
-    102778: 20,
-    103288: 29,
+    102771: 29
 }
 
 use_ab_background = []
 use_shcoeff2 = []
 use_only_light = []
-use_no_light = [99826, 99828, 99998, 100430, 100235,101150, 101578, 101579, 101580, 101581, 102272, 102273, 102274, 102279, 102510, 102427, 102771, 102774, 103212, 102773, 102776, 102777, 102778, 103288]
+use_no_light = [99826, 99828, 99998, 100430, 100235,101150, 101578, 101579, 101580, 101581, 102272, 102273, 102274, 102279, 102510, 102427, 102771]
 use_random_mask_background = []
 
 def get_from_mode(mode):
@@ -396,6 +345,7 @@ def get_from_mode(mode):
 def main():
     print("STARTING VALIDATION...")
     versions = [int(a.strip()) for a in args.version.split(",")]
+    steps = [int(a.strip()) for a in args.steps.split(",")]
     guidance_scales = [float(a.strip()) for a in args.guidance_scale.split(",")]
     #checkpoints = [int(a.strip()) for a in args.checkpoint.split(",")]
     checkpoints = []
@@ -436,34 +386,32 @@ def main():
                         model.eval() # disable randomness, dropout, etc...
                         model.disable_plot_train_loss()
                         for guidance_scale in guidance_scales:
-                            #model.set_guidance_scale(guidance_scale)
-                            #model.set_ddim_strength(guidance_scale) #temporary hack to feed the guidance ratio                        
-                            #model.set_gaussain_strength(guidance_scale)  #temporary hack to feed the guidance ratio
-                            #model.set_ddim_brightness_random(0.4)
-                            output_dir = f"output/{FOLDER_NAME}/val_{mode}/{METHODS[version]}/{guidance_scale}/{NAMES[version]}/{LRS[version]}/chk{checkpoint}/"
-                            # skip if output dir exist 
-                            if os.path.exists(output_dir):
-                                print(f"Skip {output_dir}")
-                                continue
-                            os.makedirs(output_dir, exist_ok=True)
-                            print("================================")
-                            print(output_dir)
-                            print("================================")
-                            trainer = L.Trainer(max_epochs=1000, precision=MASTER_TYPE, check_val_every_n_epoch=1, default_root_dir=output_dir, inference_mode=False, gradient_clip_val=0)
-                            val_root, count_file, dataset_class, dataset_args, specific_prompt = get_from_mode(mode)
-                            if type(count_file) == int:
-                                split = slice(0, count_file, 1)
-                            else:
-                                split = count_file
-                            if version in use_shcoeff2:
-                                dataset_args['use_shcoeff2'] = True
-                            if version in use_only_light:
-                                dataset_args['feature_types'] = ['light']
-                            if version in use_no_light:
-                                dataset_args['feature_types'] = []
-                            val_dataset = dataset_class(split=split, root_dir=val_root, specific_prompt=specific_prompt, **dataset_args)
-                            val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=1, shuffle=False)
-                            trainer.test(model, dataloaders=val_dataloader, ckpt_path=CKPT_PATH)
+                            for step in steps:
+                                model.set_num_inversion_steps(step)
+                                output_dir = f"output/{FOLDER_NAME}/val_ddim_step{mode}/{METHODS[version]}/{guidance_scale}/{NAMES[version]}/{LRS[version]}/chk{checkpoint}/step{step}"
+                                # skip if output dir exist 
+                                if os.path.exists(output_dir):
+                                    print(f"Skip {output_dir}")
+                                    continue
+                                os.makedirs(output_dir, exist_ok=True)
+                                print("================================")
+                                print(output_dir)
+                                print("================================")
+                                trainer = L.Trainer(max_epochs=1000, precision=MASTER_TYPE, check_val_every_n_epoch=1, default_root_dir=output_dir, inference_mode=False, gradient_clip_val=0)
+                                val_root, count_file, dataset_class, dataset_args, specific_prompt = get_from_mode(mode)
+                                if type(count_file) == int:
+                                    split = slice(0, count_file, 1)
+                                else:
+                                    split = count_file
+                                if version in use_shcoeff2:
+                                    dataset_args['use_shcoeff2'] = True
+                                if version in use_only_light:
+                                    dataset_args['feature_types'] = ['light']
+                                if version in use_no_light:
+                                    dataset_args['feature_types'] = []
+                                val_dataset = dataset_class(split=split, root_dir=val_root, specific_prompt=specific_prompt, **dataset_args)
+                                val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=1, shuffle=False)
+                                trainer.test(model, dataloaders=val_dataloader, ckpt_path=CKPT_PATH)
 
 
                 except Exception as e:
