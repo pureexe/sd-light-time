@@ -158,7 +158,7 @@ NAMES = {
     102274: 'newshading_newgt',
     102279: 'newshading_newgt',
     102510: 'newshading_newgt',
-    102427: 'newshading_newgt',
+    102427: 'try_not_set_light_on_inverse',
     102771: 'newshading_newgt'
 }
 METHODS = {

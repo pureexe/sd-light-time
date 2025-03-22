@@ -6,6 +6,7 @@ import ezexr
 import numpy as np
 import random
 from skimage.color import rgb2lab
+from PIL import Image
 import re 
 
 ACCEPT_EXTENSION = ['jpg', 'png', 'jpeg', 'exr']
@@ -194,7 +195,10 @@ class DiffusionFaceRelightDataset(torch.utils.data.Dataset):
                     image = torch.tensor(image)
                     image = image.permute(2,0,1) 
                 else:
-                    image = torchvision.io.read_image(image_path) / 255.0
+                    #image = torchvision.io.read_image(image_path) / 255.0
+                    image = Image.open(image_path)
+                    image = image.resize((height, width), Image.BILINEAR)
+                    image = torchvision.transforms.functional.to_tensor(image)
                 image = image[:3]
                 # if image is one channel, repeat it to 3 channels
                 if image.shape[0] == 1:
@@ -299,6 +303,7 @@ class DiffusionFaceRelightDataset(torch.utils.data.Dataset):
         word_name = self.files[idx]
 
         image = self.transform['image'](self.get_image(name,self.images_dir, 512, 512))
+        
         background = self.get_background(name, 512, 512)
         shading = self.transform['control'] (self.get_control_image(name,self.shadings_dir, 512, 512))
         if len(self.diffusion_face_features) > 0:

@@ -168,6 +168,7 @@ def get_ddim_latents(
         guidance_scale=1.0,
         interrupt_index=None,
         brightness_random=0.0, # random to increase or decrease brightness
+        controlnet_conditioning_scale=1.0,
         image_shift_mean=False
     ):
     scheduler_config = pipe.scheduler.config
@@ -229,6 +230,7 @@ def get_ddim_latents(
 
     if controlnet_image is not None:
         ddim_args['image'] = controlnet_image
+        ddim_args['controlnet_conditioning_scale'] = controlnet_conditioning_scale
 
     zt_noise, _ = pipe(**ddim_args)
 

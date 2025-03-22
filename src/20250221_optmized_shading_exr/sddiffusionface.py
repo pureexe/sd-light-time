@@ -489,17 +489,46 @@ class SDDiffusionFace(L.LightningModule):
         )
         
         interrupt_index = int(self.num_inversion_steps * self.ddim_strength) if self.ddim_strength > 0 else None
-        # get DDIM inversion  
+        # # get DDIM inversion  
+        # print("================================")
+        # source_image = batch['source_image']
+        # source_image = (source_image + 1.0) / 2.0
+        # source_image = source_image[0].permute(1,2,0).cpu().numpy()
+        # import skimage 
+        # source_image = skimage.img_as_ubyte(source_image)
+        # skimage.io.imsave('scale_up.png',source_image)
+        # print("DONEEEEEEEEEEEEEEEEEEEEE")
+        # exit()
+        
         ddim_latents, ddim_timesteps = get_ddim_latents(
-                pipe=self.pipe,
-                image=batch['source_image'],
-                text_embbeding=prompt_embeds,
-                num_inference_steps=self.num_inversion_steps,
-                generator=torch.Generator().manual_seed(self.seed),
-                controlnet_image=self.get_control_image(batch) if hasattr(self.pipe, "controlnet") else None,
-                guidance_scale=self.ddim_guidance_scale,
-                interrupt_index = interrupt_index
-            )
+            pipe=self.pipe,
+            image=batch['source_image'],
+            text_embbeding=prompt_embeds,
+            num_inference_steps=self.num_inversion_steps,
+            generator=torch.Generator().manual_seed(self.seed),
+            controlnet_image=self.get_control_image(batch) if hasattr(self.pipe, "controlnet") else None,
+            guidance_scale=self.ddim_guidance_scale,
+            interrupt_index = interrupt_index,
+            controlnet_conditioning_scale = 1.0
+        )
+
+        
+        # ## REGENERATE BACK 
+        # pipe_args = {
+        #     "prompt_embeds": prompt_embeds,
+        #     "negative_prompt_embeds": negative_prompt_embeds,
+        #     "output_type": "pt",
+        #     "guidance_scale": self.guidance_scale,
+        #     "return_dict": False,
+        #     "num_inference_steps": self.num_inversion_steps,
+        #     "generator": torch.Generator().manual_seed(self.seed),
+        #     "latents": ddim_latents[-1]
+        # }
+        # if hasattr(self.pipe, "controlnet"):
+        #     pipe_args["image"] = self.get_control_image(batch, array_index=target_idx)  
+        # pt_image, _ = self.pipe(**pipe_args)
+        # ### END OF REGENERATE BACK    
+    
 
         # if dataset is not list, convert to list
         for key in ['target_ldr_envmap', 'target_norm_envmap', 'target_image', 'target_sh_coeffs', 'word_name']:
@@ -530,6 +559,7 @@ class SDDiffusionFace(L.LightningModule):
                 "return_dict": False,
                 "num_inference_steps": self.num_inversion_steps,
                 "generator": torch.Generator().manual_seed(self.seed),
+                "controlnet_conditioning_scale": 1.0
             }
             if self.ddim_strength > 0:
                 pipe_args["image"] = ddim_latents[interrupt_index]
@@ -552,7 +582,7 @@ class SDDiffusionFace(L.LightningModule):
 
             gt_image = gt_image.to(pt_image.device)
             tb_image = [gt_image, pt_image]
-            print(f"--------> SEED: {self.seed}")
+
             # generation only to see if everything still work as expected
             sd_args = {
                 "prompt_embeds": prompt_embeds,

@@ -383,6 +383,21 @@ bin/siatv100 src/20250221_optmized_shading_exr/train.py \
         -ckpt /ist/ist-share/vision/pakkapon/relight/sd-light-time/output/20250221_optmized_shading_exr/multi_mlp_fit/lightning_logs/version_102771/checkpoints/epoch=000037.ckpt
         #-ckpt /ist/ist-share/vision/pakkapon/relight/sd-light-time/output/20250221_optmized_shading_exr/multi_mlp_fit/lightning_logs/version_102427/checkpoints/epoch=000024.ckpt
 
+# verify Image size 256 on training will create the problem or not
+bin/siatv100 src/20250221_optmized_shading_exr/train.py \
+        -lr 1e-4 \
+        --guidance_scale 1.0 \
+        --network_type sd_no_bg \
+        --batch_size 8 \
+        -c 1 \
+        --feature_type clip \
+        --shadings_dir "shadings_256" \
+        --backgrounds_dir "backgrounds" \
+        --images_dir "images_256"\
+        -dataset "/data/pakkapon/datasets/face/ffhq_defareli/train" \
+        -dataset_val "/data/pakkapon/datasets/face/ffhq_defareli/valid_spatial" \
+        -dataset_val_split "/data/pakkapon/datasets/face/ffhq_defareli/valid_spatial/index-array.json"
+
 # face dataset #103288 / 102686 #pipeline SDFACE
 bin/siatv100 src/20250221_optmized_shading_exr/train.py \
         -lr 1e-4 \
