@@ -72,7 +72,25 @@
 # bin/siatv100 src/20250221_optmized_shading_exr/val_ddim.py -i 103212 -m v3_all_14n_copyroom10_light0_exr_newgt,v3_all_14n_copyroom10_light3_exr_newgt -c 225,226,227,228,229,230,231,232,233
 # bin/siatv100 src/20250221_optmized_shading_exr/val_ddim.py -i 103212 -m v3_all_14n_copyroom10_light4_exr_newgt,v3_all_14n_copyroom10_light20_exr_newgt -c 225,226,227,228,229,230,231,232,233
 
+# render rotate ball
+# bin/siatv100 src/20250221_optmized_shading_exr/val_ddim.py -i 103212 -m rotate_everett_kitchen2 -c 274
+# bin/siatv100 src/20250221_optmized_shading_exr/val_ddim.py -i 103212 -m rotate_everett_kitchen4 -c 274
+# bin/siatv100 src/20250221_optmized_shading_exr/val_ddim.py -i 103212 -m rotate_everett_kitchen5 -c 274
+# bin/siatv100 src/20250221_optmized_shading_exr/val_ddim.py -i 103212 -m rotate_everett_kitchen6 -c 274
+# bin/siatv100 src/20250221_optmized_shading_exr/val_ddim.py -i 103212 -m rotate_everett_kitchen7 -c 274
+# bin/siatv100 src/20250221_optmized_shading_exr/val_ddim.py -i 103212 -m rotate_everett_kitchen8 -c 274
+# bin/siatv100 src/20250221_optmized_shading_exr/val_ddim.py -i 103212 -m rotate_everett_kitchen9 -c 274
+# bin/siatv100 src/20250221_optmized_shading_exr/val_ddim.py -i 103212 -m rotate_everett_kitchen10 -c 274
+# bin/siatv100 src/20250221_optmized_shading_exr/val_ddim.py -i 103212 -m rotate_everett_kitchen11 -c 274
+# bin/siatv100 src/20250221_optmized_shading_exr/val_ddim.py -i 103212 -m rotate_everett_dining1 -c 274
+# 
 
+# bin/siatv100 src/20250221_optmized_shading_exr/val_ddim.py -i 103212 -m v3_all_14n_copyroom10_light0_exr_newgt -c 274,270,260,250,240,265,255,245,235,234,235,236,237,238,239,240,241,242,243,244,245,246,247,248,249,250,251,252,253,254,255,256,257,258,259,260,261,262,263,264,265,266,267,268,269,270,271,272,273,274
+# bin/siatv100 src/20250221_optmized_shading_exr/val_ddim.py -i 103212 -m v3_all_14n_copyroom10_light3_exr_newgt -c 274,270,260,250,240,265,255,245,235,234,235,236,237,238,239,240,241,242,243,244,245,246,247,248,249,250,251,252,253,254,255,256,257,258,259,260,261,262,263,264,265,266,267,268,269,270,271,272,273,274
+# bin/siatv100 src/20250221_optmized_shading_exr/val_ddim.py -i 103212 -m v3_all_14n_copyroom10_light4_exr_newgt -c 274,270,260,250,240,265,255,245,235,234,235,236,237,238,239,240,241,242,243,244,245,246,247,248,249,250,251,252,253,254,255,256,257,258,259,260,261,262,263,264,265,266,267,268,269,270,271,272,273,274
+# bin/siatv100 src/20250221_optmized_shading_exr/val_ddim.py -i 103212 -m v3_all_14n_copyroom10_light20_exr_newgt -c 274,270,260,250,240,265,255,245,235,234,235,236,237,238,239,240,241,242,243,244,245,246,247,248,249,250,251,252,253,254,255,256,257,258,259,260,261,262,263,264,265,266,267,268,269,270,271,272,273,274
+
+# bin/siatv100 src/20250221_optmized_shading_exr/val_ddim.py -i 103211 -m face_spatial -c 62
 
 
 # bin/siatv100 src/20250221_optmized_shading_exr/val_ddim.py -i 102427 -m face_spatial_guy329_single -c 21,22,23
@@ -175,7 +193,14 @@ NAMES = {
     102776: 'newshading_newgt', 
     102777: 'newshading_newgt', 
     102778: 'newshading_newgt',
-    103288: 'sdface'
+    103288: 'sdface',
+    103211: 'pil_resize',
+    103494: 'retrain_withscale_updown',
+    104458: '100k_singlelight',
+    104459: '100k_singlelight',
+    104460: '100k_singlelight',
+    104462: '100k_singlelight',
+
 }
 METHODS = {
     99826: 'default',
@@ -202,7 +227,13 @@ METHODS = {
     102776: 'default',
     102777: 'default',
     102778: 'default',
-    103288: 'default'
+    103288: 'default',
+    103211: 'default',
+    103494: 'default',
+    104458: 'default',
+    104459: 'default',
+    104460: 'default',
+    104462: 'default'
 }
 CONDITIONS_CLASS = {
     99826: SDDiffusionFaceNoBg,
@@ -229,7 +260,13 @@ CONDITIONS_CLASS = {
     102776: SDDiffusionFaceNoBg, 
     102777: SDDiffusionFaceNoBg,
     102778: SDDiffusionFaceNoBg,
-    103288: SDDiffusionFace
+    103288: SDDiffusionFace,
+    103211: SDDiffusionFaceNoBg,
+    103494: SDDiffusionFaceNoBg,
+    104458: SDDiffusionFaceNoBg,
+    104459: SDDiffusionFaceNoBg,
+    104460: SDDiffusionFaceNoBg,
+    104462: SDDiffusionFaceNoBg,
 }
 LRS = {
     99826: '1e-4',
@@ -256,7 +293,13 @@ LRS = {
     102776: '5e-5',
     102777: '1e-5',
     102778: '5e-6',
-    103288: '1e-4'
+    103288: '1e-4',
+    103211: '1e-4',
+    103494: '1e-4',
+    104458: '1e-4',
+    104459: '5e-5',
+    104460: '1e-5',
+    104462: '1e-4_batch4',
 }
 DIRNAME = {
     99826: CHECKPOINT_FOLDER_NAME,
@@ -283,7 +326,14 @@ DIRNAME = {
     102776: CHECKPOINT_FOLDER_NAME, 
     102777: CHECKPOINT_FOLDER_NAME,
     102778: CHECKPOINT_FOLDER_NAME,
-    103288: CHECKPOINT_FOLDER_NAME
+    103288: CHECKPOINT_FOLDER_NAME,
+    103211: CHECKPOINT_FOLDER_NAME,
+    103494: CHECKPOINT_FOLDER_NAME,
+    104458: CHECKPOINT_FOLDER_NAME,
+    104459: CHECKPOINT_FOLDER_NAME,
+    104460: CHECKPOINT_FOLDER_NAME,
+    104462: CHECKPOINT_FOLDER_NAME
+
 }
 CHECKPOINTS = {
     99826: 20,
@@ -311,15 +361,72 @@ CHECKPOINTS = {
     102777: 20,
     102778: 20,
     103288: 29,
+    103211: 62,
+    103494: 14, 
+    104458: 2,
+    104459: 2,
+    104460: 2,
+    104462: 2,
 }
+
+# bin/siatv100 src/20250221_optmized_shading_exr/val_ddim.py -i 104458 -m rotate_000071 -c 2,1,0,3
+# bin/siatv100 src/20250221_optmized_shading_exr/val_ddim.py -i 104458 -m rotate_000037 -c 2,1,0,3
+# bin/siatv100 src/20250221_optmized_shading_exr/val_ddim.py -i 104458 -m rotate_14n_copyroom10_light18 -c 2,1,0,3
+# bin/siatv100 src/20250221_optmized_shading_exr/val_ddim.py -i 104458 -m rotate_14n_copyroom1_light24 -c 2,1,0,3
 
 use_ab_background = []
 use_shcoeff2 = []
 use_only_light = []
-use_no_light = [99826, 99828, 99998, 100430, 100235,101150, 101578, 101579, 101580, 101581, 102272, 102273, 102274, 102279, 102510, 102427, 102771, 102774, 103212, 102773, 102776, 102777, 102778, 103288]
+use_no_light = [99826, 99828, 99998, 100430, 100235,101150, 101578, 101579, 101580, 101581, 102272, 102273, 102274, 102279, 102510, 102427, 102771, 102774, 103212, 102773, 102776, 102777, 102778, 103288, 103211, 103494, 104458, 104459, 104460, 104462]
 use_random_mask_background = []
 
 def get_from_mode(mode):
+    if mode == "book":
+        return "/data/pakkapon/datasets/multi_illumination/spherical/val", 100, DDIMDiffusionFaceRelightDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/split-val-relight-light-array_book.json", "shadings_dir": "control_shading_from_fitting_v3_exr", "backgrounds_dir": "control_render_from_fitting_v2", "images_dir":"control_render_from_fitting_v2" , "feature_types": []},  "a photorealistic image"
+    if mode == "rotate_000071":
+        return "/data/pakkapon/datasets/laion-shading/v2/rotate", 100, DDIMDiffusionFaceRelightDataset,{"index_file":"/data/pakkapon/datasets/laion-shading/v2/rotate/index/000071.json", "shadings_dir": "shadings", "backgrounds_dir": "images", "images_dir":"images" , "feature_types": []},  "a photorealistic image"        
+    if mode == "rotate_000037":
+        return "/data/pakkapon/datasets/laion-shading/v2/rotate", 100, DDIMDiffusionFaceRelightDataset,{"index_file":"/data/pakkapon/datasets/laion-shading/v2/rotate/index/000037.json", "shadings_dir": "shadings", "backgrounds_dir": "images", "images_dir":"images" , "feature_types": []},  "a photorealistic image"        
+    if mode == "rotate_14n_copyroom10_light18":
+        return "/data/pakkapon/datasets/laion-shading/v2/rotate", 100, DDIMDiffusionFaceRelightDataset,{"index_file":"/data/pakkapon/datasets/laion-shading/v2/rotate/index/14n_copyroom10_light18.json", "shadings_dir": "shadings", "backgrounds_dir": "images", "images_dir":"images" , "feature_types": []},  "a photorealistic image"        
+    if mode == "rotate_14n_copyroom1_light24":
+        return "/data/pakkapon/datasets/laion-shading/v2/rotate", 100, DDIMDiffusionFaceRelightDataset,{"index_file":"/data/pakkapon/datasets/laion-shading/v2/rotate/index/14n_copyroom1_light24.json", "shadings_dir": "shadings", "backgrounds_dir": "images", "images_dir":"images" , "feature_types": []},  "a photorealistic image"        
+    if mode == "rotate_everett_dining1":
+        return "/data/pakkapon/datasets/multi_illumination/spherical/val_rotate_test_scenes", 100, DDIMDiffusionFaceRelightDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/val_rotate_test_scenes/everett_dining1_rotate.json", "shadings_dir": "control_shading_from_fitting_v3_exr", "backgrounds_dir": "control_render_from_fitting_v2", "images_dir":"control_render_from_fitting_v2" , "feature_types": []},  "a photorealistic image"        
+    if mode == "rotate_everett_kitchen2":
+        return "/data/pakkapon/datasets/multi_illumination/spherical/val_rotate_test_scenes", 100, DDIMDiffusionFaceRelightDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/val_rotate_test_scenes/everett_kitchen2_rotate.json", "shadings_dir": "control_shading_from_fitting_v3_exr", "backgrounds_dir": "control_render_from_fitting_v2", "images_dir":"control_render_from_fitting_v2" , "feature_types": []},  "a photorealistic image"
+    if mode == "rotate_everett_kitchen3":
+        return "/data/pakkapon/datasets/multi_illumination/spherical/val_rotate_test_scenes", 100, DDIMDiffusionFaceRelightDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/val_rotate_test_scenes/everett_kitchen3_rotate.json", "shadings_dir": "control_shading_from_fitting_v3_exr", "backgrounds_dir": "control_render_from_fitting_v2", "images_dir":"control_render_from_fitting_v2" , "feature_types": []},  "a photorealistic image"
+    if mode == "rotate_everett_kitchen4":
+        return "/data/pakkapon/datasets/multi_illumination/spherical/val_rotate_test_scenes", 100, DDIMDiffusionFaceRelightDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/val_rotate_test_scenes/everett_kitchen4_rotate.json", "shadings_dir": "control_shading_from_fitting_v3_exr", "backgrounds_dir": "control_render_from_fitting_v2", "images_dir":"control_render_from_fitting_v2" , "feature_types": []},  "a photorealistic image"
+    if mode == "rotate_everett_kitchen5":
+        return "/data/pakkapon/datasets/multi_illumination/spherical/val_rotate_test_scenes", 100, DDIMDiffusionFaceRelightDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/val_rotate_test_scenes/everett_kitchen5_rotate.json", "shadings_dir": "control_shading_from_fitting_v3_exr", "backgrounds_dir": "control_render_from_fitting_v2", "images_dir":"control_render_from_fitting_v2" , "feature_types": []},  "a photorealistic image" 
+    if mode == "rotate_everett_kitchen6":
+        return "/data/pakkapon/datasets/multi_illumination/spherical/val_rotate_test_scenes", 100, DDIMDiffusionFaceRelightDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/val_rotate_test_scenes/everett_kitchen6_rotate.json", "shadings_dir": "control_shading_from_fitting_v3_exr", "backgrounds_dir": "control_render_from_fitting_v2", "images_dir":"control_render_from_fitting_v2" , "feature_types": []},  "a photorealistic image"        
+    if mode == "rotate_everett_kitchen7":
+        return "/data/pakkapon/datasets/multi_illumination/spherical/val_rotate_test_scenes", 100, DDIMDiffusionFaceRelightDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/val_rotate_test_scenes/everett_kitchen7_rotate.json", "shadings_dir": "control_shading_from_fitting_v3_exr", "backgrounds_dir": "control_render_from_fitting_v2", "images_dir":"control_render_from_fitting_v2" , "feature_types": []},  "a photorealistic image"
+    if mode == "rotate_everett_kitchen8":
+        return "/data/pakkapon/datasets/multi_illumination/spherical/val_rotate_test_scenes", 100, DDIMDiffusionFaceRelightDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/val_rotate_test_scenes/everett_kitchen8_rotate.json", "shadings_dir": "control_shading_from_fitting_v3_exr", "backgrounds_dir": "control_render_from_fitting_v2", "images_dir":"control_render_from_fitting_v2" , "feature_types": []},  "a photorealistic image"
+    if mode == "rotate_everett_kitchen9":
+        return "/data/pakkapon/datasets/multi_illumination/spherical/val_rotate_test_scenes", 100, DDIMDiffusionFaceRelightDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/val_rotate_test_scenes/everett_kitchen9_rotate.json", "shadings_dir": "control_shading_from_fitting_v3_exr", "backgrounds_dir": "control_render_from_fitting_v2", "images_dir":"control_render_from_fitting_v2" , "feature_types": []},  "a photorealistic image"
+    if mode == "rotate_everett_kitchen10":
+        return "/data/pakkapon/datasets/multi_illumination/spherical/val_rotate_test_scenes", 100, DDIMDiffusionFaceRelightDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/val_rotate_test_scenes/everett_kitchen10_rotate.json", "shadings_dir": "control_shading_from_fitting_v3_exr", "backgrounds_dir": "control_render_from_fitting_v2", "images_dir":"control_render_from_fitting_v2" , "feature_types": []},  "a photorealistic image"
+    if mode == "rotate_everett_kitchen11":
+        return "/data/pakkapon/datasets/multi_illumination/spherical/val_rotate_test_scenes", 100, DDIMDiffusionFaceRelightDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/val_rotate_test_scenes/everett_kitchen11_rotate.json", "shadings_dir": "control_shading_from_fitting_v3_exr", "backgrounds_dir": "control_render_from_fitting_v2", "images_dir":"control_render_from_fitting_v2" , "feature_types": []},  "a photorealistic image"
+    if mode == "rotate_everett_kitchen12":
+        return "/data/pakkapon/datasets/multi_illumination/spherical/val_rotate_test_scenes", 100, DDIMDiffusionFaceRelightDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/val_rotate_test_scenes/everett_kitchen12_rotate.json", "shadings_dir": "control_shading_from_fitting_v3_exr", "backgrounds_dir": "control_render_from_fitting_v2", "images_dir":"control_render_from_fitting_v2" , "feature_types": []},  "a photorealistic image"
+    if mode == "rotate_everett_kitchen13":
+        return "/data/pakkapon/datasets/multi_illumination/spherical/val_rotate_test_scenes", 100, DDIMDiffusionFaceRelightDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/val_rotate_test_scenes/everett_kitchen13_rotate.json", "shadings_dir": "control_shading_from_fitting_v3_exr", "backgrounds_dir": "control_render_from_fitting_v2", "images_dir":"control_render_from_fitting_v2" , "feature_types": []},  "a photorealistic image"
+    if mode == "rotate_everett_kitchen14":
+        return "/data/pakkapon/datasets/multi_illumination/spherical/val_rotate_test_scenes", 100, DDIMDiffusionFaceRelightDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/val_rotate_test_scenes/everett_kitchen14_rotate.json", "shadings_dir": "control_shading_from_fitting_v3_exr", "backgrounds_dir": "control_render_from_fitting_v2", "images_dir":"control_render_from_fitting_v2" , "feature_types": []},  "a photorealistic image"
+    if mode == "rotate_everett_kitchen15":
+        return "/data/pakkapon/datasets/multi_illumination/spherical/val_rotate_test_scenes", 100, DDIMDiffusionFaceRelightDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/val_rotate_test_scenes/everett_kitchen15_rotate.json", "shadings_dir": "control_shading_from_fitting_v3_exr", "backgrounds_dir": "control_render_from_fitting_v2", "images_dir":"control_render_from_fitting_v2" , "feature_types": []},  "a photorealistic image"
+    if mode == "rotate_everett_kitchen16":
+        return "/data/pakkapon/datasets/multi_illumination/spherical/val_rotate_test_scenes", 100, DDIMDiffusionFaceRelightDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/val_rotate_test_scenes/everett_kitchen16_rotate.json", "shadings_dir": "control_shading_from_fitting_v3_exr", "backgrounds_dir": "control_render_from_fitting_v2", "images_dir":"control_render_from_fitting_v2" , "feature_types": []},  "a photorealistic image"
+    if mode == "rotate_everett_kitchen17":
+        return "/data/pakkapon/datasets/multi_illumination/spherical/val_rotate_test_scenes", 100, DDIMDiffusionFaceRelightDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/val_rotate_test_scenes/everett_kitchen17_rotate.json", "shadings_dir": "control_shading_from_fitting_v3_exr", "backgrounds_dir": "control_render_from_fitting_v2", "images_dir":"control_render_from_fitting_v2" , "feature_types": []},  "a photorealistic image"
+    if mode == "rotate_everett_kitchen18":
+        return "/data/pakkapon/datasets/multi_illumination/spherical/val_rotate_test_scenes", 100, DDIMDiffusionFaceRelightDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/val_rotate_test_scenes/everett_kitchen18_rotate.json", "shadings_dir": "control_shading_from_fitting_v3_exr", "backgrounds_dir": "control_render_from_fitting_v2", "images_dir":"control_render_from_fitting_v2" , "feature_types": []},  "a photorealistic image"
     if mode == "v3_copyroom10_rotate_exr_newgt":
         return "/data/pakkapon/datasets/multi_illumination/spherical/val_rotate_copyroom10", 100, DDIMDiffusionFaceRelightDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/spherical/index/10n_copyroom10_rotate.json", "shadings_dir": "control_shading_from_fitting_v3_exr", "backgrounds_dir": "control_render_from_fitting_v2", "images_dir":"control_render_from_fitting_v2" , "feature_types": []},  "a photorealistic image"
     if mode == "valid2left":

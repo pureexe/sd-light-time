@@ -133,6 +133,10 @@ class ChromeballRenderer():
         self.setup_spherical_coefficient()
         self.hdr2ldr = TonemapHDR(gamma=1.0, percentile=50, max_mapping=0.5)
         self.setup_normal_pipeline()
+        self.albedo = None
+        
+    def set_albedo(self, albedo):
+        self.albedo = albedo
 
     def setup_normal_pipeline(self):
         self.pipe_normal = diffusers.MarigoldNormalsPipeline.from_pretrained(
@@ -265,12 +269,13 @@ class ChromeballRenderer():
             ball_image_map = ball_image_map * mask[...,None]
             out_img = skimage.img_as_ubyte(ball_image_map)
             skimage.io.imsave(f"/ist/ist-share/vision/pakkapon/relight/sd-light-time/src/20250217_albedo_optimization_v4/output/render_ball_test/ball/{i:02d}.png",out_img)
-            print("saved image")       
             
-    def render_rotated_chromeball(self):
+    def render_rotated_chromeball(self, chromeball_dir, light_id):
+        # create directory 
+        os.makedirs(chromeball_dir, exist_ok=True)
         normal_ball_front, mask = get_ideal_normal_ball_y_up(512)
         normal_ball_front =  torch.tensor(normal_ball_front).permute(2,0,1)[None]
-        sh_coeffs = self.shcoeffs[20:21]
+        sh_coeffs = self.shcoeffs[light_id:light_id+1]
         for i in range(60):
             new_shcoeff = sh_coeffs.clone()[0].permute(1,0).numpy()
             step = i / 60.0 * np.pi * 2
@@ -282,26 +287,42 @@ class ChromeballRenderer():
             ball_image_map = ball_image_map.cpu().permute(1,2,0).numpy()
             ball_image_map = ball_image_map * mask[...,None]
             out_img = skimage.img_as_ubyte(ball_image_map)
-            skimage.io.imsave(f"/ist/ist-share/vision/pakkapon/relight/sd-light-time/src/20250217_albedo_optimization_v4/output/render_ball_test/rotate_ball20_max/{i:02d}.png",out_img)
-            print("saved image")
+            skimage.io.imsave(os.path.join(chromeball_dir, f"{i:02d}.png"), out_img)
+
             
-    def render_scene(self):
+    def render_scene(self, shading_dir, shading_norm_dir, render_dir,light_id):
         normal = self.normal_map.cpu()[None]
-        sh_coeffs = self.shcoeffs[20:21]
+        sh_coeffs = self.shcoeffs[light_id:light_id+1]
+        
+        # create directory
+        os.makedirs(shading_dir, exist_ok=True)
+        os.makedirs(shading_norm_dir, exist_ok=True)
+        os.makedirs(render_dir, exist_ok=True)
+        
         for i in range(60):
             new_shcoeff = sh_coeffs.clone()[0].permute(1,0).numpy()
             step = i / 60.0 * np.pi * 2
             new_shcoeff = rotate_sh_coeffs(new_shcoeff, step, 0)
             new_shcoeff = torch.tensor(new_shcoeff).permute(1,0)[None]
-            ball_image_front = self.render_image(new_shcoeff, normal)
-            out_exr = ball_image_front[0].permute(1,2,0).cpu().numpy()
-            ezexr.imwrite(f"/ist/ist-share/vision/pakkapon/relight/sd-light-time/src/20250217_albedo_optimization_v4/output/render_ball_test/scene20_exr/dir_{i}_mip2.exr", out_exr)
-            ball_image_map = ball_image_front[0] / ball_image_front[0].max()
+            shading_image = self.render_image(new_shcoeff, normal)
+            out_exr = shading_image[0].permute(1,2,0).cpu().numpy()
+ 
+            ezexr.imwrite(os.path.join(shading_dir, f"dir_{i}_mip2.exr"), out_exr)
+            
+            if self.albedo is not None:
+                rendered_image = self.albedo.cpu() * shading_image
+                rendered_image = rendered_image[0].permute(1,2,0).numpy()
+                rendered_image = np.clip(rendered_image, 0,1)
+                rendered_image = skimage.img_as_ubyte(rendered_image)
+                skimage.io.imsave(os.path.join(render_dir, f"dir_{i}_mip2.png"),rendered_image)
+            
+            ball_image_map = shading_image[0] / shading_image[0].max()
             #ball_image_map = torch.clamp(ball_image_front[0], 0, 1)
             ball_image_map = ball_image_map.cpu().permute(1,2,0).numpy()
             out_img = skimage.img_as_ubyte(ball_image_map)
-            skimage.io.imsave(f"/ist/ist-share/vision/pakkapon/relight/sd-light-time/src/20250217_albedo_optimization_v4/output/render_ball_test/scene20_ldr_2/dir_{i}_mip2.png",out_img)
-            print("saved image!")        
+            skimage.io.imsave(os.path.join(shading_norm_dir, f"dir_{i}_mip2.png"),out_img)
+            
+            
   
         
 ###################################

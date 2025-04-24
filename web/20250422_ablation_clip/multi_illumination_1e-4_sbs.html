@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html class="has-navbar-fixed-bottom">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Diffusion Face Relighting - Reimplmented in SD</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@1.0.2/css/bulma.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@cityssm/bulma-sticky-table@3.0.0/bulma-with-sticky-table.min.css" />
+    <style>
+        .fixed-tabs {
+          position: fixed;
+          top: 0;
+          width: 100%;
+          z-index: 1000;
+        }
+        body {
+          /* padding-top: 3rem;  #Adjust for the height of the fixed tab */
+        }
+        .crop-image {
+            width: 128px;
+            height: 128px;
+            object-fit: cover;
+            object-position: left center; /* Show the left half */
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/lodash@4.17.21/lodash.min.js"></script>    
+</head>
+<body>
+<div id="app">
+    NUMBER OF EPOCH {{num_epochs}}
+
+<div class="table-container mx-auto" style="overflow-y:auto;max-height:100vh;">
+    <div v-for="scene in scenes">
+        <div v-for="light_id in avaliable_lights">
+            <section class="hero">
+                <div class="hero-body">
+                    <center><h1 class="title">SCENE: {{scene}}</h1></center>
+                    <center><h1 class="title">TARGET_LIGHT: {{light_id}}</h1></center>
+                </div>
+            </section>
+            <table class="table is-bordered is-striped is-narrow mx-auto has-sticky-header">
+                <thead>
+                    <tr>
+                        <th>epoch</th>
+                        <th v-for="step_id in _.range(0,num_epochs,every_epochs)">
+                            <b>{{step_id }}</b>
+                        </th>
+                    </tr>
+                    <tr>
+                        <th>step_id</th>
+                        <th v-for="step_id in _.range(0,num_epochs,every_epochs)">
+                            <b>{{step_id * 3079}}</b>
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr v-if="show_rows[0]">
+                        <td> Ground Truth</td>
+                        <td v-for="step_id in  _.range(0,num_epochs,every_epochs)">
+                            <figure class="image is-128x128 mx-auto">
+                                <img :src="'/output/datasets/multi_illumination/spherical/val/control_render_from_fitting_v2/'+scene+'/dir_'+light_id+'_mip2.png'" /> 
+                            </figure>
+                        </td>
+                    </tr>
+                    <tr v-if="show_rows[1]">
+                        <td>With Clip</td>
+                        <td v-for="step_id in _.range(0,num_epochs,every_epochs)">
+                            <figure class="image is-128x128 mx-auto">
+                                <img :src="'/output/20250419_train_in_the_wild/multi_mlp_fit/lightning_logs/version_'+getVersion(mode='with_clip',learning_rate='1e-4')+'/step_'+_.padStart(String(step_id * steps_per_epoch), 6, '0')+'/crop_image/'+scene+'-dir_'+light_sources[scene]+'_mip2_'+scene+'-dir_'+light_id+'_mip2.png'" />
+                            </figure>
+                        </td>
+                    </tr>
+                    <tr v-if="show_rows[2]">
+                        <td>No Clip</td>
+                        <td v-for="step_id in _.range(0,num_epochs,every_epochs)">
+                            <figure class="image is-128x128 mx-auto">
+                                <img :src="'/output/20250419_train_in_the_wild/multi_mlp_fit/lightning_logs/version_'+getVersion(mode='no_clip',learning_rate='1e-4')+'/step_'+_.padStart(String(step_id * steps_per_epoch), 6, '0')+'/crop_image/'+scene+'-dir_'+light_sources[scene]+'_mip2_'+scene+'-dir_'+light_id+'_mip2.png'" />
+                            </figure>
+                        </td>
+                    </tr>
+                    <tr v-if="show_rows[3]">
+                        <td> Input</td>
+                        <td v-for="step_id in _.range(0,num_epochs,every_epochs)">
+                            <figure class="image is-128x128 mx-auto">
+                                <img :src="'/output/datasets/multi_illumination/spherical/val/control_render_from_fitting_v2/'+scene+'/dir_'+light_sources[scene]+'_mip2.png'" /> 
+                            </figure>
+                        </td>
+                    </tr>
+                    <tr v-if="show_rows[4]">
+                        <td> Shading Target</td>
+                        <td v-for="step_id in _.range(0,num_epochs,every_epochs)">
+                            <figure class="image is-128x128 mx-auto">
+                            </figure>
+                        </td>
+                    </tr>
+                    <tr v-if="show_rows[5]">
+                        <td> Shading Input</td>
+                        <td v-for="step_id in _.range(0,num_epochs,every_epochs)">
+                            <figure class="image is-128x128 mx-auto">
+                            </figure>
+                        </td>
+                    </tr>
+                    <tr v-if="show_rows[6]">
+                        <td> SD Output</td>
+                        <td v-for="step_id in _.range(0,num_epochs,every_epochs)">
+                            <figure class="image is-128x128 mx-auto">
+                            </figure>
+                        </td>
+                    </tr>
+                    <tr v-if="show_rows[7]">
+                        <td> SD Output</td>
+                        <td v-for="step_id in _.range(0,num_epochs,every_epochs)">
+                            <figure class="image is-128x128 mx-auto">
+                            </figure>
+                        </td>
+                    </tr>
+                
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+<nav class="navbar level is-dark is-fixed-bottom" >
+
+    <div class="level-item has-text-centered">
+        <button class="button" @click="toggleRow(0)" :class="{'is-primary': show_rows[0]}">Ground Truth</button>
+    </div>
+    <div class="level-item has-text-centered">
+        <button class="button" @click="toggleRow(1)" :class="{'is-primary': show_rows[1]}">With Clip</button>
+    </div>
+    <div class="level-item has-text-centered">
+        <button class="button" @click="toggleRow(2)" :class="{'is-primary': show_rows[2]}">No Clip</button>
+    </div>
+    <div class="level-item has-text-centered">
+        <button class="button" @click="toggleRow(3)" :class="{'is-primary': show_rows[3]}">Input</button>
+    </div>
+    <div class="level-item has-text-centered">
+        <button class="button" @click="toggleRow(4)" :class="{'is-primary': show_rows[4]}">Target Shading</button>
+    </div>
+    <div class="level-item has-text-centered">
+        <button class="button" @click="toggleRow(5)" :class="{'is-primary': show_rows[5]}">Input Shading</button>
+    </div>
+    <div class="level-item has-text-centered">
+        <button class="button" @click="toggleRow(6)" :class="{'is-primary': show_rows[6]}">SD Withclip</button>
+    </div>
+    <div class="level-item has-text-centered">
+        <button class="button" @click="toggleRow(7)" :class="{'is-primary': show_rows[7]}">SD NoClip</button>
+    </div>
+
+</nav>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.js"></script>
+<script>
+const { createApp, ref } = Vue
+createApp({
+    setup() {
+        const scenes = ref(['14n_copyroom10','14n_office14','everett_kitchen4','everett_lobby19','everett_dining1'])
+        const light_sources = ref({
+            '14n_copyroom10': 3,
+            '14n_office14': 2,
+            'everett_kitchen4': 3,
+            'everett_lobby19': 3,
+            'everett_dining1': 0
+        });
+        const avaliable_lights = [0, 2, 3, 21, 24];
+        const test_lights = [0]
+        const num_epochs = ref(40);
+        const every_epochs = ref(2);
+        const show_rows = ref([true, true, true, true, false, false, false, false]);
+        const steps_per_epoch = 3079;
+        return {
+            scenes,
+            avaliable_lights,
+            test_lights,
+            show_rows,
+            num_epochs,
+            steps_per_epoch,
+            light_sources,
+            every_epochs
+        }
+    },
+    methods: {
+        getVersion(mode = "with_clip", learning_rate='1e-4', epoch_id = 0){
+            if(mode == "with_clip"){
+                if(learning_rate == '1e-4'){
+                    return "106916";
+                }else if(learning_rate == '1e-5'){
+                    return "106917";
+                }  
+            }else if(mode == "no_clip"){
+                if(learning_rate == '1e-4'){
+                    return "106918";
+                }else if(learning_rate == '1e-5'){
+                    return "106919";
+                }
+            }
+            return "NOT_FOUND";
+        },
+        getImageName(light_id){
+            if(light_id < 25){
+                return '14n_copyroom10-dir_0_mip2_14n_copyroom10-dir_'+light_id+'_mip2';
+            } 
+            if(light_id == 25){
+                return '000000-000022_000000-000022';
+            }
+            if(light_id == 26){
+                return '000000-000029_000000-000029';
+            }
+            if(light_id == 27){
+                return '000000-000032_000000-000032';
+            }
+            if(light_id == 28){
+                return '000000-000036_000000-000036';
+            }
+        },
+        toggleRow(index) {
+            this.show_rows[index] = !this.show_rows[index];
+        }
+    },
+    mounted() {
+    },
+    beforeDestroy() {
+    }
+}).mount('#app')
+</script>
+</body>
+</html>

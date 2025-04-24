@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html class="has-navbar-fixed-bottom">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Diffusion Face Relighting - Reimplmented in SD</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@1.0.2/css/bulma.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@cityssm/bulma-sticky-table@3.0.0/bulma-with-sticky-table.min.css" />
+    <style>
+        .fixed-tabs {
+          position: fixed;
+          top: 0;
+          width: 100%;
+          z-index: 1000;
+        }
+        body {
+          /* padding-top: 3rem;  #Adjust for the height of the fixed tab */
+        }
+        .crop-image {
+            width: 128px;
+            height: 128px;
+            object-fit: cover;
+            object-position: left center; /* Show the left half */
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/lodash@4.17.21/lodash.min.js"></script>    
+</head>
+<body>
+<div id="app">
+<div class="table-container mx-auto" style="overflow-y:auto;max-height:100vh;">
+    <div v-for="light_id in avaliable_lights">
+        <section class="hero">
+            <div class="hero-body">
+                <center><h1 class="title">TARGET_LIGHT: {{light_id}}</h1></center>
+            </div>
+        </section>
+        <table class="table is-bordered is-striped is-narrow mx-auto has-sticky-header">
+            <thead>
+                <tr>
+                    <th>epoch</th>
+                    <th v-for="step_id in _.range(20)">
+                        <b>{{Math.floor(step_id / 5)}}</b>
+                    </th>
+                </tr>
+                <tr>
+                    <th>step_id</th>
+                    <th v-for="step_id in _.range(20)">
+                        <b>{{step_id * 3750}}</b>
+                    </th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr v-if="show_rows[0]">
+                    <td> Ground Truth</td>
+                    <td v-for="step_id in  _.range(20)">
+                        <figure class="image is-128x128 mx-auto">
+                            <img :src="'/output/20250221_optmized_shading_exr/multi_mlp_fit/lightning_logs/version_'+getVersion()+'/step_'+_.padStart(String(step_id * 3750), 6, '0')+'/target_image/'+getImageName(light_id)+'.jpg'" /> 
+                        </figure>
+                    </td>
+                </tr>
+                <tr v-if="show_rows[1]">
+                    <td> Predicted</td>
+                    <td v-for="step_id in _.range(20)">
+                        <figure class="image is-128x128 mx-auto">
+                            <img :src="'/output/20250221_optmized_shading_exr/multi_mlp_fit/lightning_logs/version_'+getVersion()+'/step_'+_.padStart(String(step_id * 3750), 6, '0')+'/crop_image/'+getImageName(light_id)+'.png'" /> 
+                        </figure>
+                    </td>
+                </tr>
+                <tr v-if="show_rows[2]">
+                    <td> Input</td>
+                    <td v-for="step_id in _.range(20)">
+                        <figure class="image is-128x128 mx-auto">
+                            <img :src="'/output/20250221_optmized_shading_exr/multi_mlp_fit/lightning_logs/version_'+getVersion()+'/step_'+_.padStart(String(step_id * 3750), 6, '0')+'/source_image/'+getImageName(light_id)+'.jpg'" /> 
+                        </figure>
+                    </td>
+                </tr>
+                <tr v-if="show_rows[3]">
+                    <td> Shading Target</td>
+                    <td v-for="step_id in _.range(20)">
+                        <figure class="image is-128x128 mx-auto">
+                            <img v-if="light_id < 25" :src="'/output/single_lora/output/scene_inspect/14n_copyroom10/000000/shading_exr_order6_v3_viz_ldr/dir_'+light_id+'_mip2.png'" /> 
+                        </figure>
+                    </td>
+                </tr>
+                <tr v-if="show_rows[4]">
+                    <td> Shading Input</td>
+                    <td v-for="step_id in _.range(20)">
+                        <figure class="image is-128x128 mx-auto">
+                            <img v-if="light_id < 25" :src="'/output/single_lora/output/scene_inspect/14n_copyroom10/000000/shading_exr_order6_v3_viz_ldr/dir_0_mip2.png'" /> 
+                        </figure>
+                    </td>
+                </tr>
+                <tr v-if="show_rows[5]">
+                    <td> SD Output</td>
+                    <td v-for="step_id in _.range(20)">
+                        <figure class="image is-128x128 mx-auto">
+                            <img :src="'/output/20250221_optmized_shading_exr/multi_mlp_fit/lightning_logs/version_'+getVersion()+'/step_'+_.padStart(String(step_id * 3750), 6, '0')+'/sd_output/'+getImageName(light_id)+'.jpg'" /> 
+                        </figure>
+                    </td>
+                </tr>
+              
+            </tbody>
+        </table>
+    </div>
+</div>
+<nav class="navbar level is-dark is-fixed-bottom" >
+
+    <div class="level-item has-text-centered">
+        <button class="button" @click="toggleRow(0)" :class="{'is-primary': show_rows[0]}">Ground Truth</button>
+    </div>
+    <div class="level-item has-text-centered">
+        <button class="button" @click="toggleRow(1)" :class="{'is-primary': show_rows[1]}">Predicted</button>
+    </div>
+    <div class="level-item has-text-centered">
+        <button class="button" @click="toggleRow(2)" :class="{'is-primary': show_rows[2]}">Input</button>
+    </div>
+    <div class="level-item has-text-centered">
+        <button class="button" @click="toggleRow(3)" :class="{'is-primary': show_rows[3]}">Target Shading</button>
+    </div>
+    <div class="level-item has-text-centered">
+        <button class="button" @click="toggleRow(4)" :class="{'is-primary': show_rows[4]}">Input Shading</button>
+    </div>
+    <div class="level-item has-text-centered">
+        <button class="button" @click="toggleRow(5)" :class="{'is-primary': show_rows[5]}">SD Output</button>
+    </div>
+
+</nav>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.js"></script>
+<script>
+const { createApp, ref } = Vue
+createApp({
+    setup() {
+        const scenes = ref([])
+        const avaliable_lights = _.range(25);
+        const test_lights = [0]
+        const show_rows = ref([true, true, true, true, true, true]);
+        
+        return {
+            scenes,
+            avaliable_lights,
+            test_lights,
+            show_rows,
+        }
+    },
+    methods: {
+        getVersion(epoch_id = 0){
+            return "106225";
+        },
+        getImageName(light_id){
+            if(light_id < 25){
+                return '14n_copyroom10-dir_0_mip2_14n_copyroom10-dir_'+light_id+'_mip2';
+            } 
+            if(light_id == 25){
+                return '000000-000022_000000-000022';
+            }
+            if(light_id == 26){
+                return '000000-000029_000000-000029';
+            }
+            if(light_id == 27){
+                return '000000-000032_000000-000032';
+            }
+            if(light_id == 28){
+                return '000000-000036_000000-000036';
+            }
+        },
+        toggleRow(index) {
+            this.show_rows[index] = !this.show_rows[index];
+        }
+    },
+    mounted() {
+    },
+    beforeDestroy() {
+    }
+}).mount('#app')
+</script>
+</body>
+</html>

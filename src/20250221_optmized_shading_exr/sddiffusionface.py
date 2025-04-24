@@ -465,7 +465,8 @@ class SDDiffusionFace(L.LightningModule):
         # precompute-variable
         is_apply_cfg = self.guidance_scale > 1
         # _step_{self.global_step:06d}
-        epoch_text = f"epoch_{self.current_epoch:04d}/" if is_seperate_dir_with_epoch else ""
+        # epoch_text = f"epoch_{self.current_epoch:04d}/" if is_seperate_dir_with_epoch else ""
+        epoch_text = f"step_{self.global_step:06d}/" if is_seperate_dir_with_epoch else ""
         source_name = f"{batch['name'][0].replace('/','-')}"
         device = batch['source_image'].device
 
