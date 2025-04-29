@@ -83,7 +83,12 @@
 # bin/siatv100 src/20250221_optmized_shading_exr/val_ddim.py -i 103212 -m rotate_everett_kitchen10 -c 274
 # bin/siatv100 src/20250221_optmized_shading_exr/val_ddim.py -i 103212 -m rotate_everett_kitchen11 -c 274
 # bin/siatv100 src/20250221_optmized_shading_exr/val_ddim.py -i 103212 -m rotate_everett_dining1 -c 274
-# 
+
+# bin/siatv100 src/20250221_optmized_shading_exr/val_ddim.py -i 101579 -m rotate_everett_dining1 -c 216,79
+# bin/siatv100 src/20250221_optmized_shading_exr/val_ddim.py -i 101579 -m rotate_everett_kitchen2 -c 79,216
+# bin/siatv100 src/20250221_optmized_shading_exr/val_ddim.py -i 101579 -m rotate_everett_kitchen4 -c 79,216
+# bin/siatv100 src/20250221_optmized_shading_exr/val_ddim.py -i 101579 -m rotate_everett_kitchen6 -c 79,216
+
 
 # bin/siatv100 src/20250221_optmized_shading_exr/val_ddim.py -i 103212 -m v3_all_14n_copyroom10_light0_exr_newgt -c 274,270,260,250,240,265,255,245,235,234,235,236,237,238,239,240,241,242,243,244,245,246,247,248,249,250,251,252,253,254,255,256,257,258,259,260,261,262,263,264,265,266,267,268,269,270,271,272,273,274
 # bin/siatv100 src/20250221_optmized_shading_exr/val_ddim.py -i 103212 -m v3_all_14n_copyroom10_light3_exr_newgt -c 274,270,260,250,240,265,255,245,235,234,235,236,237,238,239,240,241,242,243,244,245,246,247,248,249,250,251,252,253,254,255,256,257,258,259,260,261,262,263,264,265,266,267,268,269,270,271,272,273,274

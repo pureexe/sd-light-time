@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --error=output/logs/output/%j_out.txt   # STDOUT output is written in slurm.out.JOBID
 #SBATCH --output=output/logs/error/%j_err.txt  # STDOUT error is written in slurm.err.JOBID
-#SBATCH --job-name=1e-4ncball          # Job name: 1e-4 no clip multi-ilumn 
+#SBATCH --job-name=1e-4ncball          # Job name: 1e-4 no clip multi-ilumn  #110437
 #SBATCH --mem=64GB                   # Memory request for this job
 #SBATCH --nodes=1                    # The number of nodes
 #SBATCH --partition=gpu-cluster
