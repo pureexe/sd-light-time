@@ -566,6 +566,16 @@ def parse_args(input_args=None):
         ),
     )
 
+    parser.add_argument(
+        "--max_shading_value",
+        type=float,
+        default=0.0,
+        help=(
+            "Value use for normalize shading (control_image) into range [0,1]. "
+            "leave it empty or set value <= 0.0 to prevent this normalization"
+        )
+    )
+
     if input_args is not None:
         args = parser.parse_args(input_args)
     else:
@@ -706,7 +716,7 @@ def make_train_dataset(args, tokenizer, accelerator):
 
         # PURE-edit:  support exr format 
         conditioning_images = []
-        for image in examples[conditioning_image_column]:
+        for idx, image in enumerate(examples[conditioning_image_column]):
             # check if it pil 
             if isinstance(image, Image.Image):
                 # if it pil, we do regular one 
@@ -714,8 +724,14 @@ def make_train_dataset(args, tokenizer, accelerator):
                 cond_image = conditioning_image_transforms(cond_image)
             else:
                 # convert from numpy to torch 
-                cond_image = ezexr.imread(image)[...,:3]
+                try:
+                    cond_image = ezexr.imread(image)[...,:3]
+                except:
+                    cond_image = np.ones((args.resolution, args.resolution, 3)) * 0.5
                 cond_image = torch.from_numpy(cond_image)
+                if args.max_shading_value > 0:
+                    cond_image = cond_image / args.max_shading_value
+                    cond_image = torch.clamp(cond_image, 0, 1)
                 cond_image = cond_image.permute(2,0,1)[None] # change to [b, C,H,W] format 
                 cond_image = torch.nn.functional.interpolate(cond_image, size=(args.resolution, args.resolution), mode='bilinear', align_corners=False)[0]
             conditioning_images.append(cond_image)

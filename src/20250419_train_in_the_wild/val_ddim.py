@@ -97,6 +97,14 @@
 # bin/siatv100 src/20250419_train_in_the_wild/val_ddim.py -i 110416 -m rotate_everett_kitchen6 -c 54
 
 
+# bin/siatv100 src/20250419_train_in_the_wild/val_ddim.py -i 111016 -m rotate_everett_dining1,rotate_diffusionlight_everett_kitchen2,rotate_diffusionlight_everett_kitchen4,rotate_diffusionlight_everett_kitchen6 -c 24
+# bin/siatv100 src/20250419_train_in_the_wild/val_ddim.py -i 111017 -m rotate_everett_dining1,rotate_diffusionlight_everett_kitchen2,rotate_diffusionlight_everett_kitchen4,rotate_diffusionlight_everett_kitchen6 -c 24
+# bin/siatv100 src/20250419_train_in_the_wild/val_ddim.py -i 111018 -m rotate_everett_dining1,rotate_diffusionlight_everett_kitchen2,rotate_diffusionlight_everett_kitchen4,rotate_diffusionlight_everett_kitchen6 -c 24
+# bin/siatv100 src/20250419_train_in_the_wild/val_ddim.py -i 111020 -m rotate_everett_dining1,rotate_diffusionlight_everett_kitchen2,rotate_diffusionlight_everett_kitchen4,rotate_diffusionlight_everett_kitchen6 -c 24
+# bin/siatv100 src/20250419_train_in_the_wild/val_ddim.py -i 111021 -m rotate_everett_dining1,rotate_diffusionlight_everett_kitchen2,rotate_diffusionlight_everett_kitchen4,rotate_diffusionlight_everett_kitchen6 -c 24
+# bin/siatv100 src/20250419_train_in_the_wild/val_ddim.py -i 111022 -m rotate_everett_dining1,rotate_diffusionlight_everett_kitchen2,rotate_diffusionlight_everett_kitchen4,rotate_diffusionlight_everett_kitchen6 -c 24
+
+
 
 # bin/siatv100 src/20250221_optmized_shading_exr/val_ddim.py -i 103212 -m v3_all_14n_copyroom10_light0_exr_newgt -c 274,270,260,250,240,265,255,245,235,234,235,236,237,238,239,240,241,242,243,244,245,246,247,248,249,250,251,252,253,254,255,256,257,258,259,260,261,262,263,264,265,266,267,268,269,270,271,272,273,274
 # bin/siatv100 src/20250221_optmized_shading_exr/val_ddim.py -i 103212 -m v3_all_14n_copyroom10_light3_exr_newgt -c 274,270,260,250,240,265,255,245,235,234,235,236,237,238,239,240,241,242,243,244,245,246,247,248,249,250,251,252,253,254,255,256,257,258,259,260,261,262,263,264,265,266,267,268,269,270,271,272,273,274
@@ -217,8 +225,13 @@ NAMES = {
     106918: 'no_clip',
     110436: 'with_clip',
     110437: 'no_clip',
-    110416: 'no_clip'
-
+    110416: 'no_clip',
+    111016: 'no_clip',
+    111017: 'no_clip',
+    111018: 'no_clip',
+    111020: 'with_clip',
+    111021: 'with_clip',
+    111022: 'with_clip',
 }
 METHODS = {
     99826: 'default',
@@ -256,7 +269,13 @@ METHODS = {
     106918: 'default',
     110436: 'default',
     110437: 'default',
-    110416: 'default'
+    110416: 'default',
+    111016: 'run1',
+    111017: 'run2',
+    111018: 'run3',
+    111020: 'run1',
+    111021: 'run2',
+    111022: 'run3',
 }
 CONDITIONS_CLASS = {
     99826: SDDiffusionFaceNoBg,
@@ -294,7 +313,13 @@ CONDITIONS_CLASS = {
     106918: SDOnlyShading,
     110436: SDOnlyShading,
     110437: SDOnlyShading,
-    110416: SDOnlyShading
+    110416: SDOnlyShading,
+    111016: SDOnlyShading,
+    111017: SDOnlyShading,
+    111018: SDOnlyShading,
+    111020: SDDiffusionFaceNoBg,
+    111021: SDDiffusionFaceNoBg,
+    111022: SDDiffusionFaceNoBg,
 }
 LRS = {
     99826: '1e-4',
@@ -332,7 +357,14 @@ LRS = {
     106918: '1e-4',
     110436: '1e-4',
     110437: '1e-4',
-    110416: '1e-4'
+    110416: '1e-4',
+    111016: '1e-4',
+    111017: '1e-4',
+    111018: '1e-4',
+    111020: '1e-4',
+    111021: '1e-4',
+    111022: '1e-4',
+
 }
 DIRNAME = {
     99826: CHECKPOINT_FOLDER_NAME,
@@ -371,6 +403,12 @@ DIRNAME = {
     110436: '20250419_train_in_the_wild',
     110437: '20250419_train_in_the_wild',
     110416: '20250419_train_in_the_wild',
+    111016: '20250419_train_in_the_wild',
+    111017: '20250419_train_in_the_wild',
+    111018: '20250419_train_in_the_wild',
+    111020: '20250419_train_in_the_wild',
+    111021: '20250419_train_in_the_wild',
+    111022: '20250419_train_in_the_wild',
 }
 CHECKPOINTS = {
     99826: 20,
@@ -408,7 +446,14 @@ CHECKPOINTS = {
     106918: 19,
     110436: 14,
     110437: 14,
-    110416: 54
+    110416: 54,
+    111016: 29,
+    111017: 29,
+    111018: 29,
+    111020: 29,
+    111021: 29,
+    111022: 29,
+
 }
 
 # bin/siatv100 src/20250221_optmized_shading_exr/val_ddim.py -i 104458 -m rotate_000071 -c 2,1,0,3
@@ -419,8 +464,9 @@ CHECKPOINTS = {
 use_ab_background = []
 use_shcoeff2 = []
 use_only_light = []
-use_no_light = [99826, 99828, 99998, 100430, 100235,101150, 101578, 101579, 101580, 101581, 102272, 102273, 102274, 102279, 102510, 102427, 102771, 102774, 103212, 102773, 102776, 102777, 102778, 103288, 103211, 103494, 104458, 104459, 104460, 104462, 106916, 106918, 110436, 110437]
+use_no_light = [99826, 99828, 99998, 100430, 100235,101150, 101578, 101579, 101580, 101581, 102272, 102273, 102274, 102279, 102510, 102427, 102771, 102774, 103212, 102773, 102776, 102777, 102778, 103288, 103211, 103494, 104458, 104459, 104460, 104462, 106916, 106918, 110436, 110437, 111016, 111017, 111018, 111020, 111021, 111022]
 use_random_mask_background = []
+STORE_IN_T1 = [111016, 111017, 111018, 111020, 111021, 111022]
 
 def get_from_mode(mode):
     if mode == "rotate_diffusionlight_everett_dining1":
@@ -576,9 +622,12 @@ def main():
     print("checkpoints: ", checkpoints)
     print("modes: ", modes)
 
+    
+
     for mode in modes:
         for version in versions:
                 ddim_class = CONDITIONS_CLASS[version]
+                multifit_version = "storage_t1" if version in STORE_IN_T1 else "multi_mlp_fit"
                 try:
                     for checkpoint in checkpoints:
                         dirname = DIRNAME[version]
@@ -588,7 +637,7 @@ def main():
                             model = ddim_class(learning_rate=1e-4)
                             CKPT_PATH = None
                         else:
-                            CKPT_PATH = f"output/{dirname}/multi_mlp_fit/lightning_logs/version_{version}/checkpoints/epoch={checkpoint:06d}.ckpt"
+                            CKPT_PATH = f"output/{dirname}/{multifit_version}/lightning_logs/version_{version}/checkpoints/epoch={checkpoint:06d}.ckpt"
                             if not os.path.exists(CKPT_PATH):
                                 print(f"Checkpoint not found: {CKPT_PATH}")
                                 continue

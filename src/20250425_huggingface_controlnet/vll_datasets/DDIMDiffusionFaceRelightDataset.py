@@ -3,7 +3,7 @@
 import os 
 import json
 import torch
-from datasets.DiffusionFaceRelightDataset import DiffusionFaceRelightDataset
+from vll_datasets.DiffusionFaceRelightDataset import DiffusionFaceRelightDataset
 
 class DDIMDiffusionFaceRelightDataset(DiffusionFaceRelightDataset):
 
