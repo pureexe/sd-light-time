@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --error=output/logs/output/%j_out.txt   # STDOUT output is written in slurm.out.JOBID
 #SBATCH --output=output/logs/error/%j_err.txt  # STDOUT error is written in slurm.err.JOBID
-#SBATCH --job-name=1e-4ncm2          # Job name: 1e-4 no clip multi-ilumn # 111779/111415/111017 
+#SBATCH --job-name=1e-4_o6diffusionlight         # version 111756/111627
 #SBATCH --mem=64GB                   # Memory request for this job
 #SBATCH --nodes=1                    # The number of nodes
 #SBATCH --partition=gpu-cluster
@@ -14,7 +14,8 @@
 CONTAINER="/ist/ist-share/vision/pakkapon/singularity/diffusers0310v6.sif"
 LEARNING_RATE="1e-4"
 NETWORK_TYPE="sd_only_shading"
-COMMAND="python src/20250419_train_in_the_wild/train.py -lr ${LEARNING_RATE} --guidance_scale 1.0 --network_type ${NETWORK_TYPE} --batch_size 8 -c 5 --feature_type clip --shadings_dir control_shading_from_fitting_v3_exr --backgrounds_dir control_render_from_fitting_v2 --images_dir control_render_from_fitting_v2 -dataset /data/pakkapon/datasets/multi_illumination/spherical/train  -dataset_val /data/pakkapon/datasets/multi_illumination/spherical/val -dataset_val_split /data/pakkapon/datasets/multi_illumination/spherical/split-val-relight-light-array.json  --seed 200 -ckpt /ist/ist-share/vision/pakkapon/relight/sd-light-time/output/20250419_train_in_the_wild/multi_mlp_fit/lightning_logs/version_111415/checkpoints/epoch=000094.ckpt"
+
+COMMAND="python src/20250419_train_in_the_wild/train.py -lr ${LEARNING_RATE} --guidance_scale 1.0 --network_type ${NETWORK_TYPE} --batch_size 8 -c 5 --feature_type clip --shadings_dir shadings_marigold --backgrounds_dir images --images_dir images -dataset /data/pakkapon/datasets/multi_illumination/shadings/least_square/v3/train -dataset_split /data/pakkapon/datasets/multi_illumination/spherical/index/multi_train.json -dataset_val /data/pakkapon/datasets/multi_illumination/shadings/least_square/v3/train -dataset_val_split /data/pakkapon/datasets/multi_illumination/spherical/index/14n_copyroom10_test.json -ckpt /ist/ist-share/vision/pakkapon/relight/sd-light-time/output/20250419_train_in_the_wild/storage_t1/lightning_logs/version_111627/checkpoints/epoch=000004.ckpt"
 
 echo ${COMMAND}
 

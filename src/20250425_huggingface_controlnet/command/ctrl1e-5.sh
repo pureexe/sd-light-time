@@ -1,14 +1,14 @@
 #!/bin/bash
 #SBATCH --error=output/logs/output/%j_out.txt   # STDOUT output is written in slurm.out.JOBID
 #SBATCH --output=output/logs/error/%j_err.txt  # STDOUT error is written in slurm.err.JOBID
-#SBATCH --job-name=1e-5ctrl          # Job name: 1e-4 no clip face 108472 
+#SBATCH --job-name=1e-5ctrl          #                V1_OLD: 108472
 #SBATCH --mem=64GB                   # Memory request for this job
 #SBATCH --nodes=1                    # The number of nodes
 #SBATCH --partition=gpu-cluster
 #SBATCH --account=vision
 #SBATCH --time=72:0:0                 # Running time 2 hours
 #SBATCH --gpus=1                     # The number of gpu
-
+# RUN ON 111605
 
 
 CONTAINER="/ist/ist-share/vision/pakkapon/singularity/diffusers0310v6.sif"

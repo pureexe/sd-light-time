@@ -45,6 +45,7 @@ parser.add_argument('--images_dir', type=str, default="images")
 parser.add_argument('--false_shading', action='store_true', help='Set false_shading to True')
 parser.add_argument('--triplet_background', action='store_true', help='Compute triplet loss for background to avoid cheating.')
 parser.add_argument('--grad_accum', type=int, default=1, help='gradient accumulation if need')
+parser.add_argument('--seed', type=int, default=42, help='seed to use')
 
 
 parser.add_argument(
@@ -75,6 +76,7 @@ def get_model_class():
         return SDDiffusionFace5ch
 
 def main():
+    L.seed_everything(args.seed)
     model_class = get_model_class()
     if args.checkpoint is None:
         model = model_class(
