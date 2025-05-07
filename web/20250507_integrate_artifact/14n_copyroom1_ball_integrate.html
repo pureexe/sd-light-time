@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Diffusion Face Relighting - Reimplmented in SD</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@1.0.2/css/bulma.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.21/lodash.min.js" integrity="sha512-WFN04846sdKMIP5LKNphMaWzU7YpMyCU245etK3g/2ARYbPK9Ub18eG+ljU96qKRCWh+quCY7yefSmlkQw1ANQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <style>
+        .fixed-tabs {
+          position: fixed;
+          top: 0;
+          width: 100%;
+          z-index: 1000;
+        }
+        body {
+          padding-top: 3rem; /* Adjust for the height of the fixed tab */
+        }
+        .crop-image {
+            width: 128px;
+            height: 128px;
+            object-fit: cover;
+            object-position: left center; /* Show the left half */
+        }
+    </style>
+</head>
+<body>
+<div id="app">
+<div class="tabs is-centered fixed-tabs has-background-dark">
+    <div class="select select is-primary">
+        <select v-model="current_splittype">
+            <option 
+                v-for="splittype in avaliable_spittypes"
+                :key="splittype" 
+                :value="splittype"
+            >
+                Split: {{splittype}}
+        </option>
+        </select>
+    </div>
+    <div class="select select is-primary">
+        <select v-model="current_guidance">
+            <option 
+                v-for="guidance in avaliable_guidances"
+                :key="guidance" 
+                :value="guidance"
+            >
+                Guidance: {{guidance}}
+        </option>
+        </select>
+    </div> 
+    <div class="select select is-primary">
+        <select v-model="current_learningrate">
+            <option 
+                v-for="learning_rate in avaliable_learningrates"
+                :key="learning_rate" 
+                :value="learning_rate"
+            >
+            learning_rate: {{learning_rate}}
+        </option>
+        </select>
+    </div>    
+</div>     
+<div class="table-container mx-auto">
+    <section class="section" v-for="light_id in _.range(25)" style="text-align: center;">
+        <h1 class="title">Light {{light_id}}</h1>
+        <table class="table is-bordered is-striped is-narrow mx-auto">
+            <thead>
+                <tr>
+                    <th>Config</th>
+                    <th>Input Image</th>
+                    <th>Ball from dataset</th>
+                    <th v-for="order_id in [2,3,4,6,10,20,50,100]"> SH Order {{order_id}} </th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>
+                        First version
+                    </td>
+                    <td>
+                        <figure class="image is-128x128 mx-auto">
+                            <img :src="'/output/datasets/multi_illumination/spherical/train/images/14n_copyroom1/dir_'+light_id+'_mip2.jpg'" />
+                        </figure>
+                    </td>
+                    <td>
+                        <figure class="image is-128x128 mx-auto">
+                            <img :src="'http://10.204.100.123/pakkapon/datasets/multi_illumination/spherical/train/viz_chromeball_blender_mesh_perspective_v2/14n_copyroom1/dir_'+light_id+'_mip2.png'" />
+                        </figure>
+                    </td>
+                    <td v-for="order_id in [2,3,4,6,10,20,50,100]">
+                        <figure class="image is-128x128 mx-auto">
+                            <img :src="'/output/single_lora/output/scene_inspect/14n_copyroom1/000000/a_result/diffuseball_order'+order_id+'_from_order100/dir_'+light_id+'_mip2.png'" />
+                        </figure>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        Use normal vector <br> for lookup
+                    </td>
+                    <td>
+                        <figure class="image is-128x128 mx-auto">
+                            <img :src="'/output/datasets/multi_illumination/spherical/train/images/14n_copyroom1/dir_'+light_id+'_mip2.jpg'" />
+                        </figure>
+                    </td>
+                    <td>
+                        <figure class="image is-128x128 mx-auto">
+                            <img :src="'http://10.204.100.123/pakkapon/datasets/multi_illumination/spherical/train/viz_chromeball_blender_mesh_perspective_v2/14n_copyroom1/dir_'+light_id+'_mip2.png'" />
+                        </figure>
+                    </td>
+                    <td v-for="order_id in [2,3,4,6,10,20,50,100]">
+                        <figure class="image is-128x128 mx-auto">
+                            <img :src="'/output/single_lora/output/scene_inspect/14n_copyroom1/000000/e_result/order'+order_id+'_viz_max_gt/dir_'+light_id+'_mip2.png'" />
+                        </figure>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        add +1 to oreder
+                    </td>
+                    <td>
+                        <figure class="image is-128x128 mx-auto">
+                            <img :src="'/output/datasets/multi_illumination/spherical/train/images/14n_copyroom1/dir_'+light_id+'_mip2.jpg'" />
+                        </figure>
+                    </td>
+                    <td>
+                        <figure class="image is-128x128 mx-auto">
+                            <img :src="'http://10.204.100.123/pakkapon/datasets/multi_illumination/spherical/train/viz_chromeball_blender_mesh_perspective_v2/14n_copyroom1/dir_'+light_id+'_mip2.png'" />
+                        </figure>
+                    </td>
+                    <td v-for="order_id in [2,3,4,6,10,20,50,100]">
+                        <figure class="image is-128x128 mx-auto">
+                            <img :src="'/output/single_lora/output/scene_inspect/14n_copyroom1/000000/fix_banding/shading_exr_perspective_v3_order'+order_id+'_gt_ball_vizmax/dir_'+light_id+'_mip2.png'" />
+                        </figure>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </section>
+
+
+</div>
+</div>
+<script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+<script>
+function fetchJson(fileURL, callback) {
+    fetch(fileURL)
+        .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+        return response.json();
+        })
+        .then(jsonData => callback(null, jsonData))
+        .catch(error => callback(error, null));
+    }
+      
+const { createApp, ref } = Vue
+createApp({
+    setup() {
+        const scenes = ref([])
+        return {
+            scenes
+        }
+    },
+    methods: {
+        handleKeyPress(event) {
+        },
+        getVersion(splittype, direction, learning_rate,  guidance){
+        },
+        getFaceSplit(){
+        }
+    },
+    mounted() {
+    },
+    beforeDestroy() {
+    }
+}).mount('#app')
+</script>
+</body>
+</html>

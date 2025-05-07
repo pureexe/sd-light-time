@@ -12,7 +12,13 @@ PRESET = {
     'batch_8_run1': [
         {
         'name': f'chk24',
-        'path': f'/ist/ist-share/vision/pakkapon/relight/sd-light-time/output/20250425_huggingface_controlnet/controlnet/MultiLstShading/v1/learning_rate_1e-4/batch_8/checkpoint-76975/controlnet'
+        'path': f'/ist/ist-share/vision/pakkapon/relight/sd-light-time/output/20250425_huggingface_controlnet/controlnet/MultiLstShading/v1/learning_rate_1e-4/batch_8/checkpoint-80000/controlnet'
+        }
+    ],
+    'batch_8_run3': [
+        {
+        'name': f'chk79',
+        'path': f'/ist/ist-share/vision/pakkapon/relight/sd-light-time/output/20250425_huggingface_controlnet/controlnet/MultiLstShading/v1/learning_rate_1e-4/batch_8_v3/checkpoint-246320/controlnet'
         }
     ],
     'full1e-5':[
@@ -20,7 +26,19 @@ PRESET = {
         'name': f'checkpoint-80000',
         'path': f'/ist/ist-share/vision/pakkapon/relight/sd-light-time/output/20250425_huggingface_controlnet/controlnet/v1/1e-5/checkpoint-80000/controlnet'
         }
-    ]
+    ],
+    'full1e-4':[
+        {
+        'name': f'checkpoint-180000',
+        'path': f'/pure/t1/checkpoints/sd-light-time/20250425_huggingface_controlnet/v1_old/1e-4/checkpoint-180000/controlnet'
+        }
+    ],
+    'full1e-4_v2':[
+        {
+        'name': f'checkpoint-120000',
+        'path': f'/pure/t1/checkpoints/sd-light-time/20250425_huggingface_controlnet/v1_old/1e-4/checkpoint-120000/controlnet'
+        }
+    ],
 }
 
 
@@ -88,7 +106,7 @@ def get_builder_from_mode(mode):
             'dataset_params': {
                 'root_dir': "/data/pakkapon/datasets/multi_illumination/shadings/least_square/v3/rotate",
                 "index_file":"/data/pakkapon/datasets/multi_illumination/shadings/least_square/v3/rotate/index/everett_dining1_rotate.json",
-                "shadings_dir": "shadings_marigold",
+                "shadings_dir": "shadings_marigold_v2",
                 "backgrounds_dir": 'images',
                 "images_dir":"images", 
                 'specific_prompt': None,
@@ -102,7 +120,7 @@ def get_builder_from_mode(mode):
             'dataset_params': {
                 'root_dir': "/data/pakkapon/datasets/multi_illumination/shadings/least_square/v3/rotate",
                 "index_file":"/data/pakkapon/datasets/multi_illumination/shadings/least_square/v3/rotate/index/everett_kitchen2_rotate.json",
-                "shadings_dir": "shadings_marigold",
+                "shadings_dir": "shadings_marigold_v2",
                 "backgrounds_dir": 'images',
                 "images_dir":"images", 
                 'specific_prompt': None,
@@ -116,7 +134,7 @@ def get_builder_from_mode(mode):
             'dataset_params': {
                 'root_dir': "/data/pakkapon/datasets/multi_illumination/shadings/least_square/v3/rotate",
                 "index_file":"/data/pakkapon/datasets/multi_illumination/shadings/least_square/v3/rotate/index/everett_kitchen4_rotate.json",
-                "shadings_dir": "shadings_marigold",
+                "shadings_dir": "shadings_marigold_v2",
                 "backgrounds_dir": 'images',
                 "images_dir":"images", 
                 'specific_prompt': None,
@@ -130,7 +148,7 @@ def get_builder_from_mode(mode):
             'dataset_params': {
                 'root_dir': "/data/pakkapon/datasets/multi_illumination/shadings/least_square/v3/rotate",
                 "index_file":"/data/pakkapon/datasets/multi_illumination/shadings/least_square/v3/rotate/index/everett_kitchen6_rotate.json",
-                "shadings_dir": "shadings_marigold",
+                "shadings_dir": "shadings_marigold_v2",
                 "backgrounds_dir": 'images',
                 "images_dir":"images", 
                 'specific_prompt': None,
@@ -200,6 +218,10 @@ def main(args):
                 controlnet_path = meta['path']
             )
             device = pipe.pipe.device
+            scores = {
+                'psnr': [],
+                'mse': []
+            }
             for batch in val_dataloader:
                 init_latent = None
                 for target_idx in range(len(batch['target_shading'])):
@@ -239,10 +261,8 @@ def main(args):
                         f.write(f"{mse.item()}\n")
                     with open(f"{psnr_dir}/{filename}.txt", "w") as f:
                         f.write(f"{psnr.item()}\n")
-                    #with open(f"{ssim_dir}/{filename}.txt", "w") as f:
-                    #    f.write(f"{ssim.item()}\n")
-                    #with open(f"{ddsim_dir}/{filename}.txt", "w") as f:
-                    #    f.write(f"{ddsim.item()}\n")
+                    scores['psnr'].append(psnr.item())
+                    scores['mse'].append(mse.item())
 
                     tb_image = [gt_image, image, control_image]
                     tb_image = torch.cat(tb_image, dim=0)
@@ -250,6 +270,7 @@ def main(args):
                     tb_image = torchvision.utils.make_grid(tb_image, nrow=int(np.ceil(np.sqrt(len(tb_image)))), normalize=True)
                     torchvision.utils.save_image(tb_image, os.path.join(with_groudtruth_dir, f"{filename}.jpg"))
                     os.chmod(os.path.join(with_groudtruth_dir, f"{filename}.jpg"), 0o777)
+            scores['psnr'] = float(np.mean(np.array(scores['psnr'])))
 
 
         
@@ -261,8 +282,9 @@ if __name__ == '__main__':
     #parser.add_argument("-m", "--mode", type=str, default="rotate_everett_kitchen6,rotate_everett_dining1,rotate_everett_kitchen2,rotate_everett_kitchen4")
     parser.add_argument("-c", "--checkpoint", type=str, default="")
     #parser.add_argument("-p", "--preset", type=str, default="batch_8_run1")
-    parser.add_argument("-p", "--preset", type=str, default="full1e-5")
-    parser.add_argument("-m", "--mode", type=str, default="rotate_diffusionlight_everett_kitchen2,rotate_diffusionlight_everett_kitchen4,rotate_diffusionlight_everett_kitchen6")
+    parser.add_argument("-p", "--preset", type=str, default="batch_8_run3")
+    parser.add_argument("-m", "--mode", type=str, default="rotate_diffusionlight_everett_kitchen6,rotate_diffusionlight_everett_dining1,rotate_diffusionlight_everett_kitchen2,rotate_diffusionlight_everett_kitchen4")
+    parser.add_argument('-seed', type=str, default=42)
     args = parser.parse_args()
     main(args)
 

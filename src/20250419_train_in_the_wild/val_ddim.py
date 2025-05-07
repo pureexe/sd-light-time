@@ -91,6 +91,13 @@
 # bin/siatv100 src/20250419_train_in_the_wild/val_ddim.py -i 110437 -m rotate_diffusionlight_everett_kitchen4 -c 14
 # bin/siatv100 src/20250419_train_in_the_wild/val_ddim.py -i 110437 -m rotate_diffusionlight_everett_kitchen6 -c 14
 
+# bin/siatv100 src/20250419_train_in_the_wild/val_ddim.py -i 111756 -m rotate_diffusionlight_everett_dining1 -c 39
+# bin/siatv100 src/20250419_train_in_the_wild/val_ddim.py -i 111756 -m rotate_diffusionlight_everett_kitchen2 -c 39
+# bin/siatv100 src/20250419_train_in_the_wild/val_ddim.py -i 111756 -m rotate_diffusionlight_everett_kitchen4 -c 39
+# bin/siatv100 src/20250419_train_in_the_wild/val_ddim.py -i 111756 -m rotate_diffusionlight_everett_kitchen6 -c 39
+
+
+
 # bin/siatv100 src/20250419_train_in_the_wild/val_ddim.py -i 110416 -m rotate_everett_dining1 -c 54
 # bin/siatv100 src/20250419_train_in_the_wild/val_ddim.py -i 110416 -m rotate_everett_kitchen2 -c 54
 # bin/siatv100 src/20250419_train_in_the_wild/val_ddim.py -i 110416 -m rotate_everett_kitchen4 -c 54
@@ -103,6 +110,9 @@
 # bin/siatv100 src/20250419_train_in_the_wild/val_ddim.py -i 111020 -m rotate_everett_dining1,rotate_diffusionlight_everett_kitchen2,rotate_diffusionlight_everett_kitchen4,rotate_diffusionlight_everett_kitchen6 -c 24
 # bin/siatv100 src/20250419_train_in_the_wild/val_ddim.py -i 111021 -m rotate_everett_dining1,rotate_diffusionlight_everett_kitchen2,rotate_diffusionlight_everett_kitchen4,rotate_diffusionlight_everett_kitchen6 -c 24
 # bin/siatv100 src/20250419_train_in_the_wild/val_ddim.py -i 111022 -m rotate_everett_dining1,rotate_diffusionlight_everett_kitchen2,rotate_diffusionlight_everett_kitchen4,rotate_diffusionlight_everett_kitchen6 -c 24
+# bin/siatv100 src/20250419_train_in_the_wild/val_ddim.py -i 111414 -m rotate_everett_kitchen6 -c 84 -seed 42,100,200,300,400,500,600,700,800,900
+# bin/siatv100 src/20250419_train_in_the_wild/val_ddim.py -i 111414 -m rotate_everett_kitchen6 -c 79,59
+# bin/siatv100 src/20250419_train_in_the_wild/val_ddim.py -i 111016 -m rotate_everett_kitchen6 -c 39,19
 
 
 
@@ -179,6 +189,7 @@ parser.add_argument("-i", "--version", type=str, default="2")
 parser.add_argument("-m", "--mode", type=str, default="face_left,face_right")
 parser.add_argument("-g", "--guidance_scale", type=str, default="1")
 parser.add_argument("-c", "--checkpoint", type=str, default="lastest")
+parser.add_argument("-seed",  type=str, default="42")
 
 args = parser.parse_args()
 
@@ -232,6 +243,9 @@ NAMES = {
     111020: 'with_clip',
     111021: 'with_clip',
     111022: 'with_clip',
+    111414: 'no_clip',
+    111756: 'no_clip_diffusionlight',
+    111778: 'no_clip',    
 }
 METHODS = {
     99826: 'default',
@@ -276,6 +290,9 @@ METHODS = {
     111020: 'run1',
     111021: 'run2',
     111022: 'run3',
+    111414: 'run3',
+    111756: 'default',
+    111778: 'run1',
 }
 CONDITIONS_CLASS = {
     99826: SDDiffusionFaceNoBg,
@@ -320,6 +337,10 @@ CONDITIONS_CLASS = {
     111020: SDDiffusionFaceNoBg,
     111021: SDDiffusionFaceNoBg,
     111022: SDDiffusionFaceNoBg,
+    111414: SDOnlyShading,
+    111756: SDOnlyShading,
+    111778: SDOnlyShading,
+    
 }
 LRS = {
     99826: '1e-4',
@@ -364,7 +385,10 @@ LRS = {
     111020: '1e-4',
     111021: '1e-4',
     111022: '1e-4',
-
+    111414: '1e-4',
+    111756: '1e-4',
+    111778: '1e-4',
+    
 }
 DIRNAME = {
     99826: CHECKPOINT_FOLDER_NAME,
@@ -409,6 +433,9 @@ DIRNAME = {
     111020: '20250419_train_in_the_wild',
     111021: '20250419_train_in_the_wild',
     111022: '20250419_train_in_the_wild',
+    111414: '20250419_train_in_the_wild',
+    111756: '20250419_train_in_the_wild',
+    111778: '20250419_train_in_the_wild',
 }
 CHECKPOINTS = {
     99826: 20,
@@ -453,7 +480,10 @@ CHECKPOINTS = {
     111020: 29,
     111021: 29,
     111022: 29,
-
+    111414: 84,
+    111756: 39,
+    111778: 99,
+    
 }
 
 # bin/siatv100 src/20250221_optmized_shading_exr/val_ddim.py -i 104458 -m rotate_000071 -c 2,1,0,3
@@ -466,17 +496,17 @@ use_shcoeff2 = []
 use_only_light = []
 use_no_light = [99826, 99828, 99998, 100430, 100235,101150, 101578, 101579, 101580, 101581, 102272, 102273, 102274, 102279, 102510, 102427, 102771, 102774, 103212, 102773, 102776, 102777, 102778, 103288, 103211, 103494, 104458, 104459, 104460, 104462, 106916, 106918, 110436, 110437, 111016, 111017, 111018, 111020, 111021, 111022]
 use_random_mask_background = []
-STORE_IN_T1 = [111016, 111017, 111018, 111020, 111021, 111022]
+STORE_IN_T1 = [111016, 111017, 111018, 111020, 111021, 111022, 111778, 111779, 111780, 111781, 111782, 111783, 111756]
 
 def get_from_mode(mode):
     if mode == "rotate_diffusionlight_everett_dining1":
-        return "/data/pakkapon/datasets/multi_illumination/shadings/least_square/v3/rotate", 100, DDIMDiffusionFaceRelightDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/shadings/least_square/v3/rotate/index/everett_dining1_rotate.json", "shadings_dir": "shadings_marigold", "backgrounds_dir": "images", "images_dir":"images" , "feature_types": []},  "a photorealistic image"        
+        return "/data/pakkapon/datasets/multi_illumination/shadings/least_square/v3/rotate", 100, DDIMDiffusionFaceRelightDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/shadings/least_square/v4/rotate/index/everett_dining1_rotate.json", "shadings_dir": "shadings_marigold_v2", "backgrounds_dir": "images", "images_dir":"images" , "feature_types": []},  "a photorealistic image"        
     if mode == "rotate_diffusionlight_everett_kitchen2":
-        return "/data/pakkapon/datasets/multi_illumination/shadings/least_square/v3/rotate", 100, DDIMDiffusionFaceRelightDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/shadings/least_square/v3/rotate/index/everett_kitchen2_rotate.json", "shadings_dir": "shadings_marigold", "backgrounds_dir": "images", "images_dir":"images" , "feature_types": []},  "a photorealistic image"
+        return "/data/pakkapon/datasets/multi_illumination/shadings/least_square/v3/rotate", 100, DDIMDiffusionFaceRelightDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/shadings/least_square/v4/rotate/index/everett_kitchen2_rotate.json", "shadings_dir": "shadings_marigold_v2", "backgrounds_dir": "images", "images_dir":"images" , "feature_types": []},  "a photorealistic image"
     if mode == "rotate_diffusionlight_everett_kitchen4":
-        return "/data/pakkapon/datasets/multi_illumination/shadings/least_square/v3/rotate", 100, DDIMDiffusionFaceRelightDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/shadings/least_square/v3/rotate/index/everett_kitchen4_rotate.json", "shadings_dir": "shadings_marigold", "backgrounds_dir": "images", "images_dir":"images" , "feature_types": []},  "a photorealistic image" 
+        return "/data/pakkapon/datasets/multi_illumination/shadings/least_square/v3/rotate", 100, DDIMDiffusionFaceRelightDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/shadings/least_square/v4/rotate/index/everett_kitchen4_rotate.json", "shadings_dir": "shadings_marigold_v2", "backgrounds_dir": "images", "images_dir":"images" , "feature_types": []},  "a photorealistic image" 
     if mode == "rotate_diffusionlight_everett_kitchen6":
-        return "/data/pakkapon/datasets/multi_illumination/shadings/least_square/v3/rotate", 100, DDIMDiffusionFaceRelightDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/shadings/least_square/v3/rotate/index/everett_kitchen6_rotate.json", "shadings_dir": "shadings_marigold", "backgrounds_dir": "images", "images_dir":"images" , "feature_types": []},  "a photorealistic image"        
+        return "/data/pakkapon/datasets/multi_illumination/shadings/least_square/v3/rotate", 100, DDIMDiffusionFaceRelightDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/shadings/least_square/v4/rotate/index/everett_kitchen6_rotate.json", "shadings_dir": "shadings_marigold_v2", "backgrounds_dir": "images", "images_dir":"images" , "feature_types": []},  "a photorealistic image"        
 
     #########
     if mode == "rotate_everett_dining1":
@@ -616,6 +646,7 @@ def main():
             pass 
         checkpoints.append(checkpoint)
     modes = [a.strip() for a in args.mode.split(",")]
+    seeds = [int(a.strip()) for a in args.seed.split(",")]
 
     print("version: ", versions)
     print("guidance_scales: ", guidance_scales)
@@ -648,34 +679,35 @@ def main():
                         model.eval() # disable randomness, dropout, etc...
                         model.disable_plot_train_loss()
                         for guidance_scale in guidance_scales:
-                            #model.set_guidance_scale(guidance_scale)
-                            #model.set_ddim_strength(guidance_scale) #temporary hack to feed the guidance ratio                        
-                            #model.set_gaussain_strength(guidance_scale)  #temporary hack to feed the guidance ratio
-                            #model.set_ddim_brightness_random(0.4)
-                            output_dir = f"output/{FOLDER_NAME}/val_{mode}/{METHODS[version]}/{guidance_scale}/{NAMES[version]}/{LRS[version]}/chk{checkpoint}/"
-                            # skip if output dir exist 
-                            if os.path.exists(output_dir):
-                                print(f"Skip {output_dir}")
-                                continue
-                            os.makedirs(output_dir, exist_ok=True)
-                            print("================================")
-                            print(output_dir)
-                            print("================================")
-                            trainer = L.Trainer(max_epochs=1000, precision=MASTER_TYPE, check_val_every_n_epoch=1, default_root_dir=output_dir, inference_mode=False, gradient_clip_val=0)
-                            val_root, count_file, dataset_class, dataset_args, specific_prompt = get_from_mode(mode)
-                            if type(count_file) == int:
-                                split = slice(0, count_file, 1)
-                            else:
-                                split = count_file
-                            if version in use_shcoeff2:
-                                dataset_args['use_shcoeff2'] = True
-                            if version in use_only_light:
-                                dataset_args['feature_types'] = ['light']
-                            if version in use_no_light:
-                                dataset_args['feature_types'] = []
-                            val_dataset = dataset_class(split=split, root_dir=val_root, specific_prompt=specific_prompt, **dataset_args)
-                            val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=1, shuffle=False)
-                            trainer.test(model, dataloaders=val_dataloader, ckpt_path=CKPT_PATH)
+                            for seed in seeds:
+                                if len(seeds) > 1:
+                                    output_dir = f"output/{FOLDER_NAME}/val_{mode}/{METHODS[version]}/{guidance_scale}/{NAMES[version]}/{LRS[version]}/chk{checkpoint}/seed{seed}"
+                                else:
+                                    output_dir = f"output/{FOLDER_NAME}/val_{mode}/{METHODS[version]}/{guidance_scale}/{NAMES[version]}/{LRS[version]}/chk{checkpoint}/"
+                                model.set_seed(seed)
+                                # skip if output dir exist 
+                                if os.path.exists(output_dir):
+                                    print(f"Skip {output_dir}")
+                                    continue
+                                os.makedirs(output_dir, exist_ok=True)
+                                print("================================")
+                                print(output_dir)
+                                print("================================")
+                                trainer = L.Trainer(max_epochs=1000, precision=MASTER_TYPE, check_val_every_n_epoch=1, default_root_dir=output_dir, inference_mode=False, gradient_clip_val=0)
+                                val_root, count_file, dataset_class, dataset_args, specific_prompt = get_from_mode(mode)
+                                if type(count_file) == int:
+                                    split = slice(0, count_file, 1)
+                                else:
+                                    split = count_file
+                                if version in use_shcoeff2:
+                                    dataset_args['use_shcoeff2'] = True
+                                if version in use_only_light:
+                                    dataset_args['feature_types'] = ['light']
+                                if version in use_no_light:
+                                    dataset_args['feature_types'] = []
+                                val_dataset = dataset_class(split=split, root_dir=val_root, specific_prompt=specific_prompt, **dataset_args)
+                                val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=1, shuffle=False)
+                                trainer.test(model, dataloaders=val_dataloader, ckpt_path=CKPT_PATH)
 
 
                 except Exception as e:

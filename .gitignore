@@ -4,6 +4,7 @@ thrid_party/DECA/deca-env/
 src/20240915/*.png
 singularity/
 output/
+output_t1/
 
 # Byte-compiled / optimized / DLL files
 .call_api
