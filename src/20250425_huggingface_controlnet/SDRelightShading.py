@@ -9,12 +9,15 @@ class SDRelightShading():
     Relight by Inversion shading
     """
     
-    def __init__(self, controlnet_path, sd_path="runwayml/stable-diffusion-v1-5"):
-        self.seed = 42
+    def __init__(self, controlnet_path, sd_path="runwayml/stable-diffusion-v1-5", seed=42):
+        self.seed = seed
         self.guidance_scale = 1.0
         self.ddim_guidance_scale = 1.0
         self.num_inversion_steps = 500
         self.setup_sd(sd_path=sd_path, controlnet_path=controlnet_path)
+
+    def set_seed(self, seed):
+        self.seed = seed
 
     def setup_sd(self, sd_path="runwayml/stable-diffusion-v1-5", controlnet_path=None):
         # create controlnet from unet. Unet take 6 channel input with are 3 channel of background and other 3 channel of shading
