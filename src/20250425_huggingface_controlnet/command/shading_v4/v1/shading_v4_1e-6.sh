@@ -9,7 +9,7 @@
 #SBATCH --time=72:0:0                 # Running time 2 hours
 #SBATCH --gpus=1                     # The number of gpu
 #SBATCH --cpus-per-task=8            # The number of CPU cores
-# RUN ON  112511
+# RUN ON  112553 / 112511
 
 
 CONTAINER="/ist/ist-share/vision/pakkapon/singularity/diffusers0310v6.sif"
@@ -17,7 +17,7 @@ LEARNING_RATE="1e-6"
 RESOLUTION="512"
 BATCH_SIZE="8"
 GRAD_ACCUM="1"
-CHECK_EVERY="50000"
+CHECK_EVERY="5000"
 NUM_EPOCH="100"
 NUM_WORKER="8" #DATALOADER WORKER
 MODEL_DIR="stable-diffusion-v1-5/stable-diffusion-v1-5"
