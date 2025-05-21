@@ -97,6 +97,10 @@
 # bin/siatv100 src/20250419_train_in_the_wild/val_ddim.py -i 111756 -m rotate_diffusionlight_everett_kitchen6 -c 39
 
 
+# bin/siatv100 src/20250419_train_in_the_wild/val_ddim.py -i 111756 -m rotate_diffusionlight_everett_dining1 -c 79
+# bin/siatv100 src/20250419_train_in_the_wild/val_ddim.py -i 111756 -m rotate_diffusionlight_everett_kitchen2 -c 79
+# bin/siatv100 src/20250419_train_in_the_wild/val_ddim.py -i 111756 -m rotate_diffusionlight_everett_kitchen4 -c 79
+# bin/siatv100 src/20250419_train_in_the_wild/val_ddim.py -i 111756 -m rotate_diffusionlight_everett_kitchen6 -c 79
 
 # bin/siatv100 src/20250419_train_in_the_wild/val_ddim.py -i 110416 -m rotate_everett_dining1 -c 54
 # bin/siatv100 src/20250419_train_in_the_wild/val_ddim.py -i 110416 -m rotate_everett_kitchen2 -c 54
@@ -244,7 +248,7 @@ NAMES = {
     111021: 'with_clip',
     111022: 'with_clip',
     111414: 'no_clip',
-    111756: 'no_clip_diffusionlight',
+    111756: 'no_clip_diffusionlight_v2',
     111778: 'no_clip',    
 }
 METHODS = {
@@ -500,13 +504,21 @@ STORE_IN_T1 = [111016, 111017, 111018, 111020, 111021, 111022, 111778, 111779, 1
 
 def get_from_mode(mode):
     if mode == "rotate_diffusionlight_everett_dining1":
-        return "/data/pakkapon/datasets/multi_illumination/shadings/least_square/v3/rotate", 100, DDIMDiffusionFaceRelightDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/shadings/least_square/v4/rotate/index/everett_dining1_rotate.json", "shadings_dir": "shadings_marigold_v2", "backgrounds_dir": "images", "images_dir":"images" , "feature_types": []},  "a photorealistic image"        
+        return "/pure/t1/datasets/laion-shading/v4/rotate", 100, DDIMDiffusionFaceRelightDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/shadings/least_square/v4/rotate/index/everett_dining1_rotate.json", "shadings_dir": "shadings_marigold", "backgrounds_dir": "images", "images_dir":"images" , "feature_types": []},  "a photorealistic image"        
     if mode == "rotate_diffusionlight_everett_kitchen2":
-        return "/data/pakkapon/datasets/multi_illumination/shadings/least_square/v3/rotate", 100, DDIMDiffusionFaceRelightDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/shadings/least_square/v4/rotate/index/everett_kitchen2_rotate.json", "shadings_dir": "shadings_marigold_v2", "backgrounds_dir": "images", "images_dir":"images" , "feature_types": []},  "a photorealistic image"
+        return "/data/pakkapon/datasets/multi_illumination/shadings/least_square/v4/rotate", 100, DDIMDiffusionFaceRelightDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/shadings/least_square/v4/rotate/index/everett_kitchen2_rotate.json", "shadings_dir": "shadings_marigold", "backgrounds_dir": "images", "images_dir":"images" , "feature_types": []},  "a photorealistic image"
     if mode == "rotate_diffusionlight_everett_kitchen4":
-        return "/data/pakkapon/datasets/multi_illumination/shadings/least_square/v3/rotate", 100, DDIMDiffusionFaceRelightDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/shadings/least_square/v4/rotate/index/everett_kitchen4_rotate.json", "shadings_dir": "shadings_marigold_v2", "backgrounds_dir": "images", "images_dir":"images" , "feature_types": []},  "a photorealistic image" 
+        return "/data/pakkapon/datasets/multi_illumination/shadings/least_square/v4/rotate", 100, DDIMDiffusionFaceRelightDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/shadings/least_square/v4/rotate/index/everett_kitchen4_rotate.json", "shadings_dir": "shadings_marigold", "backgrounds_dir": "images", "images_dir":"images" , "feature_types": []},  "a photorealistic image" 
     if mode == "rotate_diffusionlight_everett_kitchen6":
-        return "/data/pakkapon/datasets/multi_illumination/shadings/least_square/v3/rotate", 100, DDIMDiffusionFaceRelightDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/shadings/least_square/v4/rotate/index/everett_kitchen6_rotate.json", "shadings_dir": "shadings_marigold_v2", "backgrounds_dir": "images", "images_dir":"images" , "feature_types": []},  "a photorealistic image"        
+        return "/data/pakkapon/datasets/multi_illumination/shadings/least_square/v4/rotate", 100, DDIMDiffusionFaceRelightDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/shadings/least_square/v4/rotate/index/everett_kitchen6_rotate.json", "shadings_dir": "shadings_marigold", "backgrounds_dir": "images", "images_dir":"images" , "feature_types": []},  "a photorealistic image" 
+    # if mode == "rotate_diffusionlight_everett_dining1":
+    #     return "/data/pakkapon/datasets/multi_illumination/shadings/least_square/v3/rotate", 100, DDIMDiffusionFaceRelightDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/shadings/least_square/v4/rotate/index/everett_dining1_rotate.json", "shadings_dir": "shadings_marigold_v2", "backgrounds_dir": "images", "images_dir":"images" , "feature_types": []},  "a photorealistic image"        
+    # if mode == "rotate_diffusionlight_everett_kitchen2":
+    #     return "/data/pakkapon/datasets/multi_illumination/shadings/least_square/v3/rotate", 100, DDIMDiffusionFaceRelightDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/shadings/least_square/v4/rotate/index/everett_kitchen2_rotate.json", "shadings_dir": "shadings_marigold_v2", "backgrounds_dir": "images", "images_dir":"images" , "feature_types": []},  "a photorealistic image"
+    # if mode == "rotate_diffusionlight_everett_kitchen4":
+    #     return "/data/pakkapon/datasets/multi_illumination/shadings/least_square/v3/rotate", 100, DDIMDiffusionFaceRelightDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/shadings/least_square/v4/rotate/index/everett_kitchen4_rotate.json", "shadings_dir": "shadings_marigold_v2", "backgrounds_dir": "images", "images_dir":"images" , "feature_types": []},  "a photorealistic image" 
+    # if mode == "rotate_diffusionlight_everett_kitchen6":
+    #     return "/data/pakkapon/datasets/multi_illumination/shadings/least_square/v3/rotate", 100, DDIMDiffusionFaceRelightDataset,{"index_file":"/data/pakkapon/datasets/multi_illumination/shadings/least_square/v4/rotate/index/everett_kitchen6_rotate.json", "shadings_dir": "shadings_marigold_v2", "backgrounds_dir": "images", "images_dir":"images" , "feature_types": []},  "a photorealistic image"        
 
     #########
     if mode == "rotate_everett_dining1":

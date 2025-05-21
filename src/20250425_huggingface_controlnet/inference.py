@@ -101,9 +101,62 @@ PRESET = {
             'name': 'run_05_chk35',
             'path': '/pure/t1/checkpoints/sd-light-time/20250425_huggingface_controlnet/controlnet/MultiLstShading/v1/learning_rate_1e-4/batch_8_v5/checkpoint-123160/controlnet'
         }
-
-    ]
+    ],
+    'batch_8_v1_r1': [
+        {
+            'name': f'chk80',
+            'path': f'/ist/ist-share/vision/pakkapon/relight/sd-light-time/output/20250425_huggingface_controlnet/output_t1/controlnet/MultiLstShading/v1/learning_rate_1e-4/batch_8_v1/checkpoint-246320/controlnet'
+        },
+        # {
+        #     'name': f'chk20',
+        #     'path': f'/ist/ist-share/vision/pakkapon/relight/sd-light-time/output/20250425_huggingface_controlnet/output_t1/controlnet/MultiLstShading/v1/learning_rate_1e-4/batch_8_v1/checkpoint-61580/controlnet'
+        # },
+        # {
+        #     'name': f'chk15',
+        #     'path': f'/ist/ist-share/vision/pakkapon/relight/sd-light-time/output/20250425_huggingface_controlnet/output_t1/controlnet/MultiLstShading/v1/learning_rate_1e-4/batch_8_v1/checkpoint-46185/controlnet'
+        # },
+        # {
+        #     'name': f'chk10',
+        #     'path': f'/ist/ist-share/vision/pakkapon/relight/sd-light-time/output/20250425_huggingface_controlnet/output_t1/controlnet/MultiLstShading/v1/learning_rate_1e-4/batch_8_v1/checkpoint-30790/controlnet'
+        # },
+        # {
+        #     'name': f'chk5',
+        #     'path': f'/ist/ist-share/vision/pakkapon/relight/sd-light-time/output/20250425_huggingface_controlnet/output_t1/controlnet/MultiLstShading/v1/learning_rate_1e-4/batch_8_v1/checkpoint-15395/controlnet'
+        # }
+    ],
+    'code0510_least_square_1e-4': [
+        {
+            'name': f'chk80',
+            'path': '/ist/ist-share/vision/pakkapon/relight/sd-light-time/output_t1/20250510_webdataset_support/controlnet/multi_illumination_least_square_diffusionlight/v3/1e-4/checkpoint-246320/controlnet',
+        },
+        # {
+        #     'name': f'chk60',
+        #     'path': '/ist/ist-share/vision/pakkapon/relight/sd-light-time/output_t1/20250510_webdataset_support/controlnet/multi_illumination_least_square_diffusionlight/v3/1e-4/checkpoint-184740/controlnet',
+        # },
+        # {
+        #     'name': f'chk40',
+        #     'path': '/ist/ist-share/vision/pakkapon/relight/sd-light-time/output_t1/20250510_webdataset_support/controlnet/multi_illumination_least_square_diffusionlight/v3/1e-4/checkpoint-123160/controlnet',
+        # },
+        
+    ],
+    'code0510_least_square_1e-5': [
+        {
+            'name': f'chk80',
+            'path': f'/ist/ist-share/vision/pakkapon/relight/sd-light-time/output_t1/20250510_webdataset_support/controlnet/multi_illumination_least_square_diffusionlight/v2/1e-5/checkpoint-246320/controlnet'
+        },
+        # {
+        #     'name': f'chk60',
+        #     'path': f'/ist/ist-share/vision/pakkapon/relight/sd-light-time/output_t1/20250510_webdataset_support/controlnet/multi_illumination_least_square_diffusionlight/v2/1e-5/checkpoint-184740/controlnet'
+        # },
+        # {
+        #     'name': f'chk40',
+        #     'path': f'/ist/ist-share/vision/pakkapon/relight/sd-light-time/output_t1/20250510_webdataset_support/controlnet/multi_illumination_least_square_diffusionlight/v2/1e-5/checkpoint-123160/controlnet'
+        # },
+       
+    ],
 }
+
+
 
 
 def get_builder_from_mode(mode):
@@ -295,7 +348,11 @@ def main(args):
                     init_latent = None
                     for target_idx in range(len(batch['target_shading'])):
                         print("SOURCE: ", batch['name'][0], " | Target: ", batch['word_name'][target_idx][0])
-
+                        filename = f"{batch['name'][0].replace('/','-')}_{batch['word_name'][target_idx][0].replace('/','-')}"
+                        with_gt_path = os.path.join(with_groudtruth_dir, f"{filename}.jpg")
+                        if os.path.exists(with_gt_path):
+                            print("Already exists")
+                            continue
                         ret = pipe.relight(
                             source_image = batch['source_image'].to(device).to(MASTER_TYPE),
                             target_shading = batch['target_shading'][target_idx].to(device).to(MASTER_TYPE),
@@ -308,13 +365,13 @@ def main(args):
 
                         # save image
                         image = torch.clamp(image, 0.0, 1.0).cpu()
-                        filename = f"{batch['name'][0].replace('/','-')}_{batch['word_name'][target_idx][0].replace('/','-')}"
+                        
                         torchvision.utils.save_image(image, os.path.join(crop_dir, f"{filename}.png"))
                         os.chmod(os.path.join(crop_dir, f"{filename}.png"), 0o777)
                         
                         control_image = batch['target_shading'][target_idx]
                         control_image = control_image / control_image.max()
-                        filename = f"{batch['name'][0].replace('/','-')}_{batch['word_name'][target_idx][0].replace('/','-')}"
+                        
                         torchvision.utils.save_image(control_image, os.path.join(control_dir, f"{filename}.png"))
                         os.chmod(os.path.join(control_dir, f"{filename}.png"), 0o777)
     
@@ -338,7 +395,7 @@ def main(args):
                         tb_image = torch.clamp(tb_image, 0.0, 1.0)
                         tb_image = torchvision.utils.make_grid(tb_image, nrow=int(np.ceil(np.sqrt(len(tb_image)))), normalize=True)
                         torchvision.utils.save_image(tb_image, os.path.join(with_groudtruth_dir, f"{filename}.jpg"))
-                        os.chmod(os.path.join(with_groudtruth_dir, f"{filename}.jpg"), 0o777)
+                        os.chmod(with_gt_path, 0o777)
 
 
                 # finding average for saving
@@ -362,8 +419,8 @@ if __name__ == '__main__':
     parser.add_argument("-c", "--checkpoint", type=str, default="")
     #parser.add_argument("-p", "--preset", type=str, default="batch_8_run1")
     parser.add_argument("-p", "--preset", type=str, default="rotate_3_runs")
-    parser.add_argument("-m", "--mode", type=str, default="rotate_everett_kitchen6")
-    parser.add_argument('-seed', type=str, default='100,200,300,400,500')
+    parser.add_argument("-m", "--mode", type=str, default="rotate_everett_kitchen6,rotate_everett_dining1,rotate_everett_kitchen2,rotate_everett_kitchen4")
+    parser.add_argument('-seed', type=str, default='42')
     args = parser.parse_args()
     main(args)
 

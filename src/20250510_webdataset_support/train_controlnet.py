@@ -575,6 +575,15 @@ def parse_args(input_args=None):
             "leave it empty or set value <= 0.0 to prevent this normalization"
         )
     )
+    
+    parser.add_argument(
+        "--estimated_dataset_length",
+        type=int,
+        default=0,
+        help=(
+            "Estimated dataset length. This is used to calculate the number of training steps in the case of webdataset., set value <= 0 to disable this"
+        )
+    )
 
     if input_args is not None:
         args = parser.parse_args(input_args)
@@ -613,7 +622,9 @@ def parse_args(input_args=None):
     return args
 
 def is_web_dataset(args):
-    return args.train_data_dir and (args.train_data_dir.endswith(".tar") or ".tar" in args.train_data_dir or "{" in args.train_data_dir)
+    is_tar_mode =  args.train_data_dir and (args.train_data_dir.endswith(".tar") or ".tar" in args.train_data_dir or "{" in args.train_data_dir)
+    is_text_mode = args.train_data_dir and (args.train_data_dir.endswith(".txt"))
+    return is_tar_mode or is_text_mode
 
 def make_train_dataset(args, tokenizer, accelerator):
     if is_web_dataset(args):
@@ -671,8 +682,15 @@ def make_train_dataset_webdataset(args, tokenizer, accelerator):
             item = (item * 2.0) - 1.0
         return item
 
+    train_data_dir = args.train_data_dir
+    if train_data_dir.endswith(".txt"):     
+        # pure-edit: support for txt file 
+        with open(train_data_dir, "r") as f:
+            lines = f.readlines()
+        train_data_dir = [line.strip() for line in lines if line.strip()]
+    
     dataset = (
-        wds.WebDataset(args.train_data_dir, resampled=True)        
+        wds.WebDataset(train_data_dir, resampled=True)        
         .select(lambda sample: all(k in sample for k in ["jpg", "npz", "txt"]))
         .to_tuple("jpg", "npz", "txt")
         .map(lambda data_tuple: {
@@ -683,16 +701,17 @@ def make_train_dataset_webdataset(args, tokenizer, accelerator):
     )
     #.decode(lambda jpg, npz, txt: (Image.open(io.BytesIO(jpg)).convert("RGB"), npz, txt))
 
-
-    match = re.search(r"\{(\d+)\.\.(\d+)\}", args.train_data_dir)
-    if match:
-        start, end = int(match.group(1)), int(match.group(2))
-        num_shards = end - start + 1
+    if args.estimated_dataset_length > 0:
+        estimated_length = args.estimated_dataset_length
     else:
-        num_shards = 1
-
-    samples_per_shard = 1000  # Set this to your average per .tar
-    estimated_length = num_shards * samples_per_shard
+        match = re.search(r"\{(\d+)\.\.(\d+)\}", args.train_data_dir)
+        if match:
+            start, end = int(match.group(1)), int(match.group(2))
+            num_shards = end - start + 1
+        else:
+            num_shards = 1
+        samples_per_shard = 1000  # Set this to your average per .tar
+        estimated_length = num_shards * samples_per_shard
 
     return SizedWebDataset(dataset, estimated_length)
 

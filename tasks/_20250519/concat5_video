@@ -1,0 +1,6 @@
+ffmpeg \
+  -i v0.mp4 -i v1.mp4 -i v2.mp4 -i v3.mp4 -i v4.mp4 \
+  -f lavfi -t 1 -i color=black:s=512x512:r=30 \
+  -filter_complex "\
+    xstack=inputs=6:layout=0_0|512_0|1024_0|0_512|512_512|1024_512[v]" \
+  -map "[v]" -c:v libx264 -crf 23 -preset veryfast output.mp4
