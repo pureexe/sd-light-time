@@ -16,13 +16,13 @@ parser = argparse.ArgumentParser(description="Tonemap dataset to viewable format
 parser.add_argument(
     "--input_dir",
     type=str,
-    default="/pure/f1/datasets/laion-shading/v4_webdataset/train/train-0000.tar",
+    default="/pure/f1/datasets/multi_illumination/real_image_lstsq_shading/v1/train/train-0000.tar",
     help="Path to the dataset to be tonemapped",
 )
 parser.add_argument(
     "--output_dir",
     type=str,
-    default="/ist/ist-share/vision/pakkapon/relight/sd-light-time/output_t1/20250518_dataset_inspection/laion",
+    default="/ist/ist-share/vision/pakkapon/relight/sd-light-time/output_t1/20250518_dataset_inspection/real_image_lstsq_shading",
     help="Path to the output directory where the tonemapped images will be saved",
 )
 parser.add_argument(

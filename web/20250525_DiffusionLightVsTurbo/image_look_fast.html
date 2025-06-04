@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Diffusion Face Relighting - Reimplmented in SD</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@1.0.2/css/bulma.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@cityssm/bulma-sticky-table@3.0.1/bulma-with-sticky-table.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.21/lodash.min.js" integrity="sha512-WFN04846sdKMIP5LKNphMaWzU7YpMyCU245etK3g/2ARYbPK9Ub18eG+ljU96qKRCWh+quCY7yefSmlkQw1ANQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <style>
+        .fixed-tabs {
+          position: fixed;
+          top: 0;
+          width: 100%;
+          z-index: 1000;
+        }
+        body {
+          /* padding-top: 3rem; */ /* Adjust for the height of the fixed tab */
+        }
+        .crop-image {
+            width: 128px;
+            height: 128px;
+            object-fit: cover;
+            object-position: left center; /* Show the left half */
+        }
+    </style>
+    <script>
+   
+    </script>
+</head>
+<body>
+<div id="app">     
+<div class="table-container mx-auto" style="overflow-y:auto;max-height:100vh;">
+
+<table class="table is-bordered is-striped is-narrow mx-auto has-sticky-header has-sticky-footer has-sticky-column">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Image</th>
+            <th>Seed</th>
+        </tr>
+    </thead>
+    <tbody>
+        <template v-for="seed in [100,200,400,600,800]" >
+            <template v-for="scene in scenes" >
+                <tr>
+                    <td rowspan="2">
+                        {{ scene }}
+                    </td>
+                    <td rowspan="2">
+                        {{ seed }}
+                    </td>
+                    <td rowspan="2">
+                    <img :src="`/output/diffusionlight_turbo/output/image_look_fast_output/raw/${scene}_ev-00_seed${seed}.png`" class="crop-image" alt="Image" loading="lazy">
+                    </td>
+                    <td v-for="ev in ['00','25','50']" >
+                        <img :src="`/output/diffusionlight_turbo/output/image_look_fast_output/ball/${scene}_ev-${ev}_seed${seed}.png`" class="crop-image" alt="Image" loading="lazy" />
+                    </td>
+                </tr>
+                <tr>
+                    <td v-for="ev in ['00','25','50']" >
+                        <img :src="`/output/diffusionlight/output/image_look_fast_output_classic/square/${scene}_ev-${ev}.png`" class="crop-image" alt="Image" loading="lazy" />
+                    </td>
+                </tr>
+            </template>
+        </template>
+    </tbody>
+</table>
+
+
+</div>
+</div>
+<script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+<script>
+function fetchJson(fileURL, callback) {
+    fetch(fileURL)
+        .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+        return response.json();
+        })
+        .then(jsonData => callback(null, jsonData))
+        .catch(error => callback(error, null));
+    }
+      
+const { createApp, ref } = Vue
+createApp({
+    setup() {
+        const scenes = ref([])
+        return {
+            scenes
+        }
+    },
+    methods: {
+        
+    },
+    mounted() {
+        var self = this;
+        fetchJson('image_look_fast.json', (error, data) => {
+            if (error) {
+                console.error('Error fetching JSON:', error);
+                return;
+            }
+            self.scenes = data;
+        });
+    },
+    beforeDestroy() {
+    }
+}).mount('#app')
+</script>
+</body>
+</html>

@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Inspect 5 scene from 5 seed</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@1.0.2/css/bulma.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@cityssm/bulma-sticky-table@3.0.1/bulma-with-sticky-table.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.21/lodash.min.js" integrity="sha512-WFN04846sdKMIP5LKNphMaWzU7YpMyCU245etK3g/2ARYbPK9Ub18eG+ljU96qKRCWh+quCY7yefSmlkQw1ANQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <style>
+        .fixed-tabs {
+          position: fixed;
+          top: 0;
+          width: 100%;
+          z-index: 1000;
+        }
+        body {
+          /* padding-top: 3rem; */ /* Adjust for the height of the fixed tab */
+        }
+        .crop-image {
+            width: 128px;
+            height: 128px;
+            object-fit: cover;
+            object-position: left center; /* Show the left half */
+        }
+    </style>
+    <script>
+   
+    </script>
+</head>
+<body>
+<div id="app">     
+<div class="table-container mx-auto" style="overflow-y:auto;max-height:100vh;">
+
+<table class="table is-bordered is-striped is-narrow mx-auto has-sticky-header has-sticky-footer has-sticky-column">
+    <thead>
+        <tr>
+            <th>Epoch / training step</th>
+            <th>Shading Frame 20</th>
+            <th>Predict Frame 20</th>
+            <th>Input</th>
+            <th>Predict Frame 40 </th>
+            <th>Shading Frame 40 </th>
+        </tr>
+    </thead>
+    <tbody>
+            <tr v-for="epoch in _.range(10, 110, 10)">  
+                <td>
+                    {{epoch}} / {{ epoch * 3125}}
+                </td>  
+                <td>
+                    <img :src="`/output_t1/20250519_epoch_resample/val_rotate_everett_kitchen6_least_square_shading/multi_illumination_vary_scene_${num_train}/chk${epoch}/seed42/control/everett_kitchen6-dir_0_mip2_everett_kitchen6-dir_20_mip2.png`" class="image is-128x128" alt="Image" loading="lazy">
+                </td>
+                <td>
+                    <img :src="`/output_t1/20250519_epoch_resample/val_rotate_everett_kitchen6_least_square_shading/multi_illumination_vary_scene_${num_train}/chk${epoch}/seed42/crop_image/everett_kitchen6-dir_0_mip2_everett_kitchen6-dir_20_mip2.png`" class="image is-128x128" alt="Image" loading="lazy">
+                </td>
+                <td>
+                    <img :src="`/output_t1/20250519_epoch_resample/val_rotate_everett_kitchen6_least_square_shading/multi_illumination_vary_scene_${num_train}/chk${epoch}/seed42/crop_image/everett_kitchen6-dir_0_mip2_everett_kitchen6-dir_0_mip2.png`" class="image is-128x128" alt="Image" loading="lazy">
+                </td>
+                <td>
+                    <img :src="`/output_t1/20250519_epoch_resample/val_rotate_everett_kitchen6_least_square_shading/multi_illumination_vary_scene_${num_train}/chk${epoch}/seed42/crop_image/everett_kitchen6-dir_0_mip2_everett_kitchen6-dir_40_mip2.png`" class="image is-128x128" alt="Image" loading="lazy">
+                </td>
+                <td>
+                    <img :src="`/output_t1/20250519_epoch_resample/val_rotate_everett_kitchen6_least_square_shading/multi_illumination_vary_scene_${num_train}/chk${epoch}/seed42/control/everett_kitchen6-dir_0_mip2_everett_kitchen6-dir_40_mip2.png`" class="image is-128x128" alt="Image" loading="lazy">
+                </td>
+
+            </tr>
+
+    </tbody>
+</table>
+
+
+</div>
+</div>
+<script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+<script>
+function fetchJson(fileURL, callback) {
+    fetch(fileURL)
+        .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+        return response.json();
+        })
+        .then(jsonData => callback(null, jsonData))
+        .catch(error => callback(error, null));
+    }
+      
+const { createApp, ref } = Vue
+createApp({
+    setup() {
+        const scenes = ref(["14n_copyroom1","14n_copyroom10","14n_copyroom6", "14n_copyroom8", "14n_office12"])
+        const seeds = ref([100, 200, 300, 400, 500])
+        const num_train = ref(500); // Number of training scenes
+        return {
+            scenes,
+            seeds,
+            num_train
+        }
+        
+    },
+    methods: {
+        handleKeyPress(event) {
+        },
+        getVersion(splittype, direction, learning_rate,  guidance){
+        },
+        getSceneName(scene) {
+            return scene.split('+')[0];
+        },
+        getFileName(scene) {
+            return scene.split('+').pop();
+        }
+    },
+    mounted() {
+        var self = this;
+        // fetchJson('/output_t1/20250518_dataset_inspection/real/filenames.json', (error, data) => {
+        //     if (error) {
+        //         console.error('Error fetching JSON:', error);
+        //         return;
+        //     }
+        //     self.scenes = data;
+        // });
+    },
+    beforeDestroy() {
+    }
+}).mount('#app')
+</script>
+</body>
+</html>

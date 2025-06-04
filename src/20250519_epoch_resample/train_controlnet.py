@@ -680,6 +680,7 @@ def make_train_dataset_webdataset(args, tokenizer, accelerator):
         if args.max_shading_value > 0.0:
             item = item / args.max_shading_value # range(0-1)
             item = (item * 2.0) - 1.0
+        print("MAX SHADING: ", item.max(), "MIN SHADING: ", item.min())
         return item
 
     train_data_dir = args.train_data_dir
@@ -833,6 +834,7 @@ def make_train_dataset_huggingface(args, tokenizer, accelerator):
                 if args.max_shading_value > 0:
                     cond_image = cond_image / args.max_shading_value
                     cond_image = torch.clamp(cond_image, 0, 1)
+                print("MAX SHADING: ", cond_image.max(), "MIN SHADING: ", cond_image.min())
                 cond_image = cond_image.permute(2,0,1)[None] # change to [b, C,H,W] format 
                 cond_image = torch.nn.functional.interpolate(cond_image, size=(args.resolution, args.resolution), mode='bilinear', align_corners=False)[0]
             conditioning_images.append(cond_image)

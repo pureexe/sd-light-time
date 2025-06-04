@@ -45,10 +45,10 @@ PRESET = {
         #     'name': 'run_01_chk80',
         #     'path': '/pure/t1/checkpoints/sd-light-time/20250425_huggingface_controlnet/controlnet/MultiLstShading/v1/learning_rate_1e-4/batch_8_v1/checkpoint-246320/controlnet'
         # },
-        # {
-        #     'name': 'run_01_chk60',
-        #     'path': '/pure/t1/checkpoints/sd-light-time/20250425_huggingface_controlnet/controlnet/MultiLstShading/v1/learning_rate_1e-4/batch_8_v1/checkpoint-184740/controlnet'
-        # },
+        {
+            'name': 'run_01_chk60',
+            'path': '/pure/t1/checkpoints/sd-light-time/20250425_huggingface_controlnet/controlnet/MultiLstShading/v1/learning_rate_1e-4/batch_8_v1/checkpoint-184740/controlnet'
+        },
         {
             'name': 'run_01_chk40',
             'path': '/pure/t1/checkpoints/sd-light-time/20250425_huggingface_controlnet/controlnet/MultiLstShading/v1/learning_rate_1e-4/batch_8_v1/checkpoint-123160/controlnet'
@@ -59,24 +59,24 @@ PRESET = {
         #     'name': 'run_02_chk80',
         #     'path': '/pure/t1/checkpoints/sd-light-time/20250425_huggingface_controlnet/controlnet/MultiLstShading/v1/learning_rate_1e-4/batch_8_v2/checkpoint-246320/controlnet'
         # },
-        # {
-        #     'name': 'run_02_chk60',
-        #     'path': '/pure/t1/checkpoints/sd-light-time/20250425_huggingface_controlnet/controlnet/MultiLstShading/v1/learning_rate_1e-4/batch_8_v2/checkpoint-184740/controlnet'
-        # },
-        # {
-        #     'name': 'run_02_chk40',
-        #     'path': '/pure/t1/checkpoints/sd-light-time/20250425_huggingface_controlnet/controlnet/MultiLstShading/v1/learning_rate_1e-4/batch_8_v2/checkpoint-123160/controlnet'
-        # }
+        {
+            'name': 'run_02_chk60',
+            'path': '/pure/t1/checkpoints/sd-light-time/20250425_huggingface_controlnet/controlnet/MultiLstShading/v1/learning_rate_1e-4/batch_8_v2/checkpoint-184740/controlnet'
+        },
+        {
+            'name': 'run_02_chk40',
+            'path': '/pure/t1/checkpoints/sd-light-time/20250425_huggingface_controlnet/controlnet/MultiLstShading/v1/learning_rate_1e-4/batch_8_v2/checkpoint-123160/controlnet'
+        }
     ],
     'seed_rotate_run3':[
         # {
         #     'name': 'run_03_chk80',
         #     'path': '/pure/t1/checkpoints/sd-light-time/20250425_huggingface_controlnet/controlnet/MultiLstShading/v1/learning_rate_1e-4/batch_8_v3/checkpoint-246320/controlnet'
         # },
-        # {
-        #     'name': 'run_03_chk60',
-        #     'path': '/pure/t1/checkpoints/sd-light-time/20250425_huggingface_controlnet/controlnet/MultiLstShading/v1/learning_rate_1e-4/batch_8_v3/checkpoint-184740/controlnet'
-        # },
+        {
+            'name': 'run_03_chk60',
+            'path': '/pure/t1/checkpoints/sd-light-time/20250425_huggingface_controlnet/controlnet/MultiLstShading/v1/learning_rate_1e-4/batch_8_v3/checkpoint-184740/controlnet'
+        },
         {
             'name': 'run_03_chk40',
             'path': '/pure/t1/checkpoints/sd-light-time/20250425_huggingface_controlnet/controlnet/MultiLstShading/v1/learning_rate_1e-4/batch_8_v3/checkpoint-123160/controlnet'
@@ -419,7 +419,8 @@ if __name__ == '__main__':
     parser.add_argument("-c", "--checkpoint", type=str, default="")
     #parser.add_argument("-p", "--preset", type=str, default="batch_8_run1")
     parser.add_argument("-p", "--preset", type=str, default="rotate_3_runs")
-    parser.add_argument("-m", "--mode", type=str, default="rotate_everett_kitchen6,rotate_everett_dining1,rotate_everett_kitchen2,rotate_everett_kitchen4")
+    #parser.add_argument("-m", "--mode", type=str, default="rotate_everett_kitchen6,rotate_everett_dining1,rotate_everett_kitchen2,rotate_everett_kitchen4")
+    parser.add_argument("-m", "--mode", type=str, default="rotate_everett_kitchen2,rotate_everett_dining1,rotate_everett_kitchen4")
     parser.add_argument('-seed', type=str, default='42')
     args = parser.parse_args()
     main(args)

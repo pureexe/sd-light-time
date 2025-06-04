@@ -4,7 +4,7 @@
 #SBATCH --job-name=1e-4_v4_shading          #           V1_OLD: 111180 
 #SBATCH --mem=64GB                   # Memory request for this job
 #SBATCH --nodes=1                    # The number of nodes
-#SBATCH --partition=gpu-cluster
+#SBATCH --partition=gpu-4080
 #SBATCH --account=vision
 #SBATCH --time=72:0:0                 # Running time 2 hours
 #SBATCH --gpus=1                     # The number of gpu

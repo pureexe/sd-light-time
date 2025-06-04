@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Inspect 5 scene from 5 seed</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@1.0.2/css/bulma.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@cityssm/bulma-sticky-table@3.0.1/bulma-with-sticky-table.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.21/lodash.min.js" integrity="sha512-WFN04846sdKMIP5LKNphMaWzU7YpMyCU245etK3g/2ARYbPK9Ub18eG+ljU96qKRCWh+quCY7yefSmlkQw1ANQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <style>
+        .fixed-tabs {
+          position: fixed;
+          top: 0;
+          width: 100%;
+          z-index: 1000;
+        }
+        body {
+          /* padding-top: 3rem; */ /* Adjust for the height of the fixed tab */
+        }
+        .crop-image {
+            width: 128px;
+            height: 128px;
+            object-fit: cover;
+            object-position: left center; /* Show the left half */
+        }
+    </style>
+    <script>
+   
+    </script>
+</head>
+<body>
+<div id="app">     
+<div class="table-container mx-auto" style="overflow-y:auto;max-height:100vh;">
+
+<table class="table is-bordered is-striped is-narrow mx-auto has-sticky-header has-sticky-footer has-sticky-column">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Input Image</th>
+            <th>video</th>
+        </tr>
+    </thead>
+    <tbody>
+        <template v-for="scene in scenes">
+            <tr v-for="">    
+                <td>
+                    {{ scene }}
+                </td>
+                <td>
+                    <img :src="`/output/datasets/multi_illumination/spherical/test/images/${scene}/dir_0_mip2.jpg`" class="image is-128x128" alt="Image" loading="lazy">
+                </td>
+                <td>
+                    <video autoplay muted loop loading="lazy">
+                        <source :src="`/output/datasets/multi_illumination/spherical/val_rotate_test_scenes/video_v3/${scene}/${scene}_ground_truth.mp4`" type="video/mp4">
+                        Your browser does not support the video tag.
+                    </video>
+                </td>
+            </tr>
+
+        </template>
+    </tbody>
+</table>
+
+
+</div>
+</div>
+<script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+<script>
+function fetchJson(fileURL, callback) {
+    fetch(fileURL)
+        .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+        return response.json();
+        })
+        .then(jsonData => callback(null, jsonData))
+        .catch(error => callback(error, null));
+    }
+      
+const { createApp, ref } = Vue
+createApp({
+    setup() {
+        const scenes = ref([
+            "everett_dining1",
+            "everett_kitchen12",
+            "everett_kitchen17",
+            "everett_kitchen2",
+            "everett_kitchen5",
+            "everett_kitchen7",
+            "everett_kitchen9",
+            "everett_living4",
+            "everett_lobby11",
+            "everett_lobby13", 
+            "everett_lobby15",
+            "everett_lobby17", 
+            "everett_lobby19",
+            "everett_lobby20",
+            "everett_lobby4",
+            "everett_dining2",
+            "everett_kitchen14",
+            "everett_kitchen18",
+            "everett_kitchen4",
+            "everett_kitchen6", 
+            "everett_kitchen8",
+            "everett_living2", 
+            "everett_lobby1",
+            "everett_lobby12",
+            "everett_lobby14", 
+            "everett_lobby16", 
+            "everett_lobby18", 
+            "everett_lobby2",
+            "everett_lobby3",
+            "everett_lobby6"
+        ])
+        const seeds = ref([100])
+        return {
+            scenes,
+            seeds
+        }
+    },
+    methods: {
+        handleKeyPress(event) {
+        },
+        getVersion(splittype, direction, learning_rate,  guidance){
+        },
+        getSceneName(scene) {
+            return scene.split('+')[0];
+        },
+        getFileName(scene) {
+            return scene.split('+').pop();
+        }
+    },
+    mounted() {
+        var self = this;
+        // fetchJson('/output_t1/20250518_dataset_inspection/real/filenames.json', (error, data) => {
+        //     if (error) {
+        //         console.error('Error fetching JSON:', error);
+        //         return;
+        //     }
+        //     self.scenes = data;
+        // });
+    },
+    beforeDestroy() {
+    }
+}).mount('#app')
+</script>
+</body>
+</html>

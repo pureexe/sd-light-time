@@ -86,11 +86,14 @@ class SDRelightShading():
         target_shading, 
         prompt="", 
         source_shading = None, 
-        latents = None
+        latents = None,
+        num_inference_steps=None
     ):
         """
         Relight image with target shading and source shading
         """
+        if num_inference_steps is None:
+            num_inference_steps = self.num_inversion_steps
         # get prompts 
         is_apply_cfg = self.guidance_scale > 1
         prompt_embeds, negative_prompt_embeds = self.pipe.encode_prompt(
@@ -110,7 +113,7 @@ class SDRelightShading():
             "output_type": "pt",
             "guidance_scale": self.guidance_scale,
             "return_dict": False,
-            "num_inference_steps": self.num_inversion_steps,
+            "num_inference_steps": num_inference_steps,
             "generator": torch.Generator().manual_seed(self.seed),
             "controlnet_conditioning_scale": 1.0,
             "image": target_shading
