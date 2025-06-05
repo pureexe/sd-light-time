@@ -15,7 +15,10 @@ def compute_histogram_from_exr(file_path):
     try:
         file_path = str(file_path)  # Ensure it's a string for ezexr
         img = ezexr.imread(file_path)  # shape: (H, W, C)
-        return img.flatten()
+        img =  img.flatten()
+        img = np.percentile(img, 99)  # Clip to 99.9% to avoid outliers
+        img = np.array([img])
+        return img
     except Exception as e:
         with open("error.log", "a") as log_file:
             log_file.write(f"{file_path} failed: {e}\n")
@@ -53,8 +56,7 @@ def main(root_dir, output_png="histogram.png", max_files=None):
     print("max pixel value:", np.max(all_pixels))
     print("min pixel value:", np.min(all_pixels))
     print("mean pixel value:", np.mean(all_pixels))
-    print("std pixel value:", np.std(all_pixels))
-    print("median pixel value:", np.median(all_pixels))
+    print("percentile 99.9% pixel value:", np.percentile(all_pixels, 99))
     plt.figure(figsize=(10, 6))
     plt.hist(all_pixels, bins=256, color='blue', alpha=0.7)
     plt.title("Histogram of Pixel Values")
@@ -67,5 +69,5 @@ def main(root_dir, output_png="histogram.png", max_files=None):
     print(f"Histogram saved to {output_png}")
 
 if __name__ == "__main__":
-    main(root_dir="/pure/f1/datasets/multi_illumination/real_image_gt_shading/v0/train/shadings/",
-         output_png="exr_gt.png")
+    main(root_dir="/pure/f1/datasets/multi_illumination/real_image_gt_shading/v0/train/albedos/",
+         output_png="exr_gt_albedo.png")

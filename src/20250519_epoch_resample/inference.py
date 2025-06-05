@@ -180,6 +180,20 @@ for checkpoint in [80]:
         'path': f"/ist/ist-share/vision/pakkapon/relight/sd-light-time/output_t1/20250519_epoch_resample/controlnet/multi_illumination_real_image_real_shading/v0_hf_max32/1e-5/checkpoint-{checkpoint * 3079}/controlnet"
     })
 
+PRESET['multi_illumination_real_image_gt_shading_v0_hf_max32_1e-4'] = []
+for checkpoint in [20, 30, 10]: # 1,2,3,5,15,25
+    PRESET['multi_illumination_real_image_gt_shading_v0_hf_max32_1e-4'].append({
+        'name': f'chk{checkpoint}',
+        'path': f"/ist/ist-share/vision/pakkapon/relight/sd-light-time/output_t1/20250519_epoch_resample/controlnet/multi_illumination_real_image_real_shading/v0_hf_max6/1e-4/checkpoint-{checkpoint * 3079}/controlnet"
+    })
+
+PRESET['multi_illumination_real_image_gt_shading_v0_hf_max32_1e-5'] = []
+for checkpoint in [1,2,3,5,10,15,20,25,30]:
+    PRESET['multi_illumination_real_image_gt_shading_v0_hf_max32_1e-5'].append({
+        'name': f'chk{checkpoint}',
+        'path': f"/ist/ist-share/vision/pakkapon/relight/sd-light-time/output_t1/20250519_epoch_resample/controlnet/multi_illumination_real_image_real_shading/v0_hf_max6/1e-5/checkpoint-{checkpoint * 3079}/controlnet"
+    })
+
 max_shadings = ['multi_illumination_real_image_real_shading_v0_hf_max32_1e-4', 'multi_illumination_real_image_real_shading_v0_hf_max32_1e-5']
             
 def get_builder_from_mode(mode):
@@ -197,6 +211,67 @@ def get_builder_from_mode(mode):
             }, 
             'dataset_class': DDIMDiffusionFaceRelightDataset
         }
+
+    if mode == "14n_copyroom_1_gt_shading":
+        return {
+            'split': 100,
+            'dataset_params': {
+                'root_dir': "/pure/f1/datasets/multi_illumination/real_image_gt_shading/v0/train",
+                "index_file":"/pure/f1/datasets/multi_illumination/real_image_real_shading/v0/train/index/14n_copyroom1.json",
+                "shadings_dir": "shadings",
+                "backgrounds_dir": 'images',
+                "images_dir":"images", 
+                'specific_prompt': None,
+                'feature_types': []
+            }, 
+            'dataset_class': DDIMDiffusionFaceRelightDataset
+        }
+
+    if mode == "14n_copyroom_6_gt_shading":
+        return {
+            'split': 100,
+            'dataset_params': {
+                'root_dir': "/pure/f1/datasets/multi_illumination/real_image_gt_shading/v0/train",
+                "index_file":"/pure/f1/datasets/multi_illumination/real_image_real_shading/v0/train/index/14n_copyroom6.json",
+                "shadings_dir": "shadings",
+                "backgrounds_dir": 'images',
+                "images_dir":"images", 
+                'specific_prompt': None,
+                'feature_types': []
+            }, 
+            'dataset_class': DDIMDiffusionFaceRelightDataset
+        }
+    
+    if mode == "14n_copyroom_8_gt_shading":
+        return {
+            'split': 100,
+            'dataset_params': {
+                'root_dir': "/pure/f1/datasets/multi_illumination/real_image_gt_shading/v0/train",
+                "index_file":"/pure/f1/datasets/multi_illumination/real_image_real_shading/v0/train/index/14n_copyroom8.json",
+                "shadings_dir": "shadings",
+                "backgrounds_dir": 'images',
+                "images_dir":"images", 
+                'specific_prompt': None,
+                'feature_types': []
+            }, 
+            'dataset_class': DDIMDiffusionFaceRelightDataset
+        }
+    
+    if mode == "14n_copyroom_10_gt_shading":
+        return {
+            'split': 100,
+            'dataset_params': {
+                'root_dir': "/pure/f1/datasets/multi_illumination/real_image_gt_shading/v0/train",
+                "index_file":"/pure/f1/datasets/multi_illumination/real_image_real_shading/v0/train/index/14n_copyroom10.json",
+                "shadings_dir": "shadings",
+                "backgrounds_dir": 'images',
+                "images_dir":"images", 
+                'specific_prompt': None,
+                'feature_types': []
+            }, 
+            'dataset_class': DDIMDiffusionFaceRelightDataset
+        }
+    
     if mode == "everett_dining1_diffusionlight_shading":
         return {
             'split': 100,
@@ -761,7 +836,7 @@ if __name__ == '__main__':
     #parser.add_argument("-m", "--mode", type=str, default="rotate_everett_kitchen6,rotate_everett_dining1,rotate_everett_kitchen2,rotate_everett_kitchen4,everett_kitchen6,everett_kitchen4,everett_kitchen2,everett_dining1")
     #parser.add_argument("-m", "--mode", type=str, default="rotate_everett_kitchen6_diffusionlight_shading,rotate_everett_dining1_diffusionlight_shading,rotate_everett_kitchen2_diffusionlight_shading,rotate_everett_kitchen4_diffusionlight_shading,everett_dining1_diffusionlight_shading,everett_kitchen2_diffusionlight_shading,everett_kitchen4_diffusionlight_shading,everett_kitchen6_diffusionlight_shading")
     parser.add_argument("-m", "--mode", type=str, default="rotate_everett_kitchen6_least_square_shading")
-    parser.add_argument("--max_shading",  type=float, default=32.0)
+    parser.add_argument("--max_shading",  type=float, default=1.0)
     parser.add_argument('-seed', type=str, default='42')
     args = parser.parse_args()
     main(args)
