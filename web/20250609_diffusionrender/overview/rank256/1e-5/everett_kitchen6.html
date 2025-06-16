@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Inspect 5 scene from 5 seed</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@1.0.2/css/bulma.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@cityssm/bulma-sticky-table@3.0.1/bulma-with-sticky-table.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.21/lodash.min.js" integrity="sha512-WFN04846sdKMIP5LKNphMaWzU7YpMyCU245etK3g/2ARYbPK9Ub18eG+ljU96qKRCWh+quCY7yefSmlkQw1ANQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdn.jsdelivr.net/npm/underscore@1.13.7/underscore-umd-min.js"></script>
+    <style>
+        .fixed-tabs {
+          position: fixed;
+          top: 0;
+          width: 100%;
+          z-index: 1000;
+        }
+        body {
+          /* padding-top: 3rem; */ /* Adjust for the height of the fixed tab */
+        }
+        .crop-image {
+            width: 128px;
+            height: 128px;
+            object-fit: cover;
+            object-position: left center; /* Show the left half */
+        }
+    </style>
+    <script>
+   
+    </script>
+</head>
+<body>
+<div id="app">     
+<div class="table-container mx-auto" style="overflow-y:auto;max-height:100vh;">
+
+<table class="table is-bordered is-striped is-narrow mx-auto has-sticky-header has-sticky-footer has-sticky-column" style="padding-bottom: 300px;">
+    <thead>
+        <tr>
+            <th>Epoch</th>
+            <th v-for="light_id in light_ids">{{light_id}}</th>
+        </tr>
+    </thead>
+    <tbody>
+            <tr class="has-background-danger">    
+                <td>
+                    Ground Truth
+                </td>
+                <td v-for="light_id in light_ids">
+                    <img :src="`/output/pure/f1/datasets/multi_illumination/diffusionrenderer/v1/val/images/${scene}/dir_${light_id}_mip2.jpg`" class="image is-128x128" alt="Image" loading="lazy">
+                </td>
+            </tr>
+            <tr v-for="epoch in epochs">    
+                <td>
+                    Epoch {{ epoch }}
+                </td>
+                <td v-for="light_id in light_ids">
+                    <img :src="`/output_t1/20250609_diffusionrender/lightning_logs/version_${version_id}/step_${_.padLeftZeros(epoch * 1540,6)}/crop_image/${scene}-dir_${light_id}_mip2.png`" class="image is-128x128" alt="Image" loading="lazy">
+                </td>
+            </tr>
+            <tr class="has-background-danger">    
+                <td>
+                    Ground Truth
+                </td>
+                <td v-for="light_id in light_ids">
+                    <img :src="`/output/pure/f1/datasets/multi_illumination/diffusionrenderer/v1/val/images/${scene}/dir_${light_id}_mip2.jpg`" class="image is-128x128" alt="Image" loading="lazy">
+                </td>
+            </tr>
+    </tbody>
+</table>
+
+
+</div>
+</div>
+<script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+<script>
+_.mixin({
+    padLeftZeros: function(num, size) {
+        let s = String(num);
+        while (s.length < size) {
+            s = "0" + s;
+        }
+        return s;
+    }
+});
+function fetchJson(fileURL, callback) {
+    fetch(fileURL)
+        .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+        return response.json();
+        })
+        .then(jsonData => callback(null, jsonData))
+        .catch(error => callback(error, null));
+    }
+      
+const { createApp, ref } = Vue
+createApp({
+    setup() {
+        const scenes = ref([])
+        const seeds = ref([])
+        //const epochs = ref([1, 2, 3, 5, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110]); // Example epochs, adjust as needed
+        const epochs = ref([0,1,2,3,4,5,6,7,8]); // Example epochs, adjust as needed
+        const light_ids = ref(_.range(0,25))
+        const version_id = ref('117173') // Example version ID, adjust as needed
+        const scene = ref('everett_kitchen6') // Example scene, adjust as needed
+        return {
+            scenes,
+            seeds,
+            epochs,
+            scene,
+            light_ids,
+            version_id
+        }
+    },
+    methods: {
+        handleKeyPress(event) {
+        },
+        getVersion(splittype, direction, learning_rate,  guidance){
+        },
+        getSceneName(scene) {
+            return scene.split('+')[0];
+        },
+        getFileName(scene) {
+            return scene.split('+').pop();
+        }
+    },
+    mounted() {
+        var self = this;
+        // fetchJson('/output_t1/20250518_dataset_inspection/real/filenames.json', (error, data) => {
+        //     if (error) {
+        //         console.error('Error fetching JSON:', error);
+        //         return;
+        //     }
+        //     self.scenes = data;
+        // });
+    },
+    beforeDestroy() {
+    }
+}).mount('#app')
+</script>
+</body>
+</html>

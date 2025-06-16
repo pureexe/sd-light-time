@@ -6,11 +6,19 @@ import torch
 import ezexr
 import torchvision
 from skimage.transform import resize
-from tonemapper import TonemapHDR
+from vll_datasets.diffusionrenderer_mapper import rgb2srgb, reinhard, hdr2log, envmap_vec
 
 class DiffusionRendererEnvmapDataset(torch.utils.data.Dataset):
-    def __init__(self, root_dir="/pure/f1/datasets/multi_illumination/diffusionrenderer/v1/train", index_file=None, *args, **kwargs):
+    def __init__(
+            self,
+            root_dir="/pure/f1/datasets/multi_illumination/diffusionrenderer/v1/train",
+            index_file=None,
+            components = ['albedo', 'normal', 'depth', 'light', 'image'],
+            *args,
+            **kwargs
+        ):
         self.root_dir = root_dir
+        self.components = components
         self.transform = {
             'image': torchvision.transforms.Compose([
                 torchvision.transforms.Resize((512, 512)),
@@ -79,38 +87,36 @@ class DiffusionRendererEnvmapDataset(torch.utils.data.Dataset):
         return normal.astype(np.float32)  # Convert to float32 for consistency
 
 
-    def get_light_dir(self, height = 256, width = 512):
-        # create  from [0, 2pi] and [-pi/2, pi/2] 
-        theta = np.linspace(0, 2 * np.pi, width)
-        phi = np.linspace(-np.pi / 2, np.pi / 2, height)
-        theta, phi = np.meshgrid(theta, phi)
-        x = np.cos(theta) * np.cos(phi)
-        y = np.sin(theta) * np.cos(phi)
-        z = np.sin(phi)
-        light_dir = np.stack([x, y, z], axis=-1)  # Shape: (height, width, 3)
-        return light_dir.astype(np.float32)  # Convert to float32 for consistency
-
+    def get_light_dir(self, height = 512, width = 512):
+        env_resolution = (height, width)
+        env_dir = envmap_vec(env_resolution) #[H,W,3]
+        env_dir = env_dir.permute(2, 0, 1)  # Change to (3, H, W)
+        return env_dir 
 
     def get_environment_map(self, filename):
         image = ezexr.imread(os.path.join(self.root_dir, 'envmap', filename+'.exr'))
         image = np.clip(image, 0, np.inf) # Ensure no negative values
-        # resize to 256x256 using numpy bilinear interpolation
-        image = resize(image, (256, 256), order=1, anti_aliasing=True)  # Resize to 256x256
+
+        # resize to 512x512 using numpy bilinear interpolation
+        image = resize(image, (512, 512), order=1, anti_aliasing=True)  # Resize to 512x512
+
+        # convert to torch tensor and change to [C, H, W]
+        image = torch.from_numpy(image).float()
+        image = image.permute(2, 0, 1)  # Change to (C, H, W)
 
         return image 
 
     def get_ldr(self, hdr_image):
         # Convert HDR to LDR
-        hdr2ldr = TonemapHDR(gamma=2.4, percentile=99, max_mapping=0.9)
-        ldr_image, _, _ = hdr2ldr(hdr_image)
+        ldr_image = rgb2srgb(reinhard(hdr_image).clamp(0, 1))
         # scale to [-1,1]
         ldr_image = (ldr_image - 0.5) * 2  # Scale to [-1, 1]
         return ldr_image
 
     def get_log_hdr(self, hdr_image):
         # Convert HDR to Log HDR
-        log_image = np.log(hdr_image+1) / np.max(hdr_image)  # Using log1p to avoid log(0)
-        log_image = (log_image - 0.5) * 2
+        log_image = rgb2srgb(hdr2log(hdr_image).clamp(0, 1))  # Convert to log space
+        log_image = (log_image - 0.5) * 2 # Scale to [-1, 1]
         return log_image
 
     def __len__(self):
@@ -120,7 +126,7 @@ class DiffusionRendererEnvmapDataset(torch.utils.data.Dataset):
         envmap = self.get_environment_map(filename)
         light_ldr = self.get_ldr(envmap)
         light_log_hdr = self.get_log_hdr(envmap)
-        light_dir = self.get_light_dir(height=envmap.shape[0], width=envmap.shape[1])
+        light_dir = self.get_light_dir(height=envmap.shape[1], width=envmap.shape[2])
 
         return {
             'light_ldr': light_ldr, 
@@ -130,24 +136,25 @@ class DiffusionRendererEnvmapDataset(torch.utils.data.Dataset):
     
     def get_item(self, idx):
         filename = self.image_index[idx]
-        name = filename
-        albedo = self.get_albedo(filename) 
-        image = self.get_image(filename)
-        light = self.get_light(filename)
-        depth = self.get_depth(filename)
-        normal = self.get_normal(filename)      
         prompt = self.prompt[filename]
-        return {
-            'name': name,
-            'albedo': albedo,
-            'depth': numpy_hwc_to_torch_chw(depth),
-            'normal': numpy_hwc_to_torch_chw(normal),
-            'light_ldr': numpy_hwc_to_torch_chw(light['light_ldr']),
-            'light_log_hdr': numpy_hwc_to_torch_chw(light['light_log_hdr']), 
-            'light_dir': numpy_hwc_to_torch_chw(light['light_dir']),          
-            'image': image,
+        output = {
+            'name': filename,
             'prompt': prompt,
         }
+        if 'albedo' in self.components:
+            output['albedo'] = self.get_albedo(filename)
+        if 'depth' in self.components:
+            output['depth'] = numpy_hwc_to_torch_chw(self.get_depth(filename))
+        if 'image'in self.components:
+            output['image']  = self.get_image(filename)
+        if 'light'in self.components:
+            light = self.get_light(filename)
+            output['light_ldr'] = light['light_ldr']
+            output['light_log_hdr'] = light['light_log_hdr']
+            output['light_dir'] = light['light_dir']
+        if 'normal'in self.components:
+            output['normal'] = numpy_hwc_to_torch_chw(self.get_normal(filename))
+        return output
 
     def __getitem__(self, idx):
         return self.get_item(idx)
