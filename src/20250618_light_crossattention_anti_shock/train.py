@@ -29,15 +29,16 @@ parser.add_argument('-dataset', '--dataset', type=str, default=DATASET_ROOT_DIR)
 parser.add_argument('-dataset_split', type=str, default="")
 parser.add_argument('-dataset_val', '--dataset_val', type=str, default=DATASET_VAL_DIR) 
 parser.add_argument('-dataset_val_split', '--dataset_val_split', type=str, default=DATASET_VAL_SPLIT) 
-parser.add_argument('--grad_accum', type=int, default=4, help='gradient accumulation if need')
+parser.add_argument('--grad_accum', type=int, default=8, help='gradient accumulation if need')
 parser.add_argument('--seed', type=int, default=42, help='seed to use')
+parser.add_argument('--lora_rank', type=int, default=256, help='rank of the lora')
 parser.add_argument(
     '-nt', 
     '--network_type', 
     type=str,
     choices=['default', 'albedo_normal_depth'],
     help="select control type for the model",
-    required=True
+    default='default'
 )
 
 parser.add_argument(
@@ -71,6 +72,7 @@ def main():
     if args.checkpoint is None:
         model = model_class(
             learning_rate=args.learning_rate,
+            lora_rank=args.lora_rank
         )
     else:
         # add learning rate parameter in case we load with differnet learning
@@ -96,7 +98,6 @@ def main():
 
     checkpoint_callback = L.pytorch.callbacks.ModelCheckpoint(
         #filename="epoch{epoch:06d}_step{step:06d}",
-        filename="{epoch:06d}",
         every_n_epochs=args.every_n_epochs,
         save_top_k=-1,  # <--- this is important!
     )
@@ -111,8 +112,8 @@ def main():
         num_sanity_val_steps=0,
         accumulate_grad_batches=args.grad_accum
     )
-    if not args.checkpoint or not os.path.exists(args.checkpoint):
-       trainer.validate(model, val_dataloader)
+    # if not args.checkpoint or not os.path.exists(args.checkpoint):
+    #    trainer.validate(model, val_dataloader)
     trainer.fit(
         model=model,
         train_dataloaders=train_dataloader,
