@@ -389,7 +389,6 @@ class SDRelightEnv(L.LightningModule):
 
             # in last step, we don't need to mess up with latent
             if i >= self.num_inference_step - 1: # don't update last step
-                print("Last step, return callback_kwargs")
                 return callback_kwargs
             # compute light features for next step
             try:
@@ -430,16 +429,17 @@ class SDRelightEnv(L.LightningModule):
         LIGHT_KEYS = ['light_ldr', 'light_log_hdr', 'light_dir']
         for key in LIGHT_KEYS:
             if prefix == 'target':
-                if key in batch and isinstance(batch[key], list):
-                    batch[prefix + '_' + key] = batch[key][index]
+                if key in batch and isinstance(batch[prefix + '_' + key], list):
+                    batch[key] = batch[prefix + '_' + key][index]
                 else:
-                    batch[prefix + '_' + key] = batch[key]
+                    batch[key] = batch[prefix + '_' + key]
             else:
                 batch[key] = batch[prefix + '_' + key]
         return batch
 
 
     def generate_tensorboard(self, batch, batch_idx, is_save_image=False, is_seperate_dir_with_epoch=False, use_ddim=False):   
+        # check key first
         log_dir = self.get_logdir()
 
         epoch_text = f"step_{self.global_step:06d}/" if is_seperate_dir_with_epoch else ""
@@ -478,6 +478,7 @@ class SDRelightEnv(L.LightningModule):
             
                 # save with ground truth
                 os.makedirs(f"{log_dir}/{epoch_text}with_groudtruth", exist_ok=True)
+                print(f"Predicted to: {log_dir}/{epoch_text}with_groudtruth")
                 torchvision.utils.save_image(image, f"{log_dir}/{epoch_text}with_groudtruth/{filename}.jpg")
                 os.chmod(f"{log_dir}/{epoch_text}with_groudtruth", 0o777)
                 os.chmod(f"{log_dir}/{epoch_text}with_groudtruth/{filename}.jpg", 0o777)
@@ -519,10 +520,11 @@ class SDRelightEnv(L.LightningModule):
 
 
     def test_step(self, batch, batch_idx):
-        if self.is_plot_train_loss:
-            self.plot_train_loss(batch, batch_idx, is_save_image=True, seed=self.seed)
-        else:
-            self.generate_tensorboard_ddim(batch, batch_idx, is_save_image=True, use_ddim=True)
+        self.generate_tensorboard(batch, batch_idx, is_save_image=True, use_ddim=True)
+        # if self.is_plot_train_loss:
+        #     self.plot_train_loss(batch, batch_idx, is_save_image=True, seed=self.seed)
+        # else:
+        #     self.generate_tensorboard(batch, batch_idx, is_save_image=True, use_ddim=True)
 
     #TODO: let's create seperate file that take checkpoint and compute the loss. this loss code should be re-implememet
     def plot_train_loss(self, batch, batch_idx, is_save_image=False, seed=None):
@@ -532,7 +534,7 @@ class SDRelightEnv(L.LightningModule):
             self.logger.experiment.add_scalar(f'plot_train_loss/{timestep}', loss, self.global_step)
             self.logger.experiment.add_scalar(f'plot_train_loss/average', loss, self.global_step)
             if is_save_image:
-                filename = f"{batch['name'][0].replace('/','-')}_{batch['word_name'][0].replace('/','-')}"
+                filename = f"{batch['name'][0].replace('/','-')}"
                 os.makedirs(f"{self.logger.log_dir}/train_loss/{timestep}", exist_ok=True)
                 with open(f"{self.logger.log_dir}/train_loss/{timestep}/{filename}.txt", "w") as f:
                     f.write(f"{loss.item()}")

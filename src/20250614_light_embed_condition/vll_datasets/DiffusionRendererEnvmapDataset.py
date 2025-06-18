@@ -94,7 +94,8 @@ class DiffusionRendererEnvmapDataset(torch.utils.data.Dataset):
         return env_dir 
 
     def get_environment_map(self, filename):
-        image = ezexr.imread(os.path.join(self.root_dir, 'envmap', filename+'.exr'))
+        exr_path = os.path.join(self.root_dir, 'envmap', filename+'.exr')
+        image = ezexr.imread(exr_path)
         image = np.clip(image, 0, np.inf) # Ensure no negative values
 
         # resize to 512x512 using numpy bilinear interpolation
