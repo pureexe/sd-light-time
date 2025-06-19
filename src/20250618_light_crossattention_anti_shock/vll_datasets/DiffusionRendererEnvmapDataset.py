@@ -92,9 +92,9 @@ class DiffusionRendererEnvmapDataset(torch.utils.data.Dataset):
         env_dir = envmap_vec(env_resolution) #[H,W,3]
         env_dir = env_dir.permute(2, 0, 1)  # Change to (3, H, W)
         return env_dir 
-
-    def get_environment_map(self, filename):
-        exr_path = os.path.join(self.root_dir, 'envmap', filename+'.exr')
+    
+    def get_environment_map(self, filename, dir_name='envmap'):
+        exr_path = os.path.join(self.root_dir, dir_name, filename+'.exr')
         image = ezexr.imread(exr_path)
         image = np.clip(image, 0, np.inf) # Ensure no negative values
 
@@ -135,6 +135,18 @@ class DiffusionRendererEnvmapDataset(torch.utils.data.Dataset):
             'light_dir': light_dir
         }
     
+    def get_irradiant(self, filename):
+        irradiant_map = self.get_environment_map(filename, dir_name='irradient')
+        irradiant_ldr = self.get_ldr(irradiant_map)
+        irradiant_log_hdr = self.get_log_hdr(irradiant_map)
+        irradiant_dir = self.get_light_dir(height=irradiant_map.shape[1], width=irradiant_map.shape[2])
+
+        return {
+            'irradiant_ldr': irradiant_ldr, 
+            'irradiant_log_hdr': irradiant_log_hdr,
+            'irradiant_dir': irradiant_dir
+        }
+    
     def get_item(self, idx):
         filename = self.image_index[idx]
         prompt = self.prompt[filename]
@@ -153,6 +165,11 @@ class DiffusionRendererEnvmapDataset(torch.utils.data.Dataset):
             output['light_ldr'] = light['light_ldr']
             output['light_log_hdr'] = light['light_log_hdr']
             output['light_dir'] = light['light_dir']
+        if 'irradiant' in self.components:
+            irradiant = self.get_irradiant(filename)
+            output['irradiant_ldr'] = irradiant['irradiant_ldr']
+            output['irradiant_log_hdr'] = irradiant['irradiant_log_hdr']
+            output['irradiant_dir'] = irradiant['irradiant_dir']
         if 'normal'in self.components:
             output['normal'] = numpy_hwc_to_torch_chw(self.get_normal(filename))
         return output

@@ -138,7 +138,10 @@ class SDRelightEnv(L.LightningModule):
             self.pipe.enable_model_cpu_offload()
             self.pipe.enable_xformers_memory_efficient_attention()
 
-    def setup_attention_processor(self):
+    def setup_attention_processor(
+        self,
+        token_lengths = [4096, 1024, 256, 64] # number of tokens for each depth
+    ):
         # setup attention processor
         attention_dict = {}
         default_attn_processor = AttnProcessor2_0()
@@ -150,7 +153,7 @@ class SDRelightEnv(L.LightningModule):
         self.attention_light_gate = torch.nn.Parameter(attention_light_gate, requires_grad=True)
         
 
-        token_lengths = [4096, 1024, 256, 64] # number of tokens for each depth
+        
         light_processor_count = 0
         for attn_name in self.pipe.unet.attn_processors.keys():
             if attn_name.endswith("attn1.processor"): # first attention is self attention
@@ -494,8 +497,10 @@ class SDRelightEnv(L.LightningModule):
         self.num_inference_step = num_inference_step
 
     def select_batch(self, batch, prefix='source', index=0):
-        LIGHT_KEYS = ['light_ldr', 'light_log_hdr', 'light_dir']
+        LIGHT_KEYS = ['light_ldr', 'light_log_hdr', 'light_dir', 'irradiant_ldr', 'irradiant_log_hdr', 'irradiant_dir']
         for key in LIGHT_KEYS:
+            if not prefix + '_' + key in batch:
+                continue
             if prefix == 'target':
                 if key in batch and isinstance(batch[prefix + '_' + key], list):
                     batch[key] = batch[prefix + '_' + key][index]
@@ -675,9 +680,72 @@ class SDAlbedoNormalDepthRelightEnv(SDRelightEnv):
                     output_features.append(feature_tensor)
         output_features = torch.cat(output_features, dim=1)  # [B, C*4, H, W]
         return output_features
+
+class SDRelightIrradientEnv(SDRelightEnv):
+
+    def setup_attention_processor(
+        self,
+        token_lengths = [4096, 1024, 256, 64] # number of tokens for each depth
+    ):
+        for i in range(len(token_lengths)):
+            token_lengths[i] = token_lengths[i] * 2 # one for envmap other for irradient
+        # setup attention processor
+        super().setup_attention_processor(token_lengths=token_lengths)
+
+    def get_light_features(self, batch):
+        """
+        Encode the light using light encoder
+        """
+        light_ldr = self.get_svdvae_latents_from_images(batch['light_ldr'])
+        light_log_hdr = self.get_svdvae_latents_from_images(batch['light_log_hdr'])
+        light_dir = self.get_svdvae_latents_from_images(batch['light_dir'])
+        irradiant_ldr = self.get_svdvae_latents_from_images(batch['irradiant_ldr'])
+        irradiant_log_hdr = self.get_svdvae_latents_from_images(batch['irradiant_log_hdr'])
+        irradiant_dir = self.get_svdvae_latents_from_images(batch['irradiant_dir'])
+
+        features_light = [
+            light_ldr,  # [B, C, H, W]
+            light_log_hdr,  # [B, C, H, W]
+            light_dir  # [B, C, H, W]            
+        ]        
+        features_light = torch.cat(features_light, dim=1)  # [B, C*3, H, W]
+
+        features_irradiant = [
+            irradiant_ldr,  # [B, C, H, W]
+            irradiant_log_hdr,  # [B, C, H, W]
+            irradiant_dir  # [B, C, H, W]            
+        ]
+        features_irradient = torch.cat(features_irradiant, dim=1)  # [B, C*3, H, W]
+        features = [features_light, features_irradient]
+        return features
     
+    def get_light_embedings(self, features):
+        """
+        Get light embedings from light features
+        """
+        light_embedings = self.encoder['env'](features[0]) # return list with shape [b, 320,1040, H, W]
+        irradient_embedings = self.encoder['env'](features[1]) # return list with shape [b, 320,1040, H, W]
+        # concatenate light embedings along channel dimension
+        light_out_embedings = []
+        for i in range(len(light_embedings)):
+            light = light_embedings[i].flatten(2).transpose(1, 2)  # [B, Token, 320]
+            irradient = irradient_embedings[i].flatten(2).transpose(1, 2)  # [B, Token, 320]
+            out_embed = torch.cat([light, irradient], dim=-2)  # [B, Token*2, 320]
+            out_embed = self.light_feature_projection[i](out_embed) # [B, Token*2, 768]
+            light_out_embedings.append(out_embed)  # append to list
 
-
+        # Combine
+        light_embedings = torch.cat(light_out_embedings, dim=1)  # [B, seq_len*4, 768]
+        return light_embedings
+    
+class SDAlbedoNormalDepthRelightIrradientEnv(SDRelightIrradientEnv,SDAlbedoNormalDepthRelightEnv):
+    def place_holders(self):
+        """
+        This is a placeholder for the class to ensure it can be instantiated.
+        It inherits from both SDRelightIrradientEnv and SDAlbedoNormalDepthRelightEnv.
+        """
+        pass
+    
 def expand_conv_in_channels(old_conv, new_in_channels):
 
     # Example use:

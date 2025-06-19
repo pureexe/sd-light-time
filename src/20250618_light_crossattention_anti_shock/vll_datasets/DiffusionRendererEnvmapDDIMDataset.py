@@ -1,6 +1,6 @@
 from vll_datasets.DiffusionRendererEnvmapDataset import DiffusionRendererEnvmapDataset
 
-LIGHT_KEY = ['light_ldr', 'light_log_hdr', 'light_dir']
+LIGHT_KEY = ['light_ldr', 'light_log_hdr', 'light_dir', "irradiant_ldr", 'irradiant_log_hdr', 'irradiant_dir']
 
 class DiffusionRendererEnvmapDDIMDataset(DiffusionRendererEnvmapDataset):
     def __init__(self, root_dir="/pure/f1/datasets/multi_illumination/diffusionrenderer/v1/val", index_file=None,  *args, **kwargs):
@@ -16,18 +16,22 @@ class DiffusionRendererEnvmapDDIMDataset(DiffusionRendererEnvmapDataset):
         # change the light source to add "source_" prefix
 
         for key in LIGHT_KEY:
-            output[f'source_{key}'] = output.pop(key)
+            if key in output:
+                if key in output:
+                    output[f'source_{key}'] = output.pop(key)
 
         # for target lighting, we will use target_ prefix
         # here is the thing that will output in format of array 
         for key in LIGHT_KEY:
-            output[f'target_{key}'] = []
+            if key in output:
+                output[f'target_{key}'] = []
         output['envmap_name'] = []
 
         for envmap_name in self.envmap_index[idx]:
             light = self.get_light(envmap_name)
             for key in LIGHT_KEY:
-                output[f'target_{key}'].append(light[key])
+                if 'target_' + key in output:
+                    output[f'target_{key}'].append(light[key])
             output['envmap_name'].append(envmap_name)
 
         return output

@@ -9,7 +9,7 @@ import argparse
 import os
 
 from constants import OUTPUT_MULTI, DATASET_ROOT_DIR, DATASET_VAL_DIR, DATASET_VAL_SPLIT
-from sdrelightenv import SDRelightEnv, SDAlbedoNormalDepthRelightEnv
+from sdrelightenv import SDRelightEnv, SDAlbedoNormalDepthRelightEnv, SDAlbedoNormalDepthRelightIrradientEnv, SDRelightIrradientEnv
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-lr', '--learning_rate', type=float, default=1e-4)
@@ -36,7 +36,7 @@ parser.add_argument(
     '-nt', 
     '--network_type', 
     type=str,
-    choices=['default', 'albedo_normal_depth'],
+    choices=['default', 'albedo_normal_depth', 'irradiant', 'albedo_normal_depth_irradiant'],
     help="select control type for the model",
     default='default'
 )
@@ -55,6 +55,10 @@ def get_model_class():
         return SDRelightEnv
     elif args.network_type == 'albedo_normal_depth':
         return SDAlbedoNormalDepthRelightEnv
+    elif args.network_type == 'albedo_normal_depth_irradiant':
+        return SDAlbedoNormalDepthRelightIrradientEnv
+    elif args.network_type == 'irradiant':
+        return SDRelightIrradientEnv
     else:
         raise ValueError(f"Unknown network type: {args.network_type}")
 
@@ -63,6 +67,10 @@ def get_dataset_components():
         return ['light', 'image']
     elif args.network_type == 'albedo_normal_depth':
         return ['albedo', 'normal', 'depth', 'light', 'image']
+    elif args.network_type == 'albedo_normal_depth_irradiant':
+        return ['albedo', 'normal', 'depth', 'light', 'image', 'irradiant']
+    elif args.network_type == 'irradiant':
+        return ['light', 'image', 'irradiant']
     else:
         raise ValueError(f"Unknown network type: {args.network_type}")
 
@@ -98,6 +106,7 @@ def main():
 
     checkpoint_callback = L.pytorch.callbacks.ModelCheckpoint(
         #filename="epoch{epoch:06d}_step{step:06d}",
+        filename="{epoch:06d}",
         every_n_epochs=args.every_n_epochs,
         save_top_k=-1,  # <--- this is important!
     )
