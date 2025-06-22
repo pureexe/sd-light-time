@@ -20,10 +20,15 @@ class DiffusionRendererEnvmapDDIMDataset(DiffusionRendererEnvmapDataset):
                 if key in output:
                     output[f'source_{key}'] = output.pop(key)
 
+        # add source and target image if image is in the output 
+        if 'image' in output:
+            output['source_image'] = output.pop('image')            
+            output['target_image'] = []
+
         # for target lighting, we will use target_ prefix
         # here is the thing that will output in format of array 
         for key in LIGHT_KEY:
-            if key in output:
+            if 'source_' + key in output:
                 output[f'target_{key}'] = []
         output['envmap_name'] = []
 
@@ -32,6 +37,10 @@ class DiffusionRendererEnvmapDDIMDataset(DiffusionRendererEnvmapDataset):
             for key in LIGHT_KEY:
                 if 'target_' + key in output:
                     output[f'target_{key}'].append(light[key])
+            
+            if 'target_image' in output:
+                output['target_image'].append(self.get_image(envmap_name))
+
             output['envmap_name'].append(envmap_name)
 
         return output

@@ -11,18 +11,19 @@ import torch
 import os 
 from tqdm.auto import tqdm
 
-#OUTPUT_PATH = "/pure/f1/datasets/multi_illumination/diffusionrenderer/v1/train/envmap_feature"
-OUTPUT_PATH = "/pure/f1/datasets/multi_illumination/diffusionrenderer/v1/test/envmap_feature"
-
+OUTPUT_PATH = "/pure/f1/datasets/multi_illumination/diffusionrenderer/v1/train/envmap_feature"
+#OUTPUT_PATH = "/pure/f1/datasets/multi_illumination/diffusionrenderer/v1/test/envmap_feature"
 @torch.inference_mode()
 def main():
     env_encoder = EnvEncoder.from_pretrained("/pure/t1/project/diffusion-renderer/checkpoints/diffusion_renderer-forward-svd", subfolder="env_encoder").to('cuda') # , torch_dtype=torch.float16
     svd_vae = AutoencoderKLTemporalDecoder.from_pretrained("stabilityai/stable-video-diffusion-img2vid", subfolder="vae").to('cuda') # use SVD vae for Envmap encoder # , varient='fp16', torch_dtype=torch.float16
    
     train_dataset = DiffusionRendererEnvmapDataset(
-        #root_dir=DATASET_ROOT_DIR,
-        root_dir="/pure/f1/datasets/multi_illumination/diffusionrenderer/v1/test",
+        root_dir=DATASET_ROOT_DIR,
+        #root_dir="/pure/f1/datasets/multi_illumination/diffusionrenderer/v1/test",
     )
+    print("DATASET_DIR:", DATASET_ROOT_DIR)
+    exit()
     train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=1, shuffle=False, num_workers=8)
     for batch in tqdm(train_dataloader):
         scene, filename = batch['name'][0].split('/')
@@ -39,7 +40,7 @@ def main():
         # concatenate features along channel dimension
         env_input = torch.cat(features, dim=1)  # [B, C*3, H, W]
         
-        env_features = env_encoder(env_input)
+        env_features = env_encoder(env_input).to('cpu')
 
         # show each layer shape
         # for i, v in enumerate(env_features):
@@ -47,7 +48,7 @@ def main():
 
         output = {}
         for i, v in enumerate(env_features):
-            output[f"layer_{i}"] = v[0].to('cpu')
+            output[f"layer_{i}"] = v[0]
         # save output to file
         os.makedirs(output_dir, exist_ok=True)        
         save_file(output, output_file)

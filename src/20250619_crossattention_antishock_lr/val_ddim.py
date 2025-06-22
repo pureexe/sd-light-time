@@ -8,14 +8,14 @@ from constants import FOLDER_NAME
 from constants import OUTPUT_MULTI, DATASET_ROOT_DIR, DATASET_VAL_DIR, DATASET_VAL_SPLIT
 
 from vll_datasets.DiffusionRendererEnvmapDDIMDataset import DiffusionRendererEnvmapDDIMDataset
-from sdrelightenv import SDRelightEnv, SDAlbedoNormalDepthRelightEnv
+from sdrelightenv import SDRelightEnv, SDAlbedoNormalDepthRelightEnv, SDNormalDepthRelightEnv
 
 MASTER_TYPE = 16
-CHECKPOINT_FOLDER_NAME = "20250614_light_embed_condition"
+CHECKPOINT_FOLDER_NAME = "20250619_crossattention_antishock_lr"
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument("-i", "--version", type=str, default="7406")
+parser.add_argument("-i", "--version", type=str, default="7472")
 parser.add_argument("-m", "--mode", type=str, default="val")
 parser.add_argument("-g", "--guidance_scale", type=str, default="1")
 parser.add_argument("-c", "--checkpoint", type=str, default="7")
@@ -25,36 +25,44 @@ args = parser.parse_args()
 
 
 NAMES = {
-    7403: 'no_albedo',
-    7404: 'albedo',
-    7405: 'albedo',
-    7406: 'albedo_depth_normal',
-    7407: 'albedo_depth_normal',
-    7410: 'albedo_depth_normal',
+    7468: 'normal_depth_mul1',
+    7469: 'normal_depth_mul2',
+    7470: 'normal_depth_mul5',
+    7471: 'normal_depth_mul10',
+    7472: 'normal_depth_mul50',
+    7473: 'normal_depth_mul100',
+    7474: 'normal_depth_mul500',
+    7475: 'normal_depth_mul1000',
 }
 LRS = {
-    7403: '1e-4',
-    7404: '1e-5',
-    7405: '1e-6',
-    7406: '1e-4',
-    7407: '1e-5',
-    7410: '1e-6',
+    7468: '1e-4',
+    7469: '1e-4',
+    7470: '1e-4',
+    7471: '1e-4',
+    7472: '1e-4',
+    7473: '1e-4',
+    7474: '1e-4',
+    7475: '1e-4',
 }
 CHECKPOINTS = {
-    7403: 15,
-    7404: 15,
-    7405: 15,
-    7406: 7,
-    7407: 7,
-    7410: 7,
+    7468: 1,
+    7469: 1,
+    7470: 1,
+    7471: 1,
+    7472: 1,
+    7473: 1,
+    7474: 1,
+    7475: 1
 }
 DDIM_CLASSES = {
-    7403: SDRelightEnv,
-    7404: SDRelightEnv,
-    7405: SDRelightEnv,
-    7406: SDAlbedoNormalDepthRelightEnv,
-    7407: SDAlbedoNormalDepthRelightEnv,
-    7410: SDAlbedoNormalDepthRelightEnv
+    7468: SDNormalDepthRelightEnv,
+    7469: SDNormalDepthRelightEnv,
+    7470: SDNormalDepthRelightEnv,
+    7471: SDNormalDepthRelightEnv,
+    7472: SDNormalDepthRelightEnv,
+    7473: SDNormalDepthRelightEnv,
+    7474: SDNormalDepthRelightEnv,
+    7475: SDNormalDepthRelightEnv,
 }
 
 

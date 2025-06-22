@@ -500,17 +500,22 @@ class SDRelightEnv(L.LightningModule):
         self.num_inference_step = num_inference_step
 
     def select_batch(self, batch, prefix='source', index=0):
-        LIGHT_KEYS = ['light_ldr', 'light_log_hdr', 'light_dir', 'irradiant_ldr', 'irradiant_log_hdr', 'irradiant_dir']
+
+        LIGHT_KEYS = ['light_ldr', 'light_log_hdr', 'light_dir', 'irradiant_ldr', 'irradiant_log_hdr', 'irradiant_dir', 'image']
         for key in LIGHT_KEYS:
             if not prefix + '_' + key in batch:
                 continue
             if prefix == 'target':
-                if key in batch and isinstance(batch[prefix + '_' + key], list):
+                if isinstance(batch[prefix + '_' + key], list):
+                    print("=============================================")
+                    print(f"Info: {prefix + '_' + key} is a list, using index {index} to select")
+                    print("=============================================")
                     batch[key] = batch[prefix + '_' + key][index]
                 else:
                     batch[key] = batch[prefix + '_' + key]
             else:
                 batch[key] = batch[prefix + '_' + key]
+        
         return batch
 
 
@@ -518,7 +523,7 @@ class SDRelightEnv(L.LightningModule):
         # check key first
         log_dir = self.get_logdir()
 
-        device = batch['image'].device
+        device = batch['source_image'].device
 
         # compute text embedding, we compute here so when doing inversion and generation
         prompt_embeds, _ = self.pipe.encode_prompt(
@@ -582,7 +587,7 @@ class SDRelightEnv(L.LightningModule):
                 os.chmod(f"{log_dir}/{epoch_text}sd_image/{filename}.png", 0o777)
 
                 # save control image to verify everything is correct 
-                is_save_control_image = False
+                is_save_control_image = True
                 if is_save_control_image:
                     for feature_name in ['albedo', 'normal', 'depth', 'light_ldr', 'light_log_hdr', 'light_dir']:
                         if feature_name in batch:
