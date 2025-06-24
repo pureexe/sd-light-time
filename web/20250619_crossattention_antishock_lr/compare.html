@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html class="has-navbar-fixed-bottom">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Inspect 5 scene from 5 seed</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@1.0.2/css/bulma.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@cityssm/bulma-sticky-table@3.0.1/bulma-with-sticky-table.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.21/lodash.min.js" integrity="sha512-WFN04846sdKMIP5LKNphMaWzU7YpMyCU245etK3g/2ARYbPK9Ub18eG+ljU96qKRCWh+quCY7yefSmlkQw1ANQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdn.jsdelivr.net/npm/underscore@1.13.7/underscore-umd-min.js"></script>
+    <style>
+        .fixed-tabs {
+          position: fixed;
+          top: 0;
+          width: 100%;
+          z-index: 1000;
+        }
+        body {
+          /* padding-top: 3rem; */ /* Adjust for the height of the fixed tab */
+        }
+        .crop-image {
+            width: 128px;
+            height: 128px;
+            object-fit: cover;
+            object-position: left center; /* Show the left half */
+        }
+    </style>
+    <script>
+   
+    </script>
+</head>
+<body>
+<div id="app">     
+<div class="table-container mx-auto" style="overflow-y:auto;max-height:100vh;" >
+
+<div>
+     <center><h1 style="font-size:2rem;">Scene {{scene}} | Light {{light_id}}</h1>  </center>
+<table class="table is-bordered is-striped is-narrow mx-auto has-sticky-header has-sticky-footer has-sticky-column" style="padding-bottom: 300px;" >
+    <thead>
+        <tr>
+            <th>Epoch</th>
+            <th v-for="epoch in epochs">{{epoch}}</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>    
+            <td>
+                Ground Truth
+            </td>
+            <td v-for="epoch in epochs">
+                <figure class="image is-128x128">
+                    <img :src="`/output/pure/f1/datasets/multi_illumination/diffusionrenderer/v1/val/images/${scene}/dir_${light_id}_mip2.jpg`"  alt="Image" loading="lazy">
+                </figure>                
+            </td>
+        </tr>
+        <tr>    
+            <td>
+                Predict<br>
+                light: {{light_id}}
+            </td>
+            <td v-for="epoch in epochs">
+                <figure class="image is-128x128">
+                  <img :src="`/output/pure/t1/project/sd-light-time/output_t1/20250619_crossattention_antishock_lr/lightning_logs/version_${version_id}/step_${_.padLeftZeros(770*epoch, 6)}/crop_image/${scene}-dir_0_mip2_${scene}-dir_${light_id}_mip2.png`" alt="Image" loading="lazy">
+                </figure>
+            </td>
+        </tr>
+        <tr >    
+            <td>
+                Source
+            </td>
+            <td v-for="epoch in epochs">
+                <img :src="`/output/pure/f1/datasets/multi_illumination/diffusionrenderer/v1/val/images/${scene}/dir_0_mip2.jpg`" class="image is-128x128" alt="Image" loading="lazy">
+            </td>
+        </tr>
+        <tr>    
+            <td>
+                SDOutput<br>
+                light: {{light_id}}
+            </td>
+            <td v-for="epoch in epochs">
+                <img :src="`/output/pure/t1/project/sd-light-time/output_t1/20250619_crossattention_antishock_lr/lightning_logs/version_${version_id}/step_${_.padLeftZeros(770*epoch, 6)}/sd_image/${scene}-dir_0_mip2_${scene}-dir_${light_id}_mip2.png`" class="image is-128x128" alt="Image" loading="lazy">
+            </td>
+        </tr>
+        <tr >    
+            <td>
+                Albedo
+            </td>
+            <td v-for="epoch in epochs">
+                <img :src="`/output/pure/f1/datasets/multi_illumination/diffusionrenderer/v1/val_viz/albedo/${scene}/dir_0_mip2.png`" class="image is-128x128" alt="Image" loading="lazy">
+            </td>
+        </tr>
+        <tr >    
+            <td>
+                depth
+            </td>
+            <td v-for="epoch in epochs">
+                <img :src="`/output/pure/f1/datasets/multi_illumination/diffusionrenderer/v1/val_viz/depth/${scene}/dir_0_mip2.png`" class="image is-128x128" alt="Image" loading="lazy">
+            </td>
+        </tr>
+        <tr >    
+            <td>
+                normal
+            </td>
+            <td v-for="epoch in epochs">
+                <img :src="`/output/pure/f1/datasets/multi_illumination/diffusionrenderer/v1/val_viz/normal/${scene}/dir_0_mip2.png`" class="image is-128x128" alt="Image" loading="lazy">
+            </td>
+        </tr>
+        <tr >    
+            <td>
+                E_ldr
+            </td>
+            <td v-for="epoch in epochs">
+                <img :src="`/output/pure/f1/datasets/multi_illumination/diffusionrenderer/v1/val_viz/light_ldr/${scene}/dir_${light_id}_mip2.png`" class="image is-128x128" alt="Image" loading="lazy">
+            </td>
+        </tr>
+        <tr >    
+            <td>
+                E_log_hdr
+            </td>
+            <td v-for="epoch in epochs">
+                <img :src="`/output/pure/f1/datasets/multi_illumination/diffusionrenderer/v1/val_viz/light_log_hdr/${scene}/dir_${light_id}_mip2.png`" class="image is-128x128" alt="Image" loading="lazy">
+            </td>
+        </tr>
+        <tr >    
+            <td>
+                E_dir
+            </td>
+            <td v-for="epoch in epochs">
+                <img :src="`/output/pure/f1/datasets/multi_illumination/diffusionrenderer/v1/val_viz/light_dir/${scene}/dir_${light_id}_mip2.png`" class="image is-128x128" alt="Image" loading="lazy">
+            </td>
+        </tr>
+    </tbody>
+</table>
+</div>
+
+
+
+</div>
+
+<nav class="navbar is-fixed-bottom">
+  
+
+  <div id="navbarExampleTransparentExample" class="navbar-menu">
+    <div class="navbar-start">
+        <div class="navbar-item">
+            <div class="select">
+            <select v-model="scene">
+                <option v-for="scene in avalible_scenes" :value="scene">{{ scene_names[scene] }}</option>
+            </select>
+            </div>
+        </div>
+        <div class="navbar-item">
+            <div class="select">
+            <select v-model="version_id">
+                <option v-for="version in avalible_versions" :value="version">{{ version_names[version] }}</option>
+            </select>
+            </div>
+        </div>
+        <div class="navbar-item">
+            <div class="select">
+            <select v-model="light_id">
+                <option v-for="light in avalible_lights" :value="light">Light: {{ light }}</option>
+            </select>   
+            </div>
+        </div>
+        <div class="navbar-item">
+        
+        
+    </div>
+
+    <div class="navbar-end">
+
+    </div>
+  </div>
+</nav>
+
+</div>
+<script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+<script>
+_.mixin({
+    padLeftZeros: function(num, size) {
+        let s = String(num);
+        while (s.length < size) {
+            s = "0" + s;
+        }
+        return s;
+    }
+});
+function fetchJson(fileURL, callback) {
+    fetch(fileURL)
+        .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+        return response.json();
+        })
+        .then(jsonData => callback(null, jsonData))
+        .catch(error => callback(error, null));
+    }
+      
+const { createApp, ref } = Vue
+createApp({
+    setup() {
+        const avalible_lights = ref(_.range(0, 25)); // Example light IDs, adjust as needed
+        const avalible_scenes = ref([
+            '14n_copyroom1',
+            '14n_copyroom10',
+            'everett_kitchen2',
+            'everett_kitchen6'
+        ]);
+        const scene_names = ref({
+            '14n_copyroom1': 'Train: 14n_copyroom1',
+            '14n_copyroom10': 'Train: 14n_copyroom10',
+            'everett_kitchen2': 'Test: everett_kitchen2',
+            'everett_kitchen6': 'Test: everett_kitchen6'
+        });
+        const avalible_versions = ref(_.range(7487,7495));
+        const version_names = ref({
+            '7487': 'Gate LR: 1e-4 | LR: 1e-4',
+            '7488': 'Gate LR: 2e-4 | LR: 1e-4',
+            '7489': 'Gate LR: 5e-4 | LR: 1e-4',
+            '7490': 'Gate LR: 1e-3 | LR: 1e-4',
+            '7491': 'Gate LR: 5e-3 | LR: 1e-4',
+            '7492': 'Gate LR: 1e-3 | LR: 1e-4',
+            '7493': 'Gate LR: 5e-2 | LR: 1e-4',
+            '7494': 'Gate LR: 1e-2 | LR: 1e-4',
+        });
+        const avalible_types = ref([
+            'crop_image',
+            'sd_image' 
+        ])
+        const type_names = ref({
+            'crop_image': 'DDIM Output',
+            'sd_image': 'SD Ouput'
+        });
+        const image_type = ref('crop_image');
+
+        const queryString = window.location.search;
+        const params = new URLSearchParams(queryString);
+        // Read the values
+        const lightId = params.get("light_id") || 20;          // e.g., "abc"
+
+        const scenes = ref([])
+        const seeds = ref([])
+        //const epochs = ref([1, 2, 3, 5, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110]); // Example epochs, adjust as needed
+        const epochBegin = parseInt(params.get("epoch_begin")) || 9; // e.g., "5"
+        const epochEnd = parseInt(params.get("epoch_end")) || 25; // e.g., "5"
+
+        const epochs = ref(_.range(epochBegin,epochEnd)); // Example epochs, adjust as needed
+        const light_ids = ref([lightId]);
+        const light_id = ref(lightId); // Example light ID, adjust as needed
+        const version_id = ref('7487') // Example version ID, adjust as needed
+        const scene = ref('everett_kitchen6') // Example scene, adjust as needed
+        return {
+            scenes,
+            seeds,
+            epochs,
+            scene,
+            light_ids,
+            light_id,
+            version_id,
+            avalible_scenes,
+            avalible_versions,
+            version_names,
+            scene_names,
+            avalible_types,
+            type_names,
+            image_type,
+            avalible_lights
+        }
+    },
+    methods: {
+        handleKeyPress(event) {
+        },
+        getVersion(splittype, direction, learning_rate,  guidance){
+        },
+        getSceneName(scene) {
+            return scene.split('+')[0];
+        },
+        getFileName(scene) {
+            return scene.split('+').pop();
+        }
+    },
+    mounted() {
+        var self = this;
+        // fetchJson('/output_t1/20250518_dataset_inspection/real/filenames.json', (error, data) => {
+        //     if (error) {
+        //         console.error('Error fetching JSON:', error);
+        //         return;
+        //     }
+        //     self.scenes = data;
+        // });
+    },
+    beforeDestroy() {
+    }
+}).mount('#app')
+</script>
+</body>
+</html>
